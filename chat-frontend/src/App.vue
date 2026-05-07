@@ -1,11 +1,22 @@
-<script setup lang="ts"></script>
-
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <router-view />
 </template>
 
-<style scoped></style>
+<script setup lang="ts">
+import { onMounted } from 'vue'
+import { useUserStore } from '@/stores/userStore'
+import { websocketService } from '@/utils/websocket'
+
+const userStore = useUserStore()
+
+onMounted(() => {
+  // 如果已登录，建立WebSocket连接
+  if (userStore.isLoggedIn()) {
+    websocketService.connect()
+  }
+})
+</script>
+
+<style>
+/* 全局样式已在 main.css 中定义 */
+</style>

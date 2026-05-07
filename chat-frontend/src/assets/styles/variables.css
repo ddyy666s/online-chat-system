@@ -1,0 +1,49 @@
+/* variables.css - CSS 变量定义 */
+
+:root {
+  /* ========== 主题色 ========== */
+  --color-primary: #409eff;
+  --color-primary-light: #66b1ff;
+  --color-primary-dark: #3a8ee6;
+  
+  --color-success: #67c23a;
+  --color-warning: #e6a23c;
+  --color-danger: #f56c6c;
+  --color-info: #909399;
+  
+  /* ========== 文字颜色 ========== */
+  --text-primary: #303133;
+  --text-regular: #606266;
+  --text-secondary: #909399;
+  --text-placeholder: #a8abb2;
+  
+  /* ========== 边框颜色 ========== */
+  --border-color: #dcdfe6;
+  --border-color-light: #e4e7ed;
+  --border-color-lighter: #ebeef5;
+  --border-color-extra-light: #f2f6fc;
+  
+  /* ========== 背景颜色 ========== */
+  --bg-color: #f5f7fa;
+  --bg-color-white: #ffffff;
+  --bg-color-overlay: #ffffff;
+  
+  /* ========== 布局尺寸 ========== */
+  --sidebar-width: 280px;
+  --header-height: 60px;
+  
+  /* ========== 圆角 ========== */
+  --border-radius-small: 2px;
+  --border-radius-base: 4px;
+  --border-radius-large: 8px;
+  --border-radius-circle: 50%;
+  
+  /* ========== 阴影 ========== */
+  --box-shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  --box-shadow-base: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+  --box-shadow-dark: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  
+  /* ========== 过渡动画 ========== */
+  --transition-duration: 0.3s;
+  --transition-timing: ease;
+}

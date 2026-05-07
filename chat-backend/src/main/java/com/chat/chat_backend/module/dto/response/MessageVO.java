@@ -1,0 +1,20 @@
+package com.chat.chat_backend.module.dto.response;
+
+import lombok.Builder;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class MessageVO {
+    private Long id;
+    private Long fromUserId;
+    private String fromUserNickname;
+    private Long toUserId;
+    private String toUserNickname;
+    private Integer messageType;
+    private String content;
+    private Boolean isRead;
+    private Boolean isRecalled;
+    private LocalDateTime sendTime;
+}

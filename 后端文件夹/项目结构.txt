@@ -1,0 +1,78 @@
+chat-backend/src/main/java/com/chat/chat_backend/
+│
+├── ChatBackendApplication.java
+│
+├── common/
+│   ├── constant/
+│   │   ├── MessageConstants.java
+│   │   └── RedisConstants.java
+│   ├── exception/
+│   │   ├── BusinessException.java
+│   │   ├── ErrorCode.java
+│   │   └── GlobalExceptionHandler.java
+│   ├── result/
+│   │   ├── PageResult.java
+│   │   ├── Result.java
+│   │   └── ResultCode.java
+│   └── utils/
+│       ├── DateUtil.java
+│       ├── JwtUtil.java
+│       ├── RedisUtil.java
+│       └── WebSocketUtil.java
+│
+├── config/
+│   ├── MybatisPlusConfig.java
+│   ├── RedisConfig.java
+│   ├── WebMvcConfig.java
+│   └── WebSocketConfig.java
+│
+├── controller/
+│   ├── AdminController.java
+│   ├── FriendController.java
+│   ├── ImpressionController.java
+│   ├── MessageController.java
+│   └── UserController.java
+│
+├── interceptor/
+│   └── JwtInterceptor.java
+│
+├── mapper/
+│   ├── FriendMapper.java
+│   ├── FriendRequestMapper.java
+│   ├── ImpressionMapper.java
+│   ├── MessageMapper.java
+│   └── UserMapper.java
+│
+├── service/
+│   ├── impl/
+│   │   ├── AdminServiceImpl.java
+│   │   ├── FriendServiceImpl.java
+│   │   ├── ImpressionServiceImpl.java
+│   │   ├── MessageServiceImpl.java
+│   │   └── UserServiceImpl.java
+│   ├── AdminService.java
+│   ├── FriendService.java
+│   ├── ImpressionService.java
+│   ├── MessageService.java
+│   └── UserService.java
+│
+├── websocket/
+│   ├── ChatWebSocketHandler.java
+│   └── WebSocketSessionManager.java
+│
+└── module/
+    ├── dto/
+    │   ├── request/
+    │   │   ├── LoginRequest.java
+    │   │   ├── RegisterRequest.java
+    │   │   └── SendMessageRequest.java
+    │   └── response/
+    │       ├── LoginResponse.java
+    │       ├── MessageResponse.java
+    │       └── UserInfoResponse.java
+    └── entity/
+        ├── Friend.java
+        ├── FriendRequest.java
+        ├── Impression.java
+        ├── Message.java
+        └── User.java
