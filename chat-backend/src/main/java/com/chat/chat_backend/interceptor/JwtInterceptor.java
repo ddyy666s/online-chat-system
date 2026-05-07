@@ -24,7 +24,10 @@ public class JwtInterceptor implements HandlerInterceptor {
         // 获取请求头中的token
         String token = request.getHeader("Authorization");
 
+        log.info("请求路径: {}, Authorization头: {}", request.getRequestURI(), token);
+
         if (token == null || !token.startsWith("Bearer ")) {
+            log.warn("Token缺失或格式错误");
             response.setStatus(401);
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write("{\"code\":1005,\"message\":\"" + ResultCode.UNAUTHORIZED.getMessage() + "\"}");
@@ -32,10 +35,12 @@ public class JwtInterceptor implements HandlerInterceptor {
         }
 
         token = token.substring(7);
+        log.info("提取的token: {}", token);
 
         // 检查黑名单
         String blacklistKey = RedisConstants.TOKEN_BLACKLIST + token;
         if (Boolean.TRUE.equals(redisTemplate.hasKey(blacklistKey))) {
+            log.warn("Token已被加入黑名单");
             response.setStatus(401);
             response.getWriter().write("{\"code\":1005,\"message\":\"Token已失效\"}");
             return false;
@@ -43,16 +48,30 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         // 验证token
         if (!jwtUtil.validateToken(token)) {
+            log.warn("Token验证失败");
             response.setStatus(401);
             response.getWriter().write("{\"code\":1005,\"message\":\"" + ResultCode.UNAUTHORIZED.getMessage() + "\"}");
             return false;
         }
 
-        // 将用户信息存入request
+        // 从token中获取用户信息
         Long userId = jwtUtil.getUserIdFromToken(token);
         String role = jwtUtil.getRoleFromToken(token);
+
+        log.info("解析结果: userId={}, role={}", userId, role);
+
+        if (userId == null) {
+            log.warn("Token中未解析到userId");
+            response.setStatus(401);
+            response.getWriter().write("{\"code\":1005,\"message\":\"Token无效\"}");
+            return false;
+        }
+
+        // 设置到request属性
         request.setAttribute("userId", userId);
         request.setAttribute("role", role);
+
+        log.info("已设置userId到request: {}", request.getAttribute("userId"));
 
         return true;
     }

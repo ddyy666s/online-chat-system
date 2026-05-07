@@ -19,6 +19,7 @@ import com.chat.chat_backend.module.entity.FriendRequest;
 import com.chat.chat_backend.module.entity.User;
 import com.chat.chat_backend.service.FriendService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FriendServiceImpl implements FriendService {
@@ -47,7 +49,6 @@ public class FriendServiceImpl implements FriendService {
 
         List<User> users = userMapper.selectList(wrapper);
 
-        // 检查是否已是好友
         return users.stream().map(user -> {
             Friend existingFriend = friendMapper.findFriendRelation(currentUserId, user.getId());
             return FriendVO.builder()
@@ -56,7 +57,9 @@ public class FriendServiceImpl implements FriendService {
                     .avatar(user.getAvatar())
                     .signature(user.getSignature())
                     .remark(existingFriend != null ? existingFriend.getRemark() : null)
+                    .groupName(existingFriend != null ? existingFriend.getGroupName() : null)
                     .isOnline(redisUtil.isMember(RedisConstants.ONLINE_USERS, String.valueOf(user.getId())))
+                    .unreadCount(0)
                     .build();
         }).collect(Collectors.toList());
     }
@@ -64,30 +67,25 @@ public class FriendServiceImpl implements FriendService {
     @Override
     @Transactional
     public void sendFriendRequest(Long currentUserId, SendFriendRequest request) {
-        // 不能添加自己为好友
         if (currentUserId.equals(request.getToUserId())) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "不能添加自己为好友");
         }
 
-        // 检查目标用户是否存在
         User targetUser = userMapper.selectById(request.getToUserId());
         if (targetUser == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
 
-        // 检查是否已经是好友
         Friend existingFriend = friendMapper.findFriendRelation(currentUserId, request.getToUserId());
         if (existingFriend != null) {
             throw new BusinessException(ResultCode.ALREADY_FRIEND);
         }
 
-        // 检查是否有待处理的申请
         FriendRequest pendingRequest = friendRequestMapper.findPendingRequest(currentUserId, request.getToUserId());
         if (pendingRequest != null) {
             throw new BusinessException(ResultCode.REQUEST_EXISTS);
         }
 
-        // 创建好友申请
         FriendRequest friendRequest = new FriendRequest();
         friendRequest.setFromUserId(currentUserId);
         friendRequest.setToUserId(request.getToUserId());
@@ -126,12 +124,10 @@ public class FriendServiceImpl implements FriendService {
             throw new BusinessException(ResultCode.REQUEST_NOT_FOUND);
         }
 
-        // 验证是否为接收者
         if (!friendRequest.getToUserId().equals(currentUserId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        // 验证申请是否已过期
         if (friendRequest.getExpireTime() != null && friendRequest.getExpireTime().isBefore(LocalDateTime.now())) {
             friendRequest.setStatus(3);
             friendRequestMapper.updateById(friendRequest);
@@ -142,9 +138,7 @@ public class FriendServiceImpl implements FriendService {
         friendRequest.setHandledTime(LocalDateTime.now());
         friendRequestMapper.updateById(friendRequest);
 
-        // 如果同意，建立双向好友关系
         if (request.getStatus() == 1) {
-            // 当前用户添加对方为好友
             Friend friend1 = new Friend();
             friend1.setUserId(currentUserId);
             friend1.setFriendId(friendRequest.getFromUserId());
@@ -152,7 +146,6 @@ public class FriendServiceImpl implements FriendService {
             friend1.setCreatedAt(LocalDateTime.now());
             friendMapper.insert(friend1);
 
-            // 对方添加当前用户为好友
             Friend friend2 = new Friend();
             friend2.setUserId(friendRequest.getFromUserId());
             friend2.setFriendId(currentUserId);
@@ -164,18 +157,36 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public List<FriendGroupVO> getFriendList(Long currentUserId) {
+        // 参数校验
+        if (currentUserId == null) {
+            log.warn("getFriendList: currentUserId is null");
+            return new ArrayList<>();
+        }
+
         List<Friend> friends = friendMapper.findAllByUserId(currentUserId);
+        log.info("getFriendList: userId={}, friends count={}", currentUserId, friends.size());
 
-        // 获取所有好友的用户信息
-        List<Long> friendIds = friends.stream().map(Friend::getFriendId).collect(Collectors.toList());
+        // 如果没有好友，直接返回空列表
+        if (friends == null || friends.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Long> friendIds = friends.stream()
+                .map(Friend::getFriendId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // 如果所有 friendId 都是 null，返回空列表
+        if (friendIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         List<User> users = userMapper.selectBatchIds(friendIds);
-        Map<Long, User> userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u));
+        Map<Long, User> userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u, (u1, u2) -> u1));
 
-        // 获取未读计数
         String unreadKey = RedisConstants.UNREAD_COUNT + currentUserId;
         Map<Object, Object> unreadMap = redisTemplate.opsForHash().entries(unreadKey);
 
-        // 构建分组
         Map<String, List<FriendVO>> groupMap = new HashMap<>();
 
         for (Friend friend : friends) {
@@ -185,7 +196,10 @@ public class FriendServiceImpl implements FriendService {
             String groupName = friend.getGroupName() != null ? friend.getGroupName() : "我的好友";
             Integer unreadCount = 0;
             if (unreadMap.containsKey(String.valueOf(friend.getFriendId()))) {
-                unreadCount = Integer.parseInt(unreadMap.get(String.valueOf(friend.getFriendId())).toString());
+                Object value = unreadMap.get(String.valueOf(friend.getFriendId()));
+                if (value != null) {
+                    unreadCount = Integer.parseInt(value.toString());
+                }
             }
 
             FriendVO vo = FriendVO.builder()
@@ -203,7 +217,6 @@ public class FriendServiceImpl implements FriendService {
             groupMap.computeIfAbsent(groupName, k -> new ArrayList<>()).add(vo);
         }
 
-        // 转为列表
         return groupMap.entrySet().stream()
                 .map(entry -> FriendGroupVO.builder()
                         .groupName(entry.getKey())
@@ -215,7 +228,6 @@ public class FriendServiceImpl implements FriendService {
     @Override
     @Transactional
     public void deleteFriend(Long currentUserId, Long friendId) {
-        // 删除双向好友关系
         LambdaQueryWrapper<Friend> wrapper1 = new LambdaQueryWrapper<>();
         wrapper1.eq(Friend::getUserId, currentUserId).eq(Friend::getFriendId, friendId);
         friendMapper.delete(wrapper1);

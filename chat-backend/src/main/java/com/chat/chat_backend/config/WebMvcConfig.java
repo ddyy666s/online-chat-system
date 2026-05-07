@@ -16,18 +16,18 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
-                .addPathPatterns("/api/**")
+                .addPathPatterns("/**")  // 拦截所有请求
                 .excludePathPatterns(
-                        "/api/user/register",
-                        "/api/user/login",
-                        "/api/ws/**"
+                        "/user/register",   // 注册不拦截
+                        "/user/login",      // 登录不拦截
+                        "/ws/**"            // WebSocket不拦截
                 );
     }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5173")
+                .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);

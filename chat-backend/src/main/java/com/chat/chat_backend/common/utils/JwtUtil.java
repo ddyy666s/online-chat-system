@@ -16,24 +16,23 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret:defaultSecretKey12345678901234567890}")
+    @Value("${jwt.secret:aB3dE5fG7hI9jK1lM2nO4pQ6rS8tU0vW2xY4zA6cC8eE0gG2iI4kK6mM8oO0qQ}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}")
-    private Long expiration;  // 默认24小时
+    private Long expiration;
 
-    /**
-     * 获取签名密钥
-     */
     private SecretKey getSigningKey() {
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /**
-     * 生成Token
-     */
     public String generateToken(Long userId, String username, String role) {
+        if (userId == null) {
+            log.error("生成Token失败: userId为null");
+            throw new IllegalArgumentException("userId不能为null");
+        }
+
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("username", username);
@@ -51,33 +50,27 @@ public class JwtUtil {
                 .compact();
     }
 
-    /**
-     * 从Token中获取用户ID
-     */
     public Long getUserIdFromToken(String token) {
         Claims claims = parseToken(token);
-        return claims != null ? Long.valueOf(claims.getSubject()) : null;
+        if (claims == null) return null;
+        Object userIdObj = claims.get("userId");
+        if (userIdObj == null) return null;
+        if (userIdObj instanceof Long) return (Long) userIdObj;
+        if (userIdObj instanceof Integer) return ((Integer) userIdObj).longValue();
+        if (userIdObj instanceof String) return Long.parseLong((String) userIdObj);
+        return null;
     }
 
-    /**
-     * 从Token中获取用户名
-     */
     public String getUsernameFromToken(String token) {
         Claims claims = parseToken(token);
         return claims != null ? (String) claims.get("username") : null;
     }
 
-    /**
-     * 从Token中获取角色
-     */
     public String getRoleFromToken(String token) {
         Claims claims = parseToken(token);
         return claims != null ? (String) claims.get("role") : null;
     }
 
-    /**
-     * 验证Token是否有效
-     */
     public boolean validateToken(String token) {
         try {
             Claims claims = parseToken(token);
@@ -88,9 +81,6 @@ public class JwtUtil {
         }
     }
 
-    /**
-     * 解析Token
-     */
     private Claims parseToken(String token) {
         try {
             return Jwts.parser()
