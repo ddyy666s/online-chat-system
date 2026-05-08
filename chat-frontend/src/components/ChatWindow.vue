@@ -28,14 +28,11 @@
             <span class="name">{{ msg.fromUserNickname }}</span>
             <span class="time">{{ formatRelativeTime(msg.sendTime) }}</span>
           </div>
-
           <div class="message-bubble">
             <span v-if="msg.messageType === 1 && !msg.isRecalled">{{ msg.content }}</span>
-
             <div v-else-if="msg.messageType === 2 && !msg.isRecalled" class="image-message">
               <el-image :src="msg.content" :preview-src-list="[msg.content]" fit="cover" class="message-image" />
             </div>
-
             <div v-else-if="msg.messageType === 4 && !msg.isRecalled" class="voice-message"
               @click="togglePlayVoice(msg)">
               <el-icon>
@@ -44,17 +41,13 @@
               </el-icon>
               <span>语音消息</span>
               <span class="voice-duration">{{ formatVoiceDuration(msg.duration) }}</span>
-              <div class="voice-wave" v-if="currentPlayingId === msg.id">
-                <span v-for="i in 5" :key="i"></span>
-              </div>
+              <div class="voice-wave" v-if="currentPlayingId === msg.id"><span v-for="i in 5" :key="i"></span></div>
             </div>
-
             <span v-else-if="msg.isRecalled" class="recalled">对方撤回了一条消息</span>
             <span v-else>{{ msg.content }}</span>
           </div>
         </div>
       </div>
-
       <div v-if="loading" class="loading"><el-skeleton :rows="2" animated /></div>
       <div ref="scrollBottomRef"></div>
     </div>
@@ -65,9 +58,21 @@
           @keyup.ctrl.enter="sendMessage" />
         <div class="input-actions"><el-button type="primary" @click="sendMessage">发送</el-button></div>
       </div>
-      <CommunicationBar @send-image="sendImage" @send-voice="sendVoice" @send-emoji="sendEmoji" />
+      <CommunicationBar :current-chat-user-id="friend?.userId" @send-image="sendImage" @send-voice="sendVoice"
+        @send-emoji="sendEmoji" @start-voice-call="startVoiceCall" @start-video-call="startVideoCall" />
     </div>
 
+    <!-- 主动发起的通话 -->
+    <CallDialog v-model="voiceCallVisible" :target-user="friend" call-type="voice" :is-caller="true"
+      @end-call="endVoiceCall" />
+    <CallDialog v-model="videoCallVisible" :target-user="friend" call-type="video" :is-caller="true"
+      @end-call="endVideoCall" />
+
+    <!-- 来电弹窗 -->
+    <CallDialog v-model="incomingCallVisible" :target-user="incomingCaller" :call-type="incomingCallType"
+      :is-caller="false" @end-call="endIncomingCall" />
+
+    <!-- 下载聊天记录弹窗 -->
     <DownloadDialog v-model="showDownloadDialog" :friend-id="friend?.userId" :friend-name="friend?.nickname"
       :total-messages="totalMessageCount" :max-limit="maxDownloadLimit" @download="handleDownload" />
   </div>
@@ -84,12 +89,14 @@ import { useUserStore } from '@/stores/userStore'
 import { useMessageStore } from '@/stores/messageStore'
 import DownloadDialog from './DownloadDialog.vue'
 import CommunicationBar from './CommunicationBar.vue'
+import CallDialog from './CallDialog.vue'
 
 const props = defineProps<{ friend: any }>()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const currentUserId = userStore.userInfo?.id
 
+// 聊天相关
 const maxDownloadLimit = 500
 const messages = ref<any[]>([])
 const inputContent = ref('')
@@ -104,6 +111,13 @@ const scrollBottomRef = ref<HTMLElement>()
 let currentAudio: HTMLAudioElement | null = null
 const currentPlayingId = ref<number | null>(null)
 
+// 通话相关
+const voiceCallVisible = ref(false)
+const videoCallVisible = ref(false)
+const incomingCallVisible = ref(false)
+const incomingCaller = ref<any>(null)
+const incomingCallType = ref<'voice' | 'video'>('voice')
+
 const formatVoiceDuration = (duration?: number): string => {
   if (!duration || duration <= 0) return '0:05'
   const mins = Math.floor(duration / 60)
@@ -111,7 +125,11 @@ const formatVoiceDuration = (duration?: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
-const togglePlayVoice = (msg: any) => {
+const togglePlayVoice = async (msg: any) => {
+  if (!msg.content) {
+    ElMessage.error('语音文件不存在')
+    return
+  }
   if (currentPlayingId.value === msg.id && currentAudio) {
     currentAudio.pause()
     currentAudio.currentTime = 0
@@ -126,21 +144,27 @@ const togglePlayVoice = (msg: any) => {
   const audio = new Audio(msg.content)
   currentPlayingId.value = msg.id
   currentAudio = audio
-  audio.play().catch(() => {
+  try {
+    await audio.play()
+  } catch (err) {
+    console.error('播放失败', err)
     ElMessage.error('播放失败')
     currentPlayingId.value = null
     currentAudio = null
-  })
+  }
   audio.onended = () => {
     currentPlayingId.value = null
     currentAudio = null
   }
 }
 
-// 加载历史
 const loadHistory = async (reset = true) => {
   if (!props.friend?.userId) return
-  if (reset) { page.value = 1; hasMore.value = true; messages.value = [] }
+  if (reset) {
+    page.value = 1
+    hasMore.value = true
+    messages.value = []
+  }
   if (!hasMore.value) return
   loading.value = true
   try {
@@ -159,11 +183,8 @@ const loadHistory = async (reset = true) => {
   }
 }
 
-const scrollToBottom = () => {
-  nextTick(() => scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' }))
-}
+const scrollToBottom = () => nextTick(() => scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' }))
 
-// 发送消息
 const sendMessage = () => {
   if (!inputContent.value.trim()) return ElMessage.warning('请输入内容')
   if (!props.friend?.userId) return
@@ -173,30 +194,68 @@ const sendMessage = () => {
 }
 
 const sendImage = (url: string) => {
-  if (!props.friend?.userId) return
-  websocketService.sendMessage(props.friend.userId, url, 2)
-  scrollToBottom()
+  if (props.friend?.userId) {
+    websocketService.sendMessage(props.friend.userId, url, 2)
+    scrollToBottom()
+  }
 }
 
 const sendVoice = (url: string, duration: number) => {
-  if (!props.friend?.userId) return
-  websocketService.sendMessage(props.friend.userId, url, 4, duration)
-  scrollToBottom()
+  if (props.friend?.userId) {
+    websocketService.sendMessage(props.friend.userId, url, 4, duration)
+    scrollToBottom()
+  }
 }
 
 const sendEmoji = (url: string) => {
-  if (!props.friend?.userId) return
-  websocketService.sendMessage(props.friend.userId, url, 2)
-  scrollToBottom()
+  if (props.friend?.userId) {
+    websocketService.sendMessage(props.friend.userId, url, 2)
+    scrollToBottom()
+  }
 }
+
+// 主动发起通话
+const startVoiceCall = (toUserId: number) => {
+  if (!toUserId) {
+    ElMessage.warning('请先选择聊天对象')
+    return
+  }
+  if (toUserId === currentUserId) {
+    ElMessage.error('不能给自己打电话')
+    return
+  }
+  if (!props.friend) {
+    ElMessage.error('请先选择聊天对象')
+    return
+  }
+  voiceCallVisible.value = true
+}
+
+const startVideoCall = (toUserId: number) => {
+  if (!toUserId) {
+    ElMessage.warning('请先选择聊天对象')
+    return
+  }
+  if (toUserId === currentUserId) {
+    ElMessage.error('不能给自己打电话')
+    return
+  }
+  if (!props.friend) {
+    ElMessage.error('请先选择聊天对象')
+    return
+  }
+  videoCallVisible.value = true
+}
+
+const endVoiceCall = () => { voiceCallVisible.value = false }
+const endVideoCall = () => { videoCallVisible.value = false }
+const endIncomingCall = () => { incomingCallVisible.value = false; incomingCaller.value = null }
 
 const handleDownload = async (limit: number) => {
   try {
     await downloadChatHistoryApi(props.friend.userId, props.friend.nickname, limit)
     ElMessage.success('开始下载')
-  } catch (e) {
-    ElMessage.error('下载失败')
-  }
+  } catch { ElMessage.error('下载失败') }
 }
 
 const markAsRead = async () => {
@@ -208,7 +267,6 @@ const markAsRead = async () => {
 }
 
 const onNewMessage = (data: any) => {
-  console.log('收到消息:', data)  // 查看 data.duration
   if (props.friend?.userId === data.fromUserId) {
     messages.value.push({
       id: data.messageId,
@@ -225,14 +283,33 @@ const onNewMessage = (data: any) => {
   }
 }
 
+// 接收通话信令
+const onCallSignal = (data: any) => {
+  console.log('收到通话信令:', data)
+  if (data.action === 'offer' && data.fromUserId !== currentUserId) {
+    incomingCaller.value = { id: data.fromUserId, nickname: data.fromUserNickname }
+    incomingCallType.value = data.callType === 'video' ? 'video' : 'voice'
+    incomingCallVisible.value = true
+  }
+}
+
 watch(() => props.friend, (newFriend) => {
-  if (newFriend?.userId) { loadHistory(true); markAsRead() }
+  if (newFriend?.userId) {
+    loadHistory(true)
+    markAsRead()
+  }
 }, { immediate: true, deep: true })
 
-onMounted(() => websocketService.onMessage(onNewMessage))
+onMounted(() => {
+  websocketService.onMessage(onNewMessage)
+  websocketService.onCallSignal(onCallSignal)
+})
 
 onUnmounted(() => {
-  if (currentAudio) { currentAudio.pause(); currentAudio = null }
+  if (currentAudio) {
+    currentAudio.pause()
+    currentAudio = null
+  }
   if (props.friend) markAsRead()
 })
 </script>

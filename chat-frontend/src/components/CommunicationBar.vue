@@ -13,76 +13,65 @@
         </el-icon>
         <span>图片</span>
       </div>
-
       <div class="tool-item" @mousedown="startRecord" @mouseup="stopRecord" @mouseleave="cancelRecord">
         <el-icon :size="24">
           <Microphone />
         </el-icon>
         <span>语音</span>
       </div>
-
       <div class="tool-item" @click="startVoiceCall">
         <el-icon :size="24">
           <Phone />
         </el-icon>
         <span>语音通话</span>
       </div>
-
       <div class="tool-item" @click="startVideoCall">
         <el-icon :size="24">
           <VideoCamera />
         </el-icon>
         <span>视频通话</span>
       </div>
-
       <div class="tool-item" @click="openEmojiPicker">
         <div class="icon-text">😊</div>
         <span>表情</span>
       </div>
     </div>
 
-    <!-- 录音提示（显示实时时长） -->
+    <!-- 录音提示 -->
     <div v-if="isRecording" class="recording-tip">
       <el-icon>
         <Microphone />
       </el-icon>
       <span>正在录音... {{ formatDuration(recordDuration) }} 松手发送</span>
-      <div class="recording-wave">
-        <span v-for="i in 5" :key="i"></span>
-      </div>
+      <div class="recording-wave"><span v-for="i in 5" :key="i"></span></div>
     </div>
 
     <!-- 表情选择器 -->
     <el-drawer v-model="showEmojiPicker" title="表情包" direction="btt" size="400px">
       <div class="emoji-container">
         <div class="emoji-tabs">
-          <el-button :type="emojiTab === 'system' ? 'primary' : 'default'" size="small"
+          <el-button size="small" :type="emojiTab === 'system' ? 'primary' : 'default'"
             @click="emojiTab = 'system'">系统表情</el-button>
-          <el-button :type="emojiTab === 'user' ? 'primary' : 'default'" size="small"
+          <el-button size="small" :type="emojiTab === 'user' ? 'primary' : 'default'"
             @click="emojiTab = 'user'">我的表情</el-button>
           <el-button size="small" @click="uploadCustomEmoji">上传表情</el-button>
         </div>
-
         <div class="emoji-grid" v-if="emojiTab === 'system'">
           <div v-for="emoji in systemEmojis" :key="emoji.id" class="emoji-item" @click="sendEmoji(emoji)">
-            <img :src="emoji.url" :alt="emoji.name" />
-            <span>{{ emoji.name }}</span>
+            <img :src="emoji.url" /><span>{{ emoji.name }}</span>
           </div>
           <div v-if="systemEmojis.length === 0" class="empty-emoji">暂无系统表情</div>
         </div>
-
         <div class="emoji-grid" v-if="emojiTab === 'user'">
           <div v-for="emoji in userEmojis" :key="emoji.id" class="emoji-item" @click="sendEmoji(emoji)">
-            <img :src="emoji.url" :alt="emoji.name" />
-            <span>{{ emoji.name }}</span>
+            <img :src="emoji.url" /><span>{{ emoji.name }}</span>
             <el-button class="delete-btn" size="small" text @click.stop="deleteEmoji(emoji.id)">删除</el-button>
           </div>
-          <div v-if="userEmojis.length === 0" class="empty-emoji">暂无自定义表情，点击上传添加</div>
+          <div v-if="userEmojis.length === 0" class="empty-emoji">暂无自定义表情</div>
         </div>
       </div>
     </el-drawer>
 
-    <!-- 隐藏文件上传 -->
     <input type="file" ref="imageInput" accept="image/*" style="display: none" @change="handleImageUpload" />
     <input type="file" ref="emojiInput" accept="image/*" style="display: none" @change="handleEmojiUpload" />
   </div>
@@ -95,9 +84,12 @@ import { ArrowUp, ArrowDown, Picture, Microphone, Phone, VideoCamera } from '@el
 import { uploadImageApi, uploadVoiceApi } from '@/api/message'
 import { getSystemEmojisApi, getUserEmojisApi, uploadEmojiApi, deleteEmojiApi, type EmojiVO } from '@/api/emoji'
 
+const props = defineProps<{
+  currentChatUserId?: number
+}>()
+
 const emit = defineEmits(['sendImage', 'sendVoice', 'sendEmoji', 'startVoiceCall', 'startVideoCall'])
 
-// UI 状态
 const isExpanded = ref(false)
 const isRecording = ref(false)
 const recordDuration = ref(0)
@@ -105,61 +97,39 @@ const showEmojiPicker = ref(false)
 const emojiTab = ref('system')
 const systemEmojis = ref<EmojiVO[]>([])
 const userEmojis = ref<EmojiVO[]>([])
-
-// 上传引用
 const imageInput = ref<HTMLInputElement>()
 const emojiInput = ref<HTMLInputElement>()
 
-// 录音相关
 let mediaRecorder: MediaRecorder | null = null
 let audioChunks: Blob[] = []
 let recordingTimer: number | null = null
 let startTime: number = 0
 let mediaStream: MediaStream | null = null
 
-// 格式化时长（秒 -> mm:ss）
-const formatDuration = (seconds: number): string => {
+const formatDuration = (seconds: number) => {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
-// 切换工具栏
-const toggleExpand = () => {
-  isExpanded.value = !isExpanded.value
-}
+const toggleExpand = () => { isExpanded.value = !isExpanded.value }
 
-// 打开图片选择器
-const openImageUpload = () => {
-  imageInput.value?.click()
-}
-
-// 处理图片上传
+// 图片
+const openImageUpload = () => { imageInput.value?.click() }
 const handleImageUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-
-  if (!file.type.startsWith('image/')) {
-    ElMessage.error('请选择图片文件')
-    return
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    ElMessage.error('图片大小不能超过5MB')
-    return
-  }
-
+  if (!file.type.startsWith('image/')) return ElMessage.error('请选择图片文件')
   try {
     const url = await uploadImageApi(file)
     emit('sendImage', url)
     ElMessage.success('图片已发送')
-  } catch (error) {
-    ElMessage.error('发送失败')
-  }
+  } catch { ElMessage.error('发送失败') }
   input.value = ''
 }
 
-// 开始录音
+// 录音
 const startRecord = async () => {
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -168,155 +138,110 @@ const startRecord = async () => {
     startTime = Date.now()
     recordDuration.value = 0
 
-    // 实时更新时间
     recordingTimer = setInterval(() => {
       recordDuration.value = Math.floor((Date.now() - startTime) / 1000)
-      if (recordDuration.value >= 60) {
-        stopRecord()
-      }
+      if (recordDuration.value >= 60) stopRecord()
     }, 200) as unknown as number
 
-    mediaRecorder.ondataavailable = (event) => {
-      audioChunks.push(event.data)
-    }
-
+    mediaRecorder.ondataavailable = (e) => { audioChunks.push(e.data) }
     mediaRecorder.onstop = async () => {
       const duration = Math.floor((Date.now() - startTime) / 1000)
       if (duration < 1) {
         ElMessage.warning('录音时间太短')
-        mediaStream?.getTracks().forEach(track => track.stop())
+        mediaStream?.getTracks().forEach(t => t.stop())
         mediaStream = null
         return
       }
-
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
-      const file = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' })
-
+      const blob = new Blob(audioChunks, { type: 'audio/webm' })
+      const file = new File([blob], `voice_${Date.now()}.webm`, { type: 'audio/webm' })
       try {
         const url = await uploadVoiceApi(file)
         emit('sendVoice', url, duration)
         ElMessage.success('语音已发送')
-      } catch (error) {
-        ElMessage.error('发送失败')
-      }
-
-      mediaStream?.getTracks().forEach(track => track.stop())
+      } catch { ElMessage.error('发送失败') }
+      mediaStream?.getTracks().forEach(t => t.stop())
       mediaStream = null
     }
-
     mediaRecorder.start(100)
     isRecording.value = true
-  } catch (error) {
-    ElMessage.error('无法获取麦克风权限')
-  }
+  } catch { ElMessage.error('无法获取麦克风权限') }
 }
 
-// 停止录音
 const stopRecord = () => {
   if (mediaRecorder && isRecording.value && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop()
     isRecording.value = false
-    if (recordingTimer) {
-      clearInterval(recordingTimer)
-      recordingTimer = null
-    }
+    if (recordingTimer) clearInterval(recordingTimer)
   }
 }
 
-// 取消录音
 const cancelRecord = () => {
   if (mediaRecorder && isRecording.value && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop()
     isRecording.value = false
-    if (recordingTimer) {
-      clearInterval(recordingTimer)
-      recordingTimer = null
-    }
+    if (recordingTimer) clearInterval(recordingTimer)
     ElMessage.info('已取消录音')
-    mediaStream?.getTracks().forEach(track => track.stop())
+    mediaStream?.getTracks().forEach(t => t.stop())
     mediaStream = null
   }
 }
 
-// 通话占位
-const startVoiceCall = () => emit('startVoiceCall')
-const startVideoCall = () => emit('startVideoCall')
-
-// 表情相关
-const openEmojiPicker = () => {
-  loadEmojis()
-  showEmojiPicker.value = true
-}
-
-const loadEmojis = async () => {
-  try {
-    const [system, user] = await Promise.all([getSystemEmojisApi(), getUserEmojisApi()])
-    systemEmojis.value = system
-    userEmojis.value = user
-  } catch (error) {
-    console.error('加载表情失败', error)
+// 通话
+const startVoiceCall = () => {
+  if (props.currentChatUserId) {
+    emit('startVoiceCall', props.currentChatUserId)
+  } else {
+    ElMessage.warning('请先选择聊天对象')
   }
 }
 
-const sendEmoji = (emoji: EmojiVO) => {
-  emit('sendEmoji', emoji.url)
-  showEmojiPicker.value = false
+const startVideoCall = () => {
+  if (props.currentChatUserId) {
+    emit('startVideoCall', props.currentChatUserId)
+  } else {
+    ElMessage.warning('请先选择聊天对象')
+  }
 }
 
-const uploadCustomEmoji = () => {
-  emojiInput.value?.click()
+// 表情
+const openEmojiPicker = () => { loadEmojis(); showEmojiPicker.value = true }
+const loadEmojis = async () => {
+  try {
+    systemEmojis.value = await getSystemEmojisApi()
+    userEmojis.value = await getUserEmojisApi()
+  } catch { console.error('加载表情失败') }
 }
-
+const sendEmoji = (emoji: EmojiVO) => { emit('sendEmoji', emoji.url); showEmojiPicker.value = false }
+const uploadCustomEmoji = () => { emojiInput.value?.click() }
 const handleEmojiUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-
-  if (!file.type.startsWith('image/')) {
-    ElMessage.error('请选择图片文件')
-    return
-  }
-  if (file.size > 2 * 1024 * 1024) {
-    ElMessage.error('图片大小不能超过2MB')
-    return
-  }
-
+  if (!file.type.startsWith('image/')) return ElMessage.error('请选择图片文件')
   const { value: name } = await ElMessageBox.prompt('请输入表情名称', '上传表情', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
     inputPattern: /^[\u4e00-\u9fa5a-zA-Z0-9]{1,20}$/,
     inputErrorMessage: '请输入1-20个字符'
   })
   if (!name) return
-
   try {
     const newEmoji = await uploadEmojiApi(file, name)
     userEmojis.value.unshift(newEmoji)
     ElMessage.success('表情上传成功')
-  } catch (error) {
-    ElMessage.error('上传失败')
-  }
+  } catch { ElMessage.error('上传失败') }
   input.value = ''
 }
-
 const deleteEmoji = async (emojiId: number) => {
   try {
-    await ElMessageBox.confirm('确定删除这个表情吗？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确定删除？', '提示')
     await deleteEmojiApi(emojiId)
     userEmojis.value = userEmojis.value.filter(e => e.id !== emojiId)
     ElMessage.success('删除成功')
-  } catch (error) {
-    if (error !== 'cancel') ElMessage.error('删除失败')
-  }
+  } catch { }
 }
 
 onUnmounted(() => {
-  if (mediaRecorder && isRecording.value) {
-    mediaRecorder.stop()
-  }
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(track => track.stop())
-  }
+  if (mediaRecorder && isRecording.value) mediaRecorder.stop()
+  if (mediaStream) mediaStream.getTracks().forEach(t => t.stop())
 })
 </script>
 
@@ -374,7 +299,6 @@ onUnmounted(() => {
   padding: 16px 24px;
   border-radius: 40px;
   display: flex;
-  align-items: center;
   gap: 16px;
   z-index: 1000;
 }
@@ -388,28 +312,7 @@ onUnmounted(() => {
   width: 4px;
   height: 15px;
   background: #ff4444;
-  border-radius: 2px;
-  animation: wave 0.5s ease-in-out infinite;
-}
-
-.recording-wave span:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.recording-wave span:nth-child(2) {
-  animation-delay: 0.1s;
-}
-
-.recording-wave span:nth-child(3) {
-  animation-delay: 0.2s;
-}
-
-.recording-wave span:nth-child(4) {
-  animation-delay: 0.3s;
-}
-
-.recording-wave span:nth-child(5) {
-  animation-delay: 0.4s;
+  animation: wave 0.5s infinite;
 }
 
 @keyframes wave {
@@ -463,10 +366,6 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
-.emoji-item span {
-  font-size: 11px;
-}
-
 .delete-btn {
   position: absolute;
   top: 0;
@@ -482,6 +381,6 @@ onUnmounted(() => {
   text-align: center;
   padding: 40px;
   color: #909399;
-  grid-column: 1 / -1;
+  grid-column: 1/-1;
 }
 </style>

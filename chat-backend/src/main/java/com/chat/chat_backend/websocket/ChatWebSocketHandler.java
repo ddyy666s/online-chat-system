@@ -74,6 +74,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             handleChatMessage(userId, json);
         } else if ("group_message".equals(type)) {
             handleGroupMessage(userId, json);
+        } else if ("call".equals(type)) {
+            handleCallSignal(userId, json);
         } else if ("ping".equals(type)) {
             session.sendMessage(new TextMessage("{\"type\":\"pong\"}"));
         }
@@ -196,6 +198,43 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             }
         }
     }
+
+    // ===================== 通话信令转发（携带昵称 + 禁止自己打自己） =====================
+    private void handleCallSignal(Long fromUserId, JSONObject json) {
+        String action = json.getStr("action");
+        Long toUserId = json.getLong("toUserId");
+        String callType = json.getStr("callType");
+
+        // 防止自己打给自己
+        if (toUserId == null || toUserId.equals(fromUserId)) {
+            log.warn("无效的通话目标用户: from={}, to={}", fromUserId, toUserId);
+            return;
+        }
+
+        // 获取发送者昵称
+        User fromUser = userMapper.selectById(fromUserId);
+        String fromUserNickname = fromUser != null ? fromUser.getNickname() : "用户";
+
+        JSONObject response = JSONUtil.createObj()
+                .set("type", "call")
+                .set("action", action)
+                .set("fromUserId", fromUserId)
+                .set("fromUserNickname", fromUserNickname)
+                .set("callType", callType);
+
+        if ("offer".equals(action) || "answer".equals(action)) {
+            response.set("sdp", json.getStr("sdp"));
+        } else if ("ice-candidate".equals(action)) {
+            response.set("candidate", json.getStr("candidate"));
+            response.set("sdpMid", json.getStr("sdpMid"));
+            response.set("sdpMLineIndex", json.getInt("sdpMLineIndex"));
+        }
+
+        // 转发给目标用户
+        sessionManager.sendMessage(toUserId, response.toString());
+        log.info("转发通话信令: {} -> {}, action={}", fromUserId, toUserId, action);
+    }
+    // ====================================================================================
 
     private void broadcastStatus(Long userId, boolean online) {
         JSONObject statusMsg = JSONUtil.createObj()

@@ -11,6 +11,7 @@ class WebSocketService {
   private messageCallbacks: MessageCallback[] = []
   private statusCallbacks: MessageCallback[] = []
   private groupMessageCallbacks: MessageCallback[] = []
+  private callSignalCallbacks: MessageCallback[] = []
   
   connect() {
     const userStore = useUserStore()
@@ -21,7 +22,8 @@ class WebSocketService {
       return
     }
     
-    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'}?token=${token}`
+    const cleanToken = token ? token.replace(/"/g, '') : ''
+    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'}?token=${cleanToken}`
     console.log('WebSocket连接中:', wsUrl)
     this.ws = new WebSocket(wsUrl)
     
@@ -41,8 +43,10 @@ class WebSocketService {
         this.statusCallbacks.forEach(cb => cb(data))
       } else if (data.type === 'group_message') {
         this.groupMessageCallbacks.forEach(cb => cb(data))
+      } else if (data.type === 'call') {
+        this.callSignalCallbacks.forEach(cb => cb(data))
       }
-  }
+    }
     
     this.ws.onclose = () => {
       console.log('WebSocket断开，尝试重连...')
@@ -78,23 +82,50 @@ class WebSocketService {
     }
   }
   
-sendMessage(toUserId: number, content: string, messageType: number = 1, duration?: number) {
-  if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-    const message: any = {
-      type: 'message',
-      toUserId: toUserId,
-      content: content,
-      messageType: messageType
+  // 发送单聊消息
+  sendMessage(toUserId: number, content: string, messageType: number = 1, duration?: number) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const message: any = {
+        type: 'message',
+        toUserId: toUserId,
+        content: content,
+        messageType: messageType
+      }
+      if (duration !== undefined && messageType === 4) {
+        message.duration = duration
+      }
+      console.log('发送消息:', message)
+      this.ws.send(JSON.stringify(message))
+    } else {
+      console.warn('WebSocket未连接')
     }
-    if (duration !== undefined && messageType === 4) {
-      message.duration = duration
-    }
-    this.ws.send(JSON.stringify(message))
-  } else {
-    console.warn('WebSocket未连接')
   }
-}
   
+  // 发送群消息
+  sendGroupMessage(groupId: number, content: string, messageType: number = 1) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: 'group_message',
+        groupId: groupId,
+        content: content,
+        messageType: messageType
+      }))
+    } else {
+      console.warn('WebSocket未连接')
+    }
+  }
+  
+  // 发送通话信令
+  sendCallSignal(data: any) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      console.log('发送通话信令:', data)
+      this.ws.send(JSON.stringify({ type: 'call', ...data }))
+    } else {
+      console.warn('WebSocket未连接，无法发送通话信令')
+    }
+  }
+  
+  // 注册回调
   onMessage(callback: MessageCallback) {
     this.messageCallbacks.push(callback)
   }
@@ -103,6 +134,13 @@ sendMessage(toUserId: number, content: string, messageType: number = 1, duration
     this.statusCallbacks.push(callback)
   }
   
+  onGroupMessage(callback: MessageCallback) {
+    this.groupMessageCallbacks.push(callback)
+  }
+  
+  onCallSignal(callback: MessageCallback) {
+    this.callSignalCallbacks.push(callback)
+  }
   
   disconnect() {
     this.stopHeartbeat()
@@ -111,22 +149,6 @@ sendMessage(toUserId: number, content: string, messageType: number = 1, duration
       this.ws = null
     }
   }
-  sendGroupMessage(groupId: number, content: string, messageType: number = 1) {
-  if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-    this.ws.send(JSON.stringify({
-      type: 'group_message',
-      groupId: groupId,
-      content: content,
-      messageType: messageType
-    }))
-  } else {
-    console.warn('WebSocket未连接')
-  }
-}
-
-onGroupMessage(callback: MessageCallback) {
-  this.groupMessageCallbacks.push(callback)
-}
 }
 
 export const websocketService = new WebSocketService()
