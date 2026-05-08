@@ -21,6 +21,7 @@ class WebSocketService {
     }
     
     const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'}?token=${token}`
+    console.log('WebSocket连接中:', wsUrl)
     this.ws = new WebSocket(wsUrl)
     
     this.ws.onopen = () => {
@@ -31,6 +32,7 @@ class WebSocketService {
     
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
+      console.log('WebSocket收到消息:', data)
       
       if (data.type === 'message') {
         this.messageCallbacks.forEach(cb => cb(data))
@@ -74,15 +76,19 @@ class WebSocketService {
   }
   
   sendMessage(toUserId: number, content: string, messageType: number = 1) {
+    console.log('sendMessage调用:', { toUserId, content, messageType })
+    
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({
+      const message = JSON.stringify({
         type: 'message',
-        toUserId,
-        content,
-        messageType
-      }))
+        toUserId: toUserId,
+        content: content,
+        messageType: messageType
+      })
+      console.log('发送WebSocket消息:', message)
+      this.ws.send(message)
     } else {
-      console.warn('WebSocket未连接')
+      console.warn('WebSocket未连接，状态:', this.ws?.readyState)
     }
   }
   

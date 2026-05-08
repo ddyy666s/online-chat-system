@@ -15,8 +15,8 @@
         <div v-for="friend in group.friends" :key="friend.userId" class="friend-item"
           :class="{ active: currentChatUserId === friend.userId }" @click="selectChat(friend.userId)">
           <div class="avatar">
-            <el-avatar :size="40" :src="friend.avatar || defaultAvatar">
-              {{ friend.nickname.charAt(0) }}
+            <el-avatar :size="40" :src="friend.avatar || ''">
+              {{ friend.nickname?.charAt(0) || 'U' }}
             </el-avatar>
             <span class="online-dot" :class="{ online: friend.isOnline }" />
           </div>
@@ -55,7 +55,9 @@
       <div v-if="searchResults.length > 0" class="search-results">
         <div v-for="user in searchResults" :key="user.userId" class="search-item">
           <div class="user-info">
-            <el-avatar :size="36" :src="user.avatar || defaultAvatar" />
+            <el-avatar :size="36" :src="user.avatar || ''">
+              {{ user.nickname?.charAt(0) || 'U' }}
+            </el-avatar>
             <div class="user-detail">
               <div class="username">{{ user.nickname }}</div>
               <div class="signature">{{ user.signature || '暂无签名' }}</div>
@@ -83,14 +85,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, MoreFilled } from '@element-plus/icons-vue'
 import { useFriendStore } from '@/stores/friendStore'
 import { searchUsersApi, sendFriendRequestApi, deleteFriendApi } from '@/api/friend'
-import defaultAvatar from '@/assets/images/default-avatar.png'
 
 const props = defineProps<{
   currentChatUserId: number | null
 }>()
 
 const emit = defineEmits<{
-  (e: 'selectChat', userId: number): void
+  (e: 'selectChat', friend: any): void
 }>()
 
 const friendStore = useFriendStore()
@@ -105,7 +106,19 @@ onMounted(() => {
 })
 
 const selectChat = (userId: number) => {
-  emit('selectChat', userId)
+  console.log('FriendList selectChat 被调用, userId:', userId)
+  if (!userId) return
+
+  // 获取完整的好友信息
+  const friend = friendStore.getFriendById(userId)
+  console.log('找到的好友信息:', friend)
+
+  if (friend) {
+    emit('selectChat', friend)
+  } else {
+    // 如果 store 中没有，构建一个基础对象
+    emit('selectChat', { userId: userId, nickname: '好友' })
+  }
 }
 
 const searchUsers = async () => {
@@ -114,7 +127,12 @@ const searchUsers = async () => {
     return
   }
   searched.value = true
-  searchResults.value = await searchUsersApi(searchKeyword.value)
+  try {
+    searchResults.value = await searchUsersApi(searchKeyword.value)
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('搜索失败')
+  }
 }
 
 const sendRequest = async (toUserId: number) => {
@@ -125,8 +143,9 @@ const sendRequest = async (toUserId: number) => {
     searchResults.value = []
     searched.value = false
     showAddFriendDialog.value = false
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error?.message || '发送失败')
   }
 }
 
@@ -143,7 +162,6 @@ const handleCommand = async (command: string, friend: any) => {
       ElMessage.success('修改成功')
     }
   } else if (command === 'move') {
-    const groups = friendStore.getGroupNames()
     const { value } = await ElMessageBox.prompt('请输入分组名称', '移动分组', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
@@ -160,9 +178,13 @@ const handleCommand = async (command: string, friend: any) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await deleteFriendApi(friend.userId)
-    ElMessage.success('删除成功')
-    friendStore.loadFriendList()
+    try {
+      await deleteFriendApi(friend.userId)
+      ElMessage.success('删除成功')
+      friendStore.loadFriendList()
+    } catch (error) {
+      ElMessage.error('删除失败')
+    }
   }
 }
 </script>

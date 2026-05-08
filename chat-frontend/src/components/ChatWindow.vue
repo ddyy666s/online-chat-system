@@ -80,6 +80,11 @@ const hasMore = ref(true)
 const scrollBottomRef = ref<HTMLElement>()
 
 const loadHistory = async (reset = true) => {
+  if (!props.friend || !props.friend.userId) {
+    console.warn('loadHistory: friendId 无效', props.friend)
+    return
+  }
+
   if (reset) {
     page.value = 1
     hasMore.value = true
@@ -102,24 +107,63 @@ const loadHistory = async (reset = true) => {
     }
   } catch (error) {
     console.error(error)
+    ElMessage.error('加载聊天记录失败')
   } finally {
     loading.value = false
   }
 }
 
 const sendMessage = () => {
-  if (!inputContent.value.trim()) return
-  websocketService.sendMessage(props.friend.userId, inputContent.value)
+  if (!inputContent.value.trim()) {
+    ElMessage.warning('请输入消息内容')
+    return
+  }
+  if (!props.friend?.userId) {
+    ElMessage.warning('请先选择聊天对象')
+    return
+  }
+
+  const content = inputContent.value
+  const tempMsg = {
+    id: Date.now(),
+    fromUserId: currentUserId,
+    fromUserNickname: userStore.userInfo?.nickname || '我',
+    content: content,
+    sendTime: new Date().toISOString(),
+    isRecalled: false
+  }
+
+  // 立即显示消息（发送方）
+  messages.value.push(tempMsg)
   inputContent.value = ''
+
+  nextTick(() => {
+    scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' })
+  })
+
+  // 发送给接收方
+  websocketService.sendMessage(props.friend.userId, content)
 }
 
 const downloadHistory = async () => {
-  await downloadChatHistoryApi(props.friend.userId, props.friend.nickname)
-  ElMessage.success('开始下载')
+  if (!props.friend) return
+  try {
+    await downloadChatHistoryApi(props.friend.userId, props.friend.nickname || '好友')
+    ElMessage.success('开始下载')
+  } catch (error) {
+    ElMessage.error('下载失败')
+  }
 }
 
 const onNewMessage = (data: any) => {
-  if (data.fromUserId === props.friend.userId) {
+  console.log('ChatWindow 收到WebSocket消息:', data)
+
+  if (!data.fromUserId) {
+    console.warn('消息缺少 fromUserId')
+    return
+  }
+
+  if (props.friend && data.fromUserId === props.friend.userId) {
     messages.value.push({
       id: data.messageId,
       fromUserId: data.fromUserId,
@@ -136,6 +180,7 @@ const onNewMessage = (data: any) => {
 }
 
 const markAsRead = async () => {
+  if (!props.friend) return
   try {
     await markAsReadApi(props.friend.userId)
     messageStore.clearUnreadForFriend(props.friend.userId)
@@ -144,19 +189,23 @@ const markAsRead = async () => {
   }
 }
 
-watch(() => props.friend, () => {
-  if (props.friend) {
+watch(() => props.friend, (newFriend) => {
+  console.log('ChatWindow: friend 变化:', newFriend)
+  if (newFriend && newFriend.userId) {
     loadHistory(true)
     markAsRead()
   }
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 onMounted(() => {
   websocketService.onMessage(onNewMessage)
+  console.log('ChatWindow 已注册 WebSocket 消息回调')
 })
 
 onUnmounted(() => {
-  markAsRead()
+  if (props.friend) {
+    markAsRead()
+  }
 })
 </script>
 

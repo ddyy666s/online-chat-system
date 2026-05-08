@@ -37,12 +37,14 @@
     <div class="sidebar-content">
       <!-- 好友列表 -->
       <FriendList v-if="activeTab === 'friends'" :current-chat-user-id="currentChatUserId"
-        @select-chat="emit('selectChat', $event)" />
+        @select-chat="handleSelectChat" />
 
       <!-- 好友申请列表 -->
       <div v-else-if="activeTab === 'requests'" class="request-list">
         <div v-for="req in friendStore.friendRequests" :key="req.id" class="request-item">
-          <el-avatar :size="40" :src="req.fromUserAvatar || defaultAvatar" />
+          <el-avatar :size="40" :src="req.fromUserAvatar || ''">
+            {{ req.fromUserNickname?.charAt(0) || 'U' }}
+          </el-avatar>
           <div class="info">
             <div class="name">{{ req.fromUserNickname }}</div>
             <div class="message">{{ req.message || '申请添加好友' }}</div>
@@ -62,16 +64,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Message, Star, Setting } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 import { useFriendStore } from '@/stores/friendStore'
 import { handleFriendRequestApi } from '@/api/friend'
+import { websocketService } from '@/utils/websocket'
 import FriendList from '@/components/FriendList.vue'
 import ImpressionBoard from '@/components/ImpressionBoard.vue'
-import defaultAvatar from '@/assets/images/default-avatar.png'
 
 const emit = defineEmits(['selectChat'])
 const router = useRouter()
@@ -88,12 +90,42 @@ const handleRequest = async (requestId: number, status: number) => {
     friendStore.loadFriendList()
   } catch (error) {
     console.error(error)
+    ElMessage.error('操作失败')
+  }
+}
+
+const handleSelectChat = (friend: any) => {
+  const userId = friend?.userId || friend?.id
+  if (userId) {
+    currentChatUserId.value = userId
+    // 确保传递的 friend 包含 isOnline 字段
+    const fullFriend = friendStore.getFriendById(userId) || friend
+    emit('selectChat', fullFriend)
   }
 }
 
 const goToAdmin = () => {
   router.push('/admin')
 }
+
+// 监听 WebSocket 状态消息
+onMounted(() => {
+  websocketService.onStatus((data: any) => {
+    console.log('Sidebar 收到状态消息:', data)
+    if (data.userId) {
+      // 更新好友列表中的状态
+      friendStore.updateFriendOnlineStatus(data.userId, data.online)
+
+      // 如果当前选中的好友就是状态变化的用户，通知聊天窗口更新
+      if (currentChatUserId.value === data.userId) {
+        const updatedFriend = friendStore.getFriendById(data.userId)
+        if (updatedFriend) {
+          emit('selectChat', updatedFriend)
+        }
+      }
+    }
+  })
+})
 </script>
 
 <style scoped>

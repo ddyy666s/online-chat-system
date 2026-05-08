@@ -8,13 +8,22 @@ export const useFriendStore = defineStore('friend', () => {
   const friendRequests = ref<FriendRequestVO[]>([])
   
   const loadFriendList = async () => {
-    const res = await getFriendListApi()
-    friendList.value = res
+    try {
+      const res = await getFriendListApi()
+      console.log('加载好友列表:', res)
+      friendList.value = res
+    } catch (error) {
+      console.error('加载好友列表失败', error)
+    }
   }
   
   const loadFriendRequests = async () => {
-    const res = await getFriendRequestsApi()
-    friendRequests.value = res
+    try {
+      const res = await getFriendRequestsApi()
+      friendRequests.value = res
+    } catch (error) {
+      console.error('加载好友申请失败', error)
+    }
   }
   
   const getGroupNames = () => {
@@ -29,12 +38,26 @@ export const useFriendStore = defineStore('friend', () => {
     return null
   }
   
+  // 添加：更新好友在线状态
+  const updateFriendOnlineStatus = (userId: number, isOnline: boolean) => {
+    console.log('updateFriendOnlineStatus 被调用:', userId, isOnline)
+    for (const group of friendList.value) {
+      const friend = group.friends.find(f => f.userId === userId)
+      if (friend) {
+        friend.isOnline = isOnline
+        console.log(`✅ 更新 ${friend.nickname} => ${isOnline ? '在线' : '离线'}`)
+        break
+      }
+    }
+  }
+  
   return {
     friendList,
     friendRequests,
     loadFriendList,
     loadFriendRequests,
     getGroupNames,
-    getFriendById
+    getFriendById,
+    updateFriendOnlineStatus
   }
 })

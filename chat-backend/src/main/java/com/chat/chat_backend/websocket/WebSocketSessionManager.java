@@ -4,15 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 @Slf4j
 @Component
 public class WebSocketSessionManager {
 
-    // userId -> WebSocketSession
     private final Map<Long, WebSocketSession> sessionMap = new ConcurrentHashMap<>();
 
     public void add(Long userId, WebSocketSession session) {
@@ -39,8 +38,6 @@ public class WebSocketSessionManager {
         return sessionMap.size();
     }
 
-
-
     public Map<Long, WebSocketSession> getAllSessions() {
         return sessionMap;
     }
@@ -53,10 +50,12 @@ public class WebSocketSessionManager {
         if (session != null && session.isOpen()) {
             try {
                 session.sendMessage(new TextMessage(message));
+                log.debug("消息已发送给用户 {}", userId);
             } catch (IOException e) {
                 log.error("发送消息给用户 {} 失败: {}", userId, e.getMessage());
             }
+        } else {
+            log.debug("用户 {} 不在线或会话已关闭", userId);
         }
     }
-
 }

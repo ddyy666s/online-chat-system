@@ -4,9 +4,8 @@
     <div class="right-panel">
       <Header />
       <div class="content">
-        <template v-if="currentChatUser">
-          <ChatWindow :friend="currentChatUser" />
-        </template>
+        <ChatWindow v-if="currentChatUser && currentChatUser.userId" :friend="currentChatUser"
+          :key="currentChatUser.userId" />
         <div v-else class="empty-chat">
           <el-empty description="选择好友开始聊天" />
         </div>
@@ -23,8 +22,9 @@ import ChatWindow from '@/components/ChatWindow.vue'
 
 const currentChatUser = ref<any>(null)
 
-const handleSelectChat = (user: any) => {
-  currentChatUser.value = user
+const handleSelectChat = (friend: any) => {
+  console.log('MainLayout 收到选择好友:', friend)
+  currentChatUser.value = friend
 }
 </script>
 

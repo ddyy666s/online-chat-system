@@ -43,15 +43,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        // 存储会话
         sessionManager.add(userId, session);
         session.getAttributes().put("userId", userId);
 
-        // 记录在线状态到Redis
         redisUtil.addToSet(RedisConstants.ONLINE_USERS, String.valueOf(userId));
         redisUtil.expire(RedisConstants.ONLINE_USERS, RedisConstants.ONLINE_EXPIRE_SECONDS, TimeUnit.SECONDS);
 
-        // 广播好友上线通知
         broadcastStatus(userId, true);
 
         log.info("用户 {} 已连接WebSocket，当前在线人数: {}", userId, sessionManager.getOnlineCount());
@@ -61,17 +58,19 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         Long userId = (Long) session.getAttributes().get("userId");
         if (userId == null) {
+            log.warn("消息处理失败：userId为空");
             return;
         }
 
         String payload = message.getPayload();
+        log.info("收到消息: userId={}, payload={}", userId, payload);
+
         JSONObject json = JSONUtil.parseObj(payload);
         String type = json.getStr("type");
 
         if ("message".equals(type)) {
             handleChatMessage(userId, json);
         } else if ("ping".equals(type)) {
-            // 心跳响应
             session.sendMessage(new TextMessage("{\"type\":\"pong\"}"));
         }
     }
@@ -81,6 +80,18 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         String content = json.getStr("content");
         Integer messageType = json.getInt("messageType", 1);
 
+        // 参数校验
+        if (toUserId == null) {
+            log.error("发送消息失败：toUserId为空");
+            return;
+        }
+        if (content == null || content.trim().isEmpty()) {
+            log.error("发送消息失败：content为空");
+            return;
+        }
+
+        log.info("处理消息: from={}, to={}, content={}", fromUserId, toUserId, content);
+
         // 保存消息到数据库
         Message msg = new Message();
         msg.setFromUserId(fromUserId);
@@ -89,7 +100,14 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         msg.setContent(content);
         msg.setIsRead(0);
         msg.setSendTime(LocalDateTime.now());
-        messageMapper.insert(msg);
+
+        try {
+            messageMapper.insert(msg);
+            log.info("消息已保存到数据库: id={}", msg.getId());
+        } catch (Exception e) {
+            log.error("保存消息失败: {}", e.getMessage());
+            return;
+        }
 
         // 增加Redis未读计数
         String unreadKey = RedisConstants.UNREAD_COUNT + toUserId;
@@ -115,6 +133,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         // 如果对方在线，实时推送
         if (sessionManager.isOnline(toUserId)) {
             sessionManager.sendMessage(toUserId, response.toString());
+            log.info("消息已推送给用户 {}", toUserId);
+        } else {
+            log.info("用户 {} 不在线，消息已保存为未读", toUserId);
         }
     }
 
@@ -126,8 +147,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
         String jsonMsg = statusMsg.toString();
 
-        // 注意：需要先给 WebSocketSessionManager 添加 sendMessage 方法
-        // 或者直接遍历所有会话发送
         for (WebSocketSession session : sessionManager.getAllSessions().values()) {
             if (session != null && session.isOpen()) {
                 try {
@@ -153,11 +172,13 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private Long extractUserIdFromSession(WebSocketSession session) {
         URI uri = session.getUri();
         if (uri == null) {
+            log.warn("URI为空");
             return null;
         }
 
         String query = uri.getQuery();
         if (query == null || !query.contains("token=")) {
+            log.warn("Query中无token");
             return null;
         }
 
@@ -170,6 +191,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             return jwtUtil.getUserIdFromToken(token);
         }
 
+        log.warn("Token验证失败");
         return null;
     }
 }
