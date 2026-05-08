@@ -1,6 +1,7 @@
 package com.chat.chat_backend.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.chat.chat_backend.common.constant.MessageConstants;
 import com.chat.chat_backend.common.constant.RedisConstants;
 import com.chat.chat_backend.common.exception.BusinessException;
 import com.chat.chat_backend.common.result.ResultCode;
@@ -13,12 +14,14 @@ import com.chat.chat_backend.module.entity.Message;
 import com.chat.chat_backend.module.entity.User;
 import com.chat.chat_backend.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
@@ -31,6 +34,10 @@ public class MessageServiceImpl implements MessageService {
     public Page<MessageVO> getChatHistory(Long userId, Long friendId, Integer page, Integer size) {
         int offset = (page - 1) * size;
         List<Message> messages = messageMapper.findChatHistory(userId, friendId, offset, size);
+
+        // 获取总记录数
+        Long total = messageMapper.countChatHistory(userId, friendId);
+
         User friend = userMapper.selectById(friendId);
         User currentUser = userMapper.selectById(userId);
 
@@ -58,15 +65,23 @@ public class MessageServiceImpl implements MessageService {
 
         Page<MessageVO> pageResult = new Page<>(page, size);
         pageResult.setRecords(voList);
-        pageResult.setTotal(messages.size());
+        pageResult.setTotal(total);
         return pageResult;
     }
 
     @Override
-    public List<MessageVO> downloadChatHistory(Long userId, Long friendId) {
-        List<Message> messages = messageMapper.findChatHistory(userId, friendId, 0, 9999);
-        User friend = userMapper.selectById(friendId);
-        User currentUser = userMapper.selectById(userId);
+    public List<MessageVO> downloadChatHistory(Long userId, Long friendId, Integer limit) {
+        log.info("downloadChatHistory: userId={}, friendId={}, limit={}", userId, friendId, limit);
+
+        if (limit == null || limit <= 0) {
+            limit = MessageConstants.DEFAULT_DOWNLOAD_SIZE;
+        }
+        if (limit > MessageConstants.MAX_DOWNLOAD_SIZE) {
+            limit = MessageConstants.MAX_DOWNLOAD_SIZE;
+        }
+
+        List<Message> messages = messageMapper.findChatHistory(userId, friendId, 0, limit);
+        log.info("查询到消息数量: {}", messages.size());
 
         return messages.stream()
                 .map(msg -> {
@@ -109,7 +124,6 @@ public class MessageServiceImpl implements MessageService {
             }
         }
 
-        // 获取未读消息详情列表
         List<UnreadCountVO.UnreadMessage> messages = new ArrayList<>();
         List<MessageMapper.UnreadMessageDetail> unreadMessages = messageMapper.findUnreadMessages(userId);
         for (MessageMapper.UnreadMessageDetail msg : unreadMessages) {

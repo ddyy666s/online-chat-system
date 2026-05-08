@@ -21,6 +21,11 @@ public interface MessageMapper extends BaseMapper<Message> {
                                   @Param("offset") Integer offset,
                                   @Param("limit") Integer limit);
 
+    // 获取聊天记录总数
+    @Select("SELECT COUNT(*) FROM message WHERE (from_user_id = #{userId} AND to_user_id = #{friendId}) " +
+            "OR (from_user_id = #{friendId} AND to_user_id = #{userId})")
+    Long countChatHistory(@Param("userId") Long userId, @Param("friendId") Long friendId);
+
     @Select("SELECT COUNT(*) FROM message WHERE to_user_id = #{userId} AND is_read = 0 AND recall_time IS NULL")
     Integer countUnreadTotal(@Param("userId") Long userId);
 
@@ -30,7 +35,6 @@ public interface MessageMapper extends BaseMapper<Message> {
             "GROUP BY from_user_id")
     List<UnreadGroup> groupUnreadByFriend(@Param("userId") Long userId);
 
-    // 新增：查询未读消息详情（用于消息盒子）
     @Select("SELECT m.id, m.from_user_id as fromUserId, m.content, m.send_time as sendTime, " +
             "u.nickname as fromUserNickname, u.avatar as fromUserAvatar " +
             "FROM message m " +
@@ -48,7 +52,6 @@ public interface MessageMapper extends BaseMapper<Message> {
             "AND send_time > DATE_SUB(NOW(), INTERVAL 2 MINUTE)")
     Integer recallMessage(@Param("messageId") Long messageId, @Param("userId") Long userId);
 
-    // 内部类：未读消息分组
     class UnreadGroup {
         private Long fromUserId;
         private Integer count;
@@ -59,7 +62,6 @@ public interface MessageMapper extends BaseMapper<Message> {
         public void setCount(Integer count) { this.count = count; }
     }
 
-    // 内部类：未读消息详情
     class UnreadMessageDetail {
         private Long id;
         private Long fromUserId;

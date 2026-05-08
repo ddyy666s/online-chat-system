@@ -43,33 +43,45 @@ export interface PageResult<T> {
   records: T[]
 }
 
+// 获取聊天记录
 export const getChatHistoryApi = (friendId: number, page: number = 1, size: number = 20) => {
   return request.get<any, PageResult<MessageVO>>(`/message/history/${friendId}`, { params: { page, size } })
 }
 
-export const downloadChatHistoryApi = async (friendId: number, friendName: string) => {
+// 下载聊天记录
+export const downloadChatHistoryApi = async (friendId: number, friendName: string, limit: number = 100) => {
   const token = localStorage.getItem('chat_token')
+  // 去掉可能存在的引号
+  const cleanToken = token ? token.replace(/"/g, '') : ''
+  
   const response = await axios.get(`/api/message/download/${friendId}`, {
+    params: { limit },
     responseType: 'blob',
-    headers: { 'Authorization': `Bearer ${token}` }
+    headers: { 
+      'Authorization': `Bearer ${cleanToken}`
+    }
   })
+  
   const blob = response.data
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `chat_${friendName}_${Date.now()}.txt`
+  a.download = `${friendName}_聊天记录_${Date.now()}.txt`
   a.click()
   URL.revokeObjectURL(url)
 }
 
+// 标记消息已读
 export const markAsReadApi = (friendId: number) => {
   return request.put(`/message/read/${friendId}`)
 }
 
+// 获取未读消息统计
 export const getUnreadCountApi = () => {
   return request.get<any, UnreadCountVO>('/message/unread/count')
 }
 
+// 撤回消息
 export const recallMessageApi = (messageId: number) => {
   return request.put(`/message/recall/${messageId}`)
 }

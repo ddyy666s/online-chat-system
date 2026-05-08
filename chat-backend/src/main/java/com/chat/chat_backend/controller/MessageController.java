@@ -1,23 +1,30 @@
 package com.chat.chat_backend.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.chat.chat_backend.common.constant.MessageConstants;
 import com.chat.chat_backend.common.result.Result;
+import com.chat.chat_backend.mapper.UserMapper;
 import com.chat.chat_backend.module.dto.response.MessageVO;
 import com.chat.chat_backend.module.dto.response.UnreadCountVO;
+import com.chat.chat_backend.module.entity.User;
 import com.chat.chat_backend.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
+import java.net.URLEncoder;
+import java.util.Date;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/message")
 @RequiredArgsConstructor
 public class MessageController {
 
     private final MessageService messageService;
+    private final UserMapper userMapper;
 
     /**
      * 获取聊天记录
@@ -38,26 +45,52 @@ public class MessageController {
     @GetMapping("/download/{friendId}")
     public void downloadChatHistory(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    @PathVariable Long friendId) throws Exception {
+                                    @PathVariable Long friendId,
+                                    @RequestParam(value = "limit", defaultValue = "100") Integer limit) throws Exception {
         Long userId = (Long) request.getAttribute("userId");
-        List<MessageVO> messages = messageService.downloadChatHistory(userId, friendId);
 
-        response.setContentType("text/plain;charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment;filename=chat_history_" + friendId + ".txt");
+        log.info("下载聊天记录: userId={}, friendId={}, limit={}", userId, friendId, limit);
 
-        StringBuilder sb = new StringBuilder();
-        for (MessageVO msg : messages) {
-            sb.append(msg.getSendTime())
-                    .append(" ")
-                    .append(msg.getFromUserNickname())
-                    .append(": ")
-                    .append(msg.getContent())
-                    .append("\n");
+        // 限制最大下载数量
+        if (limit > MessageConstants.MAX_DOWNLOAD_SIZE) {
+            limit = MessageConstants.MAX_DOWNLOAD_SIZE;
+        }
+        if (limit <= 0) {
+            limit = MessageConstants.DEFAULT_DOWNLOAD_SIZE;
         }
 
-        PrintWriter writer = response.getWriter();
-        writer.write(sb.toString());
-        writer.flush();
+        List<MessageVO> messages = messageService.downloadChatHistory(userId, friendId, limit);
+
+        // 如果没有消息，返回提示
+        if (messages == null || messages.isEmpty()) {
+            response.setContentType("text/plain;charset=UTF-8");
+            response.getWriter().write("暂无聊天记录可导出");
+            return;
+        }
+
+        // 获取好友信息
+        User friend = userMapper.selectById(friendId);
+        String friendName = friend != null ? friend.getNickname() : "好友";
+
+        response.setContentType("text/plain;charset=UTF-8");
+        response.setHeader("Content-Disposition",
+                "attachment;filename=" + URLEncoder.encode(friendName + "_聊天记录_" + System.currentTimeMillis() + ".txt", "UTF-8"));
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("========================================\n");
+        sb.append("聊天记录导出\n");
+        sb.append("导出时间: ").append(new Date()).append("\n");
+        sb.append("聊天对象: ").append(friendName).append("\n");
+        sb.append("共 ").append(messages.size()).append(" 条消息\n");
+        sb.append("========================================\n\n");
+
+        for (MessageVO msg : messages) {
+            sb.append("[").append(msg.getSendTime()).append("] ");
+            sb.append(msg.getFromUserNickname()).append(": ");
+            sb.append(msg.getContent()).append("\n");
+        }
+
+        response.getWriter().write(sb.toString());
     }
 
     /**

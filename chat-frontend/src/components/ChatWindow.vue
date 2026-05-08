@@ -2,7 +2,7 @@
   <div class="chat-window">
     <div class="chat-header">
       <div class="friend-info">
-        <el-avatar :size="40" :src="friend?.avatar">
+        <el-avatar :size="40" :src="friend?.avatar || ''">
           {{ friend?.nickname?.charAt(0) || 'U' }}
         </el-avatar>
         <div class="friend-detail">
@@ -12,7 +12,7 @@
       </div>
       <div class="actions">
         <el-tooltip content="下载聊天记录" placement="bottom">
-          <el-button :icon="Download" circle text @click="downloadHistory" />
+          <el-button :icon="Download" circle text @click="showDownloadDialog = true" />
         </el-tooltip>
       </div>
     </div>
@@ -20,12 +20,12 @@
     <div class="message-list" ref="messageListRef">
       <div v-for="msg in messages" :key="msg.id" class="message-item"
         :class="{ own: msg.fromUserId === currentUserId }">
-        <el-avatar :size="32" :src="msg.fromUserAvatar">
-          {{ msg.fromUserNickname?.charAt(0) || '?' }}
+        <el-avatar :size="32" :src="msg.fromUserAvatar || ''">
+          {{ msg.fromUserNickname?.charAt(0) || 'U' }}
         </el-avatar>
         <div class="message-content">
           <div class="message-info">
-            <span class="name">{{ msg.fromUserNickname || '未知用户' }}</span>
+            <span class="name">{{ msg.fromUserNickname }}</span>
             <span class="time">{{ formatRelativeTime(msg.sendTime) }}</span>
           </div>
           <div class="message-bubble">
@@ -51,6 +51,10 @@
         </el-button>
       </div>
     </div>
+
+    <!-- 下载弹窗 -->
+    <DownloadDialog v-model="showDownloadDialog" :friend-id="friend?.userId" :friend-name="friend?.nickname"
+      :total-messages="totalMessageCount" :max-limit="maxDownloadLimit" @download="handleDownload" />
   </div>
 </template>
 
@@ -63,6 +67,7 @@ import { formatRelativeTime } from '@/utils/date'
 import { websocketService } from '@/utils/websocket'
 import { useUserStore } from '@/stores/userStore'
 import { useMessageStore } from '@/stores/messageStore'
+import DownloadDialog from './DownloadDialog.vue'
 
 const props = defineProps<{
   friend: any
@@ -72,16 +77,21 @@ const userStore = useUserStore()
 const messageStore = useMessageStore()
 const currentUserId = userStore.userInfo?.id
 
+// 常量配置
+const maxDownloadLimit = 500
+
 const messages = ref<any[]>([])
 const inputContent = ref('')
 const loading = ref(false)
 const page = ref(1)
 const hasMore = ref(true)
+const totalMessageCount = ref(0)
+const showDownloadDialog = ref(false)
 const scrollBottomRef = ref<HTMLElement>()
 
 // 加载历史消息
 const loadHistory = async (reset = true) => {
-  if (!props.friend?.userId) {
+  if (!props.friend || !props.friend.userId) {
     console.warn('loadHistory: friendId 无效', props.friend)
     return
   }
@@ -97,6 +107,13 @@ const loadHistory = async (reset = true) => {
   loading.value = true
   try {
     const res = await getChatHistoryApi(props.friend.userId, page.value, 20)
+
+    // 第一页时更新总消息数
+    if (page.value === 1) {
+      totalMessageCount.value = res.total
+      console.log('总消息数:', res.total)
+    }
+
     const newMessages = res.records.reverse()
     messages.value = [...newMessages, ...messages.value]
     hasMore.value = res.records.length > 0
@@ -136,41 +153,26 @@ const sendMessage = () => {
     isRecalled: false
   }
 
-  // 立即显示消息（发送方）
   messages.value.push(tempMsg)
   inputContent.value = ''
+
+  // 更新总消息数（临时增加）
+  totalMessageCount.value++
 
   nextTick(() => {
     scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' })
   })
 
-  // 发送给接收方
   websocketService.sendMessage(props.friend.userId, content)
-}
-
-// 下载聊天记录
-const downloadHistory = async () => {
-  if (!props.friend) return
-  try {
-    await downloadChatHistoryApi(props.friend.userId, props.friend.nickname || '好友')
-    ElMessage.success('开始下载')
-  } catch (error) {
-    ElMessage.error('下载失败')
-  }
 }
 
 // 接收新消息
 const onNewMessage = (data: any) => {
-  console.log('ChatWindow 收到WebSocket消息:', data)
-
-  if (!data.fromUserId) {
-    console.warn('消息缺少 fromUserId')
-    return
-  }
-
-  // 只处理来自当前聊天对象的消息
   if (props.friend && data.fromUserId === props.friend.userId) {
-    const newMsg = {
+    // 收到新消息，总消息数增加
+    totalMessageCount.value++
+
+    messages.value.push({
       id: data.messageId,
       fromUserId: data.fromUserId,
       fromUserNickname: data.fromUserNickname,
@@ -178,8 +180,7 @@ const onNewMessage = (data: any) => {
       content: data.content,
       sendTime: data.sendTime,
       isRecalled: false
-    }
-    messages.value.push(newMsg)
+    })
     nextTick(() => {
       scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' })
     })
@@ -187,7 +188,17 @@ const onNewMessage = (data: any) => {
   }
 }
 
-// 标记已读
+// 处理下载
+const handleDownload = async (limit: number) => {
+  try {
+    await downloadChatHistoryApi(props.friend.userId, props.friend.nickname, limit)
+    ElMessage.success(`开始下载最近 ${limit} 条聊天记录`)
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('下载失败')
+  }
+}
+
 const markAsRead = async () => {
   if (!props.friend) return
   try {
@@ -198,19 +209,15 @@ const markAsRead = async () => {
   }
 }
 
-// 监听好友切换
 watch(() => props.friend, (newFriend) => {
-  console.log('ChatWindow: friend 变化:', newFriend)
-  if (newFriend?.userId) {
+  if (newFriend && newFriend.userId) {
     loadHistory(true)
     markAsRead()
   }
 }, { immediate: true, deep: true })
 
-// 注册 WebSocket 回调
 onMounted(() => {
   websocketService.onMessage(onNewMessage)
-  console.log('ChatWindow 已注册 WebSocket 消息回调')
 })
 
 onUnmounted(() => {
