@@ -15,16 +15,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Sidebar from './Sidebar.vue'
 import Header from './Header.vue'
 import ChatWindow from '@/components/ChatWindow.vue'
+import { useFriendStore } from '@/stores/friendStore'
 
+const route = useRoute()
+const router = useRouter()
+const friendStore = useFriendStore()
 const currentChatUser = ref<any>(null)
 
+// 根据 friendId 获取好友信息
+const loadFriendById = async (friendId: number) => {
+  // 确保好友列表已加载
+  if (friendStore.friendList.length === 0) {
+    await friendStore.loadFriendList()
+  }
+  const friend = friendStore.getFriendById(friendId)
+  if (friend) {
+    currentChatUser.value = friend
+  } else {
+    // 如果找不到，创建一个临时对象
+    currentChatUser.value = { userId: friendId, nickname: '好友' }
+  }
+}
+
+// 监听路由参数变化
+watch(() => route.query.friendId, (newFriendId) => {
+  if (newFriendId) {
+    loadFriendById(Number(newFriendId))
+  }
+}, { immediate: true })
+
+// 从侧边栏选择好友
 const handleSelectChat = (friend: any) => {
-  console.log('MainLayout 收到选择好友:', friend)
   currentChatUser.value = friend
+  // 清除 URL 中的 friendId 参数（可选）
+  router.push('/')
 }
 </script>
 

@@ -22,9 +22,20 @@ export interface UnreadDetail {
   unreadCount: number
 }
 
+export interface UnreadMessage {
+  id: number
+  fromUserId: number
+  fromUserNickname: string
+  fromUserAvatar: string | null
+  content: string
+  sendTime: string
+  messageType?: number
+}
+
 export interface UnreadCountVO {
   total: number
   details: UnreadDetail[]
+  messages: UnreadMessage[]
 }
 
 export interface PageResult<T> {
@@ -40,11 +51,8 @@ export const downloadChatHistoryApi = async (friendId: number, friendName: strin
   const token = localStorage.getItem('chat_token')
   const response = await axios.get(`/api/message/download/${friendId}`, {
     responseType: 'blob',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
+    headers: { 'Authorization': `Bearer ${token}` }
   })
-  
   const blob = response.data
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

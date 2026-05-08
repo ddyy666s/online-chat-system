@@ -5,7 +5,8 @@
     </div>
 
     <div class="actions">
-      <el-badge :value="messageStore.unreadCount.total" :hidden="messageStore.unreadCount.total === 0">
+      <!-- 消息盒子图标 -->
+      <el-badge :value="messageStore.unreadCount?.total || 0" :hidden="!messageStore.unreadCount?.total">
         <el-button :icon="Bell" circle @click="showMessageBox = true" />
       </el-badge>
 
@@ -25,42 +26,28 @@
       </el-dropdown>
     </div>
 
-    <el-drawer v-model="showMessageBox" title="消息盒子" direction="rtl" size="400px">
-      <div v-for="detail in messageStore.unreadCount.details" :key="detail.friendId" class="unread-item">
-        <el-avatar :size="40" :src="detail.friendAvatar">
-          {{ detail.friendNickname?.charAt(0) || 'U' }}
-        </el-avatar>
-        <div class="info">
-          <div class="name">{{ detail.friendNickname }}</div>
-          <div class="message">{{ detail.unreadCount }} 条未读消息</div>
-        </div>
-        <el-button size="small" type="primary" @click="jumpToChat(detail.friendId)">去回复</el-button>
-      </div>
-      <el-empty v-if="messageStore.unreadCount.details.length === 0" description="暂无未读消息" />
-    </el-drawer>
+    <MessageBox v-model="showMessageBox" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Bell } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 import { useMessageStore } from '@/stores/messageStore'
+import MessageBox from '@/components/MessageBox.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const showMessageBox = ref(false)
+let intervalId: number | null = null
 
 const handleCommand = async (command: string) => {
   if (command === 'logout') {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await ElMessageBox.confirm('确定要退出登录吗？', '提示')
     userStore.logout()
     router.push('/login')
   } else if (command === 'profile') {
@@ -68,10 +55,22 @@ const handleCommand = async (command: string) => {
   }
 }
 
-const jumpToChat = (friendId: number) => {
-  showMessageBox.value = false
-  router.push(`/?friendId=${friendId}`)
-}
+// 定时刷新未读消息
+onMounted(() => {
+  // 立即加载一次
+  messageStore.loadUnreadCount()
+
+  // 每3秒刷新一次
+  intervalId = setInterval(() => {
+    messageStore.loadUnreadCount()
+  }, 3000)
+})
+
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
+})
 </script>
 
 <style scoped>
@@ -102,27 +101,5 @@ const jumpToChat = (friendId: number) => {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-}
-
-.unread-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.unread-item .info {
-  flex: 1;
-}
-
-.unread-item .name {
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.unread-item .message {
-  font-size: 12px;
-  color: #909399;
 }
 </style>

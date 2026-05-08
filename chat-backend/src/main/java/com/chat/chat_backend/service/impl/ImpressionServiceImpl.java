@@ -3,57 +3,85 @@ package com.chat.chat_backend.service.impl;
 import com.chat.chat_backend.common.exception.BusinessException;
 import com.chat.chat_backend.common.result.ResultCode;
 import com.chat.chat_backend.mapper.ImpressionMapper;
+import com.chat.chat_backend.mapper.MessageMapper;
 import com.chat.chat_backend.mapper.UserMapper;
 import com.chat.chat_backend.module.dto.request.AddImpressionRequest;
 import com.chat.chat_backend.module.dto.response.ImpressionVO;
 import com.chat.chat_backend.module.entity.Impression;
+import com.chat.chat_backend.module.entity.Message;
 import com.chat.chat_backend.module.entity.User;
 import com.chat.chat_backend.service.ImpressionService;
+import com.chat.chat_backend.websocket.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImpressionServiceImpl implements ImpressionService {
 
     private final ImpressionMapper impressionMapper;
     private final UserMapper userMapper;
+    private final MessageMapper messageMapper;
+    private final WebSocketSessionManager sessionManager;
 
     @Override
+    @Transactional
     public void addImpression(Long userId, AddImpressionRequest request) {
-        // 不能评价自己
         if (userId.equals(request.getToUserId())) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "不能评价自己");
         }
 
-        // 检查目标用户是否存在
         User targetUser = userMapper.selectById(request.getToUserId());
         if (targetUser == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
 
-        // 内容长度限制
         if (request.getContent().length() > 100) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "评价内容不能超过100字");
         }
 
+        // 1. 保存评价
         Impression impression = new Impression();
         impression.setFromUserId(userId);
         impression.setToUserId(request.getToUserId());
         impression.setContent(request.getContent());
         impression.setIsDelete(0);
         impression.setCreatedAt(LocalDateTime.now());
-
         impressionMapper.insert(impression);
+
+        // 2. 生成系统消息（类型为3表示系统消息/评价通知）
+        User fromUser = userMapper.selectById(userId);
+        String systemMessage = fromUser.getNickname() + " 给你添加了一条评价：" + request.getContent();
+
+        Message msg = new Message();
+        msg.setFromUserId(userId);
+        msg.setToUserId(request.getToUserId());
+        msg.setMessageType(3);  // 类型3：系统消息/评价通知
+        msg.setContent(systemMessage);
+        msg.setIsRead(0);
+        msg.setSendTime(LocalDateTime.now());
+        messageMapper.insert(msg);
+
+        log.info("评价通知已发送: {} -> {}", fromUser.getNickname(), targetUser.getNickname());
+
+        // 3. 如果对方在线，实时推送通知
+        if (sessionManager.isOnline(request.getToUserId())) {
+            sessionManager.sendMessage(request.getToUserId(),
+                    "{\"type\":\"impression\",\"fromUserId\":" + userId +
+                            ",\"fromUserNickname\":\"" + fromUser.getNickname() +
+                            "\",\"content\":\"" + request.getContent() + "\"}");
+        }
     }
 
     @Override
     public List<ImpressionVO> getImpressionsToMe(Long userId) {
         List<Impression> impressions = impressionMapper.findImpressionsToUser(userId);
-
         return impressions.stream().map(imp -> {
             User fromUser = userMapper.selectById(imp.getFromUserId());
             return ImpressionVO.builder()
@@ -71,7 +99,6 @@ public class ImpressionServiceImpl implements ImpressionService {
     @Override
     public List<ImpressionVO> getImpressionsByMe(Long userId) {
         List<Impression> impressions = impressionMapper.findImpressionsByUser(userId);
-
         return impressions.stream().map(imp -> {
             User toUser = userMapper.selectById(imp.getToUserId());
             return ImpressionVO.builder()
@@ -92,12 +119,9 @@ public class ImpressionServiceImpl implements ImpressionService {
         if (impression == null) {
             throw new BusinessException(ResultCode.IMPRESSION_NOT_FOUND);
         }
-
-        // 只有评价者可以删除
         if (!impression.getFromUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
-
         impression.setIsDelete(1);
         impressionMapper.updateById(impression);
     }

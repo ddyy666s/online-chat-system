@@ -15,6 +15,7 @@ import com.chat.chat_backend.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,23 +31,19 @@ public class MessageServiceImpl implements MessageService {
     public Page<MessageVO> getChatHistory(Long userId, Long friendId, Integer page, Integer size) {
         int offset = (page - 1) * size;
         List<Message> messages = messageMapper.findChatHistory(userId, friendId, offset, size);
-
-        // 获取用户信息
         User friend = userMapper.selectById(friendId);
         User currentUser = userMapper.selectById(userId);
 
         List<MessageVO> voList = messages.stream()
                 .map(msg -> {
-                    // 获取发送者信息（重要：需要获取头像）
                     User fromUser = userMapper.selectById(msg.getFromUserId());
                     String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
                     String fromUserAvatar = fromUser != null ? fromUser.getAvatar() : null;
-
                     return MessageVO.builder()
                             .id(msg.getId())
                             .fromUserId(msg.getFromUserId())
                             .fromUserNickname(fromUserNickname)
-                            .fromUserAvatar(fromUserAvatar)  // 添加这一行
+                            .fromUserAvatar(fromUserAvatar)
                             .toUserId(msg.getToUserId())
                             .toUserNickname(msg.getToUserId().equals(userId) ?
                                     currentUser.getNickname() : friend.getNickname())
@@ -75,7 +72,6 @@ public class MessageServiceImpl implements MessageService {
                 .map(msg -> {
                     User fromUser = userMapper.selectById(msg.getFromUserId());
                     String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
-
                     return MessageVO.builder()
                             .id(msg.getId())
                             .fromUserId(msg.getFromUserId())
@@ -89,10 +85,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public void markAsRead(Long userId, Long friendId) {
-        // 更新数据库
         messageMapper.markAsRead(userId, friendId);
-
-        // 清除Redis未读计数
         String unreadKey = RedisConstants.UNREAD_COUNT + userId;
         redisUtil.hashDelete(unreadKey, String.valueOf(friendId));
     }
@@ -102,21 +95,42 @@ public class MessageServiceImpl implements MessageService {
         Integer total = messageMapper.countUnreadTotal(userId);
         List<MessageMapper.UnreadGroup> groups = messageMapper.groupUnreadByFriend(userId);
 
-        List<UnreadCountVO.UnreadDetail> details = groups.stream()
-                .map(g -> {
-                    User friend = userMapper.selectById(g.from_user_id);
-                    return UnreadCountVO.UnreadDetail.builder()
-                            .friendId(g.from_user_id)
-                            .friendNickname(friend != null ? friend.getNickname() : "未知用户")
-                            .friendAvatar(friend != null ? friend.getAvatar() : null)  // 添加这一行
-                            .unreadCount(g.count)
-                            .build();
-                })
-                .collect(Collectors.toList());
+        List<UnreadCountVO.UnreadDetail> details = new ArrayList<>();
+        for (MessageMapper.UnreadGroup group : groups) {
+            if (group.getFromUserId() == null) continue;
+            User friend = userMapper.selectById(group.getFromUserId());
+            if (friend != null) {
+                details.add(UnreadCountVO.UnreadDetail.builder()
+                        .friendId(group.getFromUserId())
+                        .friendNickname(friend.getNickname())
+                        .friendAvatar(friend.getAvatar())
+                        .unreadCount(group.getCount())
+                        .build());
+            }
+        }
+
+        // 获取未读消息详情列表
+        List<UnreadCountVO.UnreadMessage> messages = new ArrayList<>();
+        List<MessageMapper.UnreadMessageDetail> unreadMessages = messageMapper.findUnreadMessages(userId);
+        for (MessageMapper.UnreadMessageDetail msg : unreadMessages) {
+            String content = msg.getContent();
+            if (content.length() > 50) {
+                content = content.substring(0, 50) + "...";
+            }
+            messages.add(UnreadCountVO.UnreadMessage.builder()
+                    .id(msg.getId())
+                    .fromUserId(msg.getFromUserId())
+                    .fromUserNickname(msg.getFromUserNickname())
+                    .fromUserAvatar(msg.getFromUserAvatar())
+                    .content(content)
+                    .sendTime(msg.getSendTime())
+                    .build());
+        }
 
         return UnreadCountVO.builder()
                 .total(total)
                 .details(details)
+                .messages(messages)
                 .build();
     }
 
