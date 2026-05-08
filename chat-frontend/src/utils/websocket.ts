@@ -78,22 +78,22 @@ class WebSocketService {
     }
   }
   
-  sendMessage(toUserId: number, content: string, messageType: number = 1) {
-    console.log('sendMessage调用:', { toUserId, content, messageType })
-    
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const message = JSON.stringify({
-        type: 'message',
-        toUserId: toUserId,
-        content: content,
-        messageType: messageType
-      })
-      console.log('发送WebSocket消息:', message)
-      this.ws.send(message)
-    } else {
-      console.warn('WebSocket未连接，状态:', this.ws?.readyState)
+sendMessage(toUserId: number, content: string, messageType: number = 1, duration?: number) {
+  if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    const message: any = {
+      type: 'message',
+      toUserId: toUserId,
+      content: content,
+      messageType: messageType
     }
+    if (duration !== undefined && messageType === 4) {
+      message.duration = duration
+    }
+    this.ws.send(JSON.stringify(message))
+  } else {
+    console.warn('WebSocket未连接')
   }
+}
   
   onMessage(callback: MessageCallback) {
     this.messageCallbacks.push(callback)

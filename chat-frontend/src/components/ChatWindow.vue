@@ -29,64 +29,45 @@
             <span class="time">{{ formatRelativeTime(msg.sendTime) }}</span>
           </div>
 
-          <!-- 整合后的多类型消息气泡 -->
           <div class="message-bubble">
-            <!-- 文字消息 -->
             <span v-if="msg.messageType === 1 && !msg.isRecalled">{{ msg.content }}</span>
 
-            <!-- 图片消息 -->
             <div v-else-if="msg.messageType === 2 && !msg.isRecalled" class="image-message">
               <el-image :src="msg.content" :preview-src-list="[msg.content]" fit="cover" class="message-image" />
             </div>
 
-            <!-- 语音消息 -->
             <div v-else-if="msg.messageType === 4 && !msg.isRecalled" class="voice-message"
-              @click="playVoice(msg.content)">
+              @click="togglePlayVoice(msg)">
               <el-icon>
-                <Microphone />
+                <VideoPlay v-if="currentPlayingId !== msg.id" />
+                <VideoPause v-else />
               </el-icon>
               <span>语音消息</span>
-              <span class="voice-duration">0:05</span>
+              <span class="voice-duration">{{ formatVoiceDuration(msg.duration) }}</span>
+              <div class="voice-wave" v-if="currentPlayingId === msg.id">
+                <span v-for="i in 5" :key="i"></span>
+              </div>
             </div>
 
-            <!-- 撤回消息 -->
             <span v-else-if="msg.isRecalled" class="recalled">对方撤回了一条消息</span>
-
-            <!-- 其他类型 -->
             <span v-else>{{ msg.content }}</span>
           </div>
         </div>
       </div>
 
-      <div v-if="loading" class="loading">
-        <el-skeleton :rows="2" animated />
-      </div>
+      <div v-if="loading" class="loading"><el-skeleton :rows="2" animated /></div>
       <div ref="scrollBottomRef"></div>
     </div>
 
-    <!-- 消息输入 + 通信栏 -->
     <div class="message-area">
       <div class="message-input">
         <el-input v-model="inputContent" type="textarea" :rows="2" placeholder="请输入消息..."
           @keyup.ctrl.enter="sendMessage" />
-        <div class="input-actions">
-          <el-button type="primary" @click="sendMessage">发送</el-button>
-        </div>
+        <div class="input-actions"><el-button type="primary" @click="sendMessage">发送</el-button></div>
       </div>
-
-      <CommunicationBar :current-chat-user-id="friend?.userId" @send-image="sendImage" @send-voice="sendVoice"
-        @send-emoji="sendEmoji" @start-voice-call="startVoiceCall" @start-video-call="startVideoCall" />
+      <CommunicationBar @send-image="sendImage" @send-voice="sendVoice" @send-emoji="sendEmoji" />
     </div>
 
-    <!-- 语音通话弹窗 -->
-    <VoiceCallDialog v-if="voiceCallVisible" v-model="voiceCallVisible" :target-user="friend" :is-caller="true"
-      @end-call="endVoiceCall" />
-
-    <!-- 视频通话弹窗 -->
-    <VideoCallDialog v-if="videoCallVisible" v-model="videoCallVisible" :target-user="friend" :is-caller="true"
-      @end-call="endVideoCall" />
-
-    <!-- 下载聊天记录弹窗 -->
     <DownloadDialog v-model="showDownloadDialog" :friend-id="friend?.userId" :friend-name="friend?.nickname"
       :total-messages="totalMessageCount" :max-limit="maxDownloadLimit" @download="handleDownload" />
   </div>
@@ -95,7 +76,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Download, Microphone } from '@element-plus/icons-vue'
+import { Download, VideoPlay, VideoPause } from '@element-plus/icons-vue'
 import { getChatHistoryApi, downloadChatHistoryApi, markAsReadApi } from '@/api/message'
 import { formatRelativeTime } from '@/utils/date'
 import { websocketService } from '@/utils/websocket'
@@ -103,21 +84,13 @@ import { useUserStore } from '@/stores/userStore'
 import { useMessageStore } from '@/stores/messageStore'
 import DownloadDialog from './DownloadDialog.vue'
 import CommunicationBar from './CommunicationBar.vue'
-import VoiceCallDialog from './VoiceCallDialog.vue'
-import VideoCallDialog from './VideoCallDialog.vue'
 
-const props = defineProps<{
-  friend: any
-}>()
-
+const props = defineProps<{ friend: any }>()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const currentUserId = userStore.userInfo?.id
 
-// 配置
 const maxDownloadLimit = 500
-
-// 数据
 const messages = ref<any[]>([])
 const inputContent = ref('')
 const loading = ref(false)
@@ -126,170 +99,117 @@ const hasMore = ref(true)
 const totalMessageCount = ref(0)
 const showDownloadDialog = ref(false)
 const scrollBottomRef = ref<HTMLElement>()
-const messageListRef = ref<HTMLElement>()
 
-// 通话弹窗
-const voiceCallVisible = ref(false)
-const videoCallVisible = ref(false)
+// 语音播放
+let currentAudio: HTMLAudioElement | null = null
+const currentPlayingId = ref<number | null>(null)
 
-// ------------------------------
-// 加载历史消息
-// ------------------------------
+const formatVoiceDuration = (duration?: number): string => {
+  if (!duration || duration <= 0) return '0:05'
+  const mins = Math.floor(duration / 60)
+  const secs = duration % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+const togglePlayVoice = (msg: any) => {
+  if (currentPlayingId.value === msg.id && currentAudio) {
+    currentAudio.pause()
+    currentAudio.currentTime = 0
+    currentAudio = null
+    currentPlayingId.value = null
+    return
+  }
+  if (currentAudio) {
+    currentAudio.pause()
+    currentAudio = null
+  }
+  const audio = new Audio(msg.content)
+  currentPlayingId.value = msg.id
+  currentAudio = audio
+  audio.play().catch(() => {
+    ElMessage.error('播放失败')
+    currentPlayingId.value = null
+    currentAudio = null
+  })
+  audio.onended = () => {
+    currentPlayingId.value = null
+    currentAudio = null
+  }
+}
+
+// 加载历史
 const loadHistory = async (reset = true) => {
-  if (!props.friend || !props.friend.userId) return
+  if (!props.friend?.userId) return
   if (reset) { page.value = 1; hasMore.value = true; messages.value = [] }
   if (!hasMore.value) return
-
   loading.value = true
   try {
     const res = await getChatHistoryApi(props.friend.userId, page.value, 20)
     if (page.value === 1) totalMessageCount.value = res.total
-
     const newMessages = res.records.reverse()
-    messages.value = [...newMessages, ...messages.value]
-    hasMore.value = res.records.length > 0
+    messages.value = reset ? newMessages : [...messages.value, ...newMessages]
+    hasMore.value = newMessages.length > 0
     page.value++
-
-    if (reset) {
-      await nextTick()
-      scrollBottomRef.value?.scrollIntoView({ behavior: 'auto' })
-    }
+    if (reset) await nextTick()
+    scrollBottomRef.value?.scrollIntoView({ behavior: 'auto' })
   } catch (error) {
-    console.error(error)
-    ElMessage.error('加载聊天记录失败')
+    ElMessage.error('加载消息失败')
   } finally {
     loading.value = false
   }
 }
 
-// 自动滚动到底部
 const scrollToBottom = () => {
-  nextTick(() => {
-    scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' })
-  })
+  nextTick(() => scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' }))
 }
 
-// 播放语音
-const playVoice = (url: string) => {
-  const audio = new Audio(url)
-  audio.play().catch(err => console.error('播放失败', err))
-}
-
-// ------------------------------
-// 发送文本消息
-// ------------------------------
+// 发送消息
 const sendMessage = () => {
-  if (!inputContent.value.trim()) {
-    ElMessage.warning('请输入消息内容')
-    return
-  }
-  if (!props.friend?.userId) {
-    ElMessage.warning('请先选择聊天对象')
-    return
-  }
-
-  const content = inputContent.value
-  const tempMsg = {
-    id: Date.now(),
-    fromUserId: currentUserId,
-    fromUserNickname: userStore.userInfo?.nickname || '我',
-    fromUserAvatar: userStore.userInfo?.avatar,
-    content: content,
-    messageType: 1,
-    sendTime: new Date().toISOString(),
-    isRecalled: false
-  }
-
-  messages.value.push(tempMsg)
+  if (!inputContent.value.trim()) return ElMessage.warning('请输入内容')
+  if (!props.friend?.userId) return
+  websocketService.sendMessage(props.friend.userId, inputContent.value, 1)
   inputContent.value = ''
-  totalMessageCount.value++
   scrollToBottom()
-  websocketService.sendMessage(props.friend.userId, content)
 }
 
-// ------------------------------
-// 发送图片
-// ------------------------------
 const sendImage = (url: string) => {
-  const tempMsg = {
-    id: Date.now(),
-    fromUserId: currentUserId,
-    fromUserNickname: userStore.userInfo?.nickname || '我',
-    fromUserAvatar: userStore.userInfo?.avatar,
-    content: url,
-    messageType: 2,
-    sendTime: new Date().toISOString(),
-    isRecalled: false
-  }
-  messages.value.push(tempMsg)
+  if (!props.friend?.userId) return
   websocketService.sendMessage(props.friend.userId, url, 2)
   scrollToBottom()
 }
 
-// ------------------------------
-// 发送语音
-// ------------------------------
-const sendVoice = (url: string) => {
-  const tempMsg = {
-    id: Date.now(),
-    fromUserId: currentUserId,
-    fromUserNickname: userStore.userInfo?.nickname || '我',
-    fromUserAvatar: userStore.userInfo?.avatar,
-    content: url,
-    messageType: 4,
-    sendTime: new Date().toISOString(),
-    isRecalled: false
-  }
-  messages.value.push(tempMsg)
-  websocketService.sendMessage(props.friend.userId, url, 4)
+const sendVoice = (url: string, duration: number) => {
+  if (!props.friend?.userId) return
+  websocketService.sendMessage(props.friend.userId, url, 4, duration)
   scrollToBottom()
 }
 
-// ------------------------------
-// 发送表情
-// ------------------------------
 const sendEmoji = (url: string) => {
-  const tempMsg = {
-    id: Date.now(),
-    fromUserId: currentUserId,
-    fromUserNickname: userStore.userInfo?.nickname || '我',
-    fromUserAvatar: userStore.userInfo?.avatar,
-    content: url,
-    messageType: 2,
-    sendTime: new Date().toISOString(),
-    isRecalled: false
-  }
-  messages.value.push(tempMsg)
+  if (!props.friend?.userId) return
   websocketService.sendMessage(props.friend.userId, url, 2)
   scrollToBottom()
 }
 
-// ------------------------------
-// 语音通话
-// ------------------------------
-const startVoiceCall = () => {
-  voiceCallVisible.value = true
-}
-const endVoiceCall = () => {
-  voiceCallVisible.value = false
-}
-
-// ------------------------------
-// 视频通话
-// ------------------------------
-const startVideoCall = () => {
-  videoCallVisible.value = true
-}
-const endVideoCall = () => {
-  videoCallVisible.value = false
+const handleDownload = async (limit: number) => {
+  try {
+    await downloadChatHistoryApi(props.friend.userId, props.friend.nickname, limit)
+    ElMessage.success('开始下载')
+  } catch (e) {
+    ElMessage.error('下载失败')
+  }
 }
 
-// ------------------------------
-// 接收新消息
-// ------------------------------
+const markAsRead = async () => {
+  if (!props.friend?.userId) return
+  try {
+    await markAsReadApi(props.friend.userId)
+    messageStore.clearUnreadForFriend(props.friend.userId)
+  } catch (error) { console.error(error) }
+}
+
 const onNewMessage = (data: any) => {
-  if (props.friend && data.fromUserId === props.friend.userId) {
-    totalMessageCount.value++
+  console.log('收到消息:', data)  // 查看 data.duration
+  if (props.friend?.userId === data.fromUserId) {
     messages.value.push({
       id: data.messageId,
       fromUserId: data.fromUserId,
@@ -297,57 +217,22 @@ const onNewMessage = (data: any) => {
       fromUserAvatar: data.fromUserAvatar,
       content: data.content,
       messageType: data.messageType || 1,
+      duration: data.duration,
       sendTime: data.sendTime,
       isRecalled: false
     })
     scrollToBottom()
-    markAsRead()
   }
 }
 
-// ------------------------------
-// 下载聊天记录
-// ------------------------------
-const handleDownload = async (limit: number) => {
-  try {
-    await downloadChatHistoryApi(props.friend.userId, props.friend.nickname, limit)
-    ElMessage.success(`开始下载最近 ${limit} 条聊天记录`)
-  } catch (error) {
-    console.error(error)
-    ElMessage.error('下载失败')
-  }
-}
-
-// ------------------------------
-// 标记已读
-// ------------------------------
-const markAsRead = async () => {
-  if (!props.friend) return
-  try {
-    await markAsReadApi(props.friend.userId)
-    messageStore.clearUnreadForFriend(props.friend.userId)
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-// ------------------------------
-// 监听切换好友
-// ------------------------------
 watch(() => props.friend, (newFriend) => {
-  if (newFriend?.userId) {
-    loadHistory(true)
-    markAsRead()
-  }
+  if (newFriend?.userId) { loadHistory(true); markAsRead() }
 }, { immediate: true, deep: true })
 
-// 注册 WebSocket 回调
-onMounted(() => {
-  websocketService.onMessage(onNewMessage)
-})
+onMounted(() => websocketService.onMessage(onNewMessage))
 
-// 清理
 onUnmounted(() => {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null }
   if (props.friend) markAsRead()
 })
 </script>
@@ -430,28 +315,86 @@ onUnmounted(() => {
   background: #95ec69;
 }
 
-/* 图片消息 */
-.image-message {
-  cursor: pointer;
-}
-
 .message-image {
   max-width: 200px;
   border-radius: 8px;
 }
 
-/* 语音消息 */
 .voice-message {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 20px;
+  min-width: 120px;
+  transition: all 0.2s;
+}
+
+.voice-message:hover {
+  background: #e9e9e9;
+  transform: scale(1.02);
+}
+
+.message-item.own .voice-message {
+  background: #95ec69;
 }
 
 .voice-duration {
   font-size: 12px;
-  color: #909399;
+  color: #666;
+  margin-left: auto;
+}
+
+.voice-wave {
+  display: flex;
+  gap: 3px;
+  margin-left: 8px;
+}
+
+.voice-wave span {
+  width: 3px;
+  height: 12px;
+  background: #409eff;
+  border-radius: 1px;
+  animation: wave 0.8s ease-in-out infinite;
+}
+
+.message-item.own .voice-wave span {
+  background: #333;
+}
+
+.voice-wave span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.voice-wave span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.voice-wave span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.voice-wave span:nth-child(4) {
+  animation-delay: 0.45s;
+}
+
+.voice-wave span:nth-child(5) {
+  animation-delay: 0.6s;
+}
+
+@keyframes wave {
+
+  0%,
+  100% {
+    height: 12px;
+  }
+
+  50% {
+    height: 20px;
+  }
 }
 
 .recalled {
@@ -459,7 +402,6 @@ onUnmounted(() => {
   font-style: italic;
 }
 
-/* 输入框区域 */
 .message-area {
   border-top: 1px solid #e4e7ed;
   background: #fff;

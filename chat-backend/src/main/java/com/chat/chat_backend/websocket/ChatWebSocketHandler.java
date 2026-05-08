@@ -79,38 +79,37 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    // 单聊消息处理
+    // 单聊消息处理（已支持语音时长 duration）
     private void handleChatMessage(Long fromUserId, JSONObject json) {
         Long toUserId = json.getLong("toUserId");
         String content = json.getStr("content");
         Integer messageType = json.getInt("messageType", 1);
+        Integer duration = json.getInt("duration");
 
-        if (toUserId == null || content == null || content.trim().isEmpty()) {
-            log.error("消息参数错误");
-            return;
-        }
+        log.info("收到消息: from={}, to={}, type={}, duration={}", fromUserId, toUserId, messageType, duration);
 
-        // 保存消息到数据库
+        // 保存消息
         Message msg = new Message();
         msg.setFromUserId(fromUserId);
         msg.setToUserId(toUserId);
         msg.setMessageType(messageType);
-        msg.setContent(content);
+
+        // 语音消息：存储格式 "url|duration"
+        if (messageType == 4 && duration != null && duration > 0) {
+            msg.setContent(content + "|" + duration);
+        } else {
+            msg.setContent(content);
+        }
+
         msg.setIsRead(0);
         msg.setSendTime(LocalDateTime.now());
         messageMapper.insert(msg);
-        log.info("消息已保存: id={}, from={}, to={}", msg.getId(), fromUserId, toUserId);
-
-        // 增加Redis未读计数
-        String unreadKey = RedisConstants.UNREAD_COUNT + toUserId;
-        redisUtil.hashIncrement(unreadKey, String.valueOf(fromUserId), 1);
-        redisUtil.expire(unreadKey, 7, TimeUnit.DAYS);
 
         // 获取发送者信息
         User fromUser = userMapper.selectById(fromUserId);
         String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
 
-        // 构建消息体
+        // 构建返回消息（包含时长）
         JSONObject response = JSONUtil.createObj()
                 .set("type", "message")
                 .set("messageId", msg.getId())
@@ -120,13 +119,13 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 .set("messageType", messageType)
                 .set("sendTime", msg.getSendTime().toString());
 
-        // 如果对方在线，实时推送
-        if (sessionManager.isOnline(toUserId)) {
-            sessionManager.sendMessage(toUserId, response.toString());
-            log.info("消息已推送给用户 {}", toUserId);
-        } else {
-            log.info("用户 {} 不在线，消息已保存为未读", toUserId);
+        // 如果是语音消息，添加时长
+        if (messageType == 4 && duration != null && duration > 0) {
+            response.set("duration", duration);
         }
+
+        // 推送给对方
+        sessionManager.sendMessage(toUserId, response.toString());
     }
 
     // 群聊消息处理
@@ -134,6 +133,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         Long groupId = json.getLong("groupId");
         String content = json.getStr("content");
         Integer messageType = json.getInt("messageType", 1);
+        Integer duration = json.getInt("duration"); // 群聊也支持语音时长
 
         if (groupId == null || content == null || content.trim().isEmpty()) {
             log.error("群消息参数错误");
@@ -162,7 +162,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         msg.setContent(content);
         msg.setSendTime(LocalDateTime.now());
         groupMessageMapper.insert(msg);
-        log.info("群消息已保存: id={}, groupId={}, from={}", msg.getId(), groupId, fromUserId);
+        log.info("群消息已保存: id={}, groupId={}, from={}, duration={}",
+                msg.getId(), groupId, fromUserId, duration);
 
         // 增加所有群成员的未读计数（发送者除外）
         groupMemberMapper.incrementUnreadCount(groupId, fromUserId);
@@ -171,7 +172,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         User fromUser = userMapper.selectById(fromUserId);
         String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
 
-        // 构建消息体
+        // 构建消息体 → 携带 duration
         JSONObject response = JSONUtil.createObj()
                 .set("type", "group_message")
                 .set("messageId", msg.getId())
@@ -180,6 +181,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 .set("fromUserNickname", fromUserNickname)
                 .set("content", content)
                 .set("messageType", messageType)
+                .set("duration", duration)
                 .set("sendTime", msg.getSendTime().toString());
 
         String responseStr = response.toString();

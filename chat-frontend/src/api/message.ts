@@ -13,6 +13,7 @@ export interface MessageVO {
   isRead: boolean
   isRecalled: boolean
   sendTime: string
+  duration?: number
 }
 
 export interface UnreadDetail {

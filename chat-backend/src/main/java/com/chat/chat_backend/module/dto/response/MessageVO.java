@@ -10,6 +10,7 @@ public class MessageVO {
     private Long id;
     private Long fromUserId;
     private String fromUserNickname;
+    private Integer duration;
     private String fromUserAvatar;
     private Long toUserId;
     private String toUserNickname;

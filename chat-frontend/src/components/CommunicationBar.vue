@@ -1,13 +1,11 @@
 <template>
   <div class="communication-bar" :class="{ expanded: isExpanded }">
-    <!-- 收起时的按钮 -->
     <div class="toggle-btn" @click="toggleExpand">
       <el-icon :size="24">
         <component :is="isExpanded ? 'ArrowDown' : 'ArrowUp'" />
       </el-icon>
     </div>
 
-    <!-- 展开后的工具栏 -->
     <div class="toolbar" v-show="isExpanded">
       <div class="tool-item" @click="openImageUpload">
         <el-icon :size="24">
@@ -43,14 +41,14 @@
       </div>
     </div>
 
-    <!-- 录音中提示 -->
+    <!-- 录音提示（显示实时时长） -->
     <div v-if="isRecording" class="recording-tip">
       <el-icon>
         <Microphone />
       </el-icon>
-      <span>正在录音... 松手发送</span>
+      <span>正在录音... {{ formatDuration(recordDuration) }} 松手发送</span>
       <div class="recording-wave">
-        <span v-for="i in 5" :key="i" :style="{ height: Math.random() * 20 + 10 + 'px' }"></span>
+        <span v-for="i in 5" :key="i"></span>
       </div>
     </div>
 
@@ -84,7 +82,7 @@
       </div>
     </el-drawer>
 
-    <!-- 隐藏的文件上传 -->
+    <!-- 隐藏文件上传 -->
     <input type="file" ref="imageInput" accept="image/*" style="display: none" @change="handleImageUpload" />
     <input type="file" ref="emojiInput" accept="image/*" style="display: none" @change="handleEmojiUpload" />
   </div>
@@ -97,22 +95,18 @@ import { ArrowUp, ArrowDown, Picture, Microphone, Phone, VideoCamera } from '@el
 import { uploadImageApi, uploadVoiceApi } from '@/api/message'
 import { getSystemEmojisApi, getUserEmojisApi, uploadEmojiApi, deleteEmojiApi, type EmojiVO } from '@/api/emoji'
 
-const props = defineProps<{
-  currentChatUserId?: number
-  currentGroupId?: number
-}>()
-
-const emit = defineEmits(['send', 'sendImage', 'sendVoice', 'sendEmoji', 'startVoiceCall', 'startVideoCall'])
+const emit = defineEmits(['sendImage', 'sendVoice', 'sendEmoji', 'startVoiceCall', 'startVideoCall'])
 
 // UI 状态
 const isExpanded = ref(false)
 const isRecording = ref(false)
+const recordDuration = ref(0)
 const showEmojiPicker = ref(false)
 const emojiTab = ref('system')
 const systemEmojis = ref<EmojiVO[]>([])
 const userEmojis = ref<EmojiVO[]>([])
 
-// 上传相关
+// 上传引用
 const imageInput = ref<HTMLInputElement>()
 const emojiInput = ref<HTMLInputElement>()
 
@@ -120,8 +114,17 @@ const emojiInput = ref<HTMLInputElement>()
 let mediaRecorder: MediaRecorder | null = null
 let audioChunks: Blob[] = []
 let recordingTimer: number | null = null
+let startTime: number = 0
+let mediaStream: MediaStream | null = null
 
-// 切换工具栏展开/收起
+// 格式化时长（秒 -> mm:ss）
+const formatDuration = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
+// 切换工具栏
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value
 }
@@ -141,7 +144,6 @@ const handleImageUpload = async (event: Event) => {
     ElMessage.error('请选择图片文件')
     return
   }
-
   if (file.size > 5 * 1024 * 1024) {
     ElMessage.error('图片大小不能超过5MB')
     return
@@ -152,62 +154,70 @@ const handleImageUpload = async (event: Event) => {
     emit('sendImage', url)
     ElMessage.success('图片已发送')
   } catch (error) {
-    console.error(error)
     ElMessage.error('发送失败')
   }
-
   input.value = ''
 }
 
 // 开始录音
 const startRecord = async () => {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    mediaRecorder = new MediaRecorder(stream)
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    mediaRecorder = new MediaRecorder(mediaStream)
     audioChunks = []
+    startTime = Date.now()
+    recordDuration.value = 0
+
+    // 实时更新时间
+    recordingTimer = setInterval(() => {
+      recordDuration.value = Math.floor((Date.now() - startTime) / 1000)
+      if (recordDuration.value >= 60) {
+        stopRecord()
+      }
+    }, 200) as unknown as number
 
     mediaRecorder.ondataavailable = (event) => {
       audioChunks.push(event.data)
     }
 
     mediaRecorder.onstop = async () => {
+      const duration = Math.floor((Date.now() - startTime) / 1000)
+      if (duration < 1) {
+        ElMessage.warning('录音时间太短')
+        mediaStream?.getTracks().forEach(track => track.stop())
+        mediaStream = null
+        return
+      }
+
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
       const file = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' })
 
       try {
         const url = await uploadVoiceApi(file)
-        emit('sendVoice', url)
+        emit('sendVoice', url, duration)
         ElMessage.success('语音已发送')
       } catch (error) {
-        console.error(error)
         ElMessage.error('发送失败')
       }
 
-      stream.getTracks().forEach(track => track.stop())
+      mediaStream?.getTracks().forEach(track => track.stop())
+      mediaStream = null
     }
 
-    mediaRecorder.start()
+    mediaRecorder.start(100)
     isRecording.value = true
-
-    // 60秒自动停止
-    recordingTimer = setTimeout(() => {
-      if (isRecording.value) {
-        stopRecord()
-      }
-    }, 60000) as unknown as number
   } catch (error) {
-    console.error(error)
-    ElMessage.error('无法获取麦克风权限，请检查浏览器设置')
+    ElMessage.error('无法获取麦克风权限')
   }
 }
 
-// 停止录音并发送
+// 停止录音
 const stopRecord = () => {
   if (mediaRecorder && isRecording.value && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop()
     isRecording.value = false
     if (recordingTimer) {
-      clearTimeout(recordingTimer)
+      clearInterval(recordingTimer)
       recordingTimer = null
     }
   }
@@ -219,36 +229,28 @@ const cancelRecord = () => {
     mediaRecorder.stop()
     isRecording.value = false
     if (recordingTimer) {
-      clearTimeout(recordingTimer)
+      clearInterval(recordingTimer)
       recordingTimer = null
     }
     ElMessage.info('已取消录音')
+    mediaStream?.getTracks().forEach(track => track.stop())
+    mediaStream = null
   }
 }
 
-// 开始语音通话
-const startVoiceCall = () => {
-  emit('startVoiceCall')
-}
+// 通话占位
+const startVoiceCall = () => emit('startVoiceCall')
+const startVideoCall = () => emit('startVideoCall')
 
-// 开始视频通话
-const startVideoCall = () => {
-  emit('startVideoCall')
-}
-
-// 打开表情选择器
+// 表情相关
 const openEmojiPicker = () => {
   loadEmojis()
   showEmojiPicker.value = true
 }
 
-// 加载表情包
 const loadEmojis = async () => {
   try {
-    const [system, user] = await Promise.all([
-      getSystemEmojisApi(),
-      getUserEmojisApi()
-    ])
+    const [system, user] = await Promise.all([getSystemEmojisApi(), getUserEmojisApi()])
     systemEmojis.value = system
     userEmojis.value = user
   } catch (error) {
@@ -256,18 +258,15 @@ const loadEmojis = async () => {
   }
 }
 
-// 发送表情
 const sendEmoji = (emoji: EmojiVO) => {
   emit('sendEmoji', emoji.url)
   showEmojiPicker.value = false
 }
 
-// 上传自定义表情
 const uploadCustomEmoji = () => {
   emojiInput.value?.click()
 }
 
-// 处理表情上传
 const handleEmojiUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -277,7 +276,6 @@ const handleEmojiUpload = async (event: Event) => {
     ElMessage.error('请选择图片文件')
     return
   }
-
   if (file.size > 2 * 1024 * 1024) {
     ElMessage.error('图片大小不能超过2MB')
     return
@@ -289,7 +287,6 @@ const handleEmojiUpload = async (event: Event) => {
     inputPattern: /^[\u4e00-\u9fa5a-zA-Z0-9]{1,20}$/,
     inputErrorMessage: '请输入1-20个字符'
   })
-
   if (!name) return
 
   try {
@@ -297,24 +294,19 @@ const handleEmojiUpload = async (event: Event) => {
     userEmojis.value.unshift(newEmoji)
     ElMessage.success('表情上传成功')
   } catch (error) {
-    console.error(error)
     ElMessage.error('上传失败')
   }
-
   input.value = ''
 }
 
-// 删除自定义表情
 const deleteEmoji = async (emojiId: number) => {
   try {
-    await ElMessageBox.confirm('确定要删除这个表情吗？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确定删除这个表情吗？', '提示', { type: 'warning' })
     await deleteEmojiApi(emojiId)
     userEmojis.value = userEmojis.value.filter(e => e.id !== emojiId)
     ElMessage.success('删除成功')
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
+    if (error !== 'cancel') ElMessage.error('删除失败')
   }
 }
 
@@ -322,15 +314,16 @@ onUnmounted(() => {
   if (mediaRecorder && isRecording.value) {
     mediaRecorder.stop()
   }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop())
+  }
 })
 </script>
 
 <style scoped>
 .communication-bar {
-  position: relative;
   border-top: 1px solid #e4e7ed;
   background: #fff;
-  transition: all 0.3s;
 }
 
 .toggle-btn {
@@ -339,19 +332,16 @@ onUnmounted(() => {
   padding: 8px 0;
   cursor: pointer;
   color: #909399;
-  transition: all 0.3s;
 }
 
 .toggle-btn:hover {
   color: #409eff;
-  background: #f5f5f5;
 }
 
 .toolbar {
   display: flex;
   justify-content: space-around;
   padding: 12px 16px;
-  border-top: 1px solid #f0f0f0;
 }
 
 .tool-item {
@@ -361,7 +351,6 @@ onUnmounted(() => {
   gap: 4px;
   cursor: pointer;
   color: #606266;
-  transition: all 0.2s;
   padding: 6px 12px;
   border-radius: 8px;
 }
@@ -369,19 +358,12 @@ onUnmounted(() => {
 .tool-item:hover {
   color: #409eff;
   background: #f0f7ff;
-  transform: translateY(-2px);
-}
-
-.tool-item span {
-  font-size: 12px;
 }
 
 .icon-text {
   font-size: 20px;
-  line-height: 1;
 }
 
-/* 录音提示 */
 .recording-tip {
   position: fixed;
   bottom: 150px;
@@ -395,35 +377,53 @@ onUnmounted(() => {
   align-items: center;
   gap: 16px;
   z-index: 1000;
-  font-size: 14px;
 }
 
 .recording-wave {
   display: flex;
-  align-items: center;
   gap: 4px;
 }
 
 .recording-wave span {
   width: 4px;
+  height: 15px;
   background: #ff4444;
   border-radius: 2px;
   animation: wave 0.5s ease-in-out infinite;
+}
+
+.recording-wave span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.recording-wave span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.recording-wave span:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.recording-wave span:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.recording-wave span:nth-child(5) {
+  animation-delay: 0.4s;
 }
 
 @keyframes wave {
 
   0%,
   100% {
-    height: 10px;
+    height: 15px;
   }
 
   50% {
-    height: 30px;
+    height: 35px;
   }
 }
 
-/* 表情选择器 */
 .emoji-container {
   padding: 16px;
   max-height: 400px;
@@ -434,7 +434,6 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
-  flex-wrap: wrap;
 }
 
 .emoji-grid {
@@ -451,14 +450,11 @@ onUnmounted(() => {
   cursor: pointer;
   padding: 10px;
   border-radius: 12px;
-  transition: all 0.2s;
   position: relative;
-  border: 1px solid transparent;
 }
 
 .emoji-item:hover {
   background: #f5f5f5;
-  border-color: #e4e7ed;
 }
 
 .emoji-item img {
@@ -469,16 +465,13 @@ onUnmounted(() => {
 
 .emoji-item span {
   font-size: 11px;
-  color: #606266;
 }
 
 .delete-btn {
   position: absolute;
   top: 0;
   right: 0;
-  padding: 2px 4px;
   opacity: 0;
-  transition: opacity 0.2s;
 }
 
 .emoji-item:hover .delete-btn {

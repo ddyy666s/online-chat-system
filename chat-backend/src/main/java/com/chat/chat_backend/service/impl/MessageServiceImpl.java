@@ -16,6 +16,7 @@ import com.chat.chat_backend.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,6 @@ public class MessageServiceImpl implements MessageService {
     public Page<MessageVO> getChatHistory(Long userId, Long friendId, Integer page, Integer size) {
         int offset = (page - 1) * size;
         List<Message> messages = messageMapper.findChatHistory(userId, friendId, offset, size);
-
-        // 获取总记录数
         Long total = messageMapper.countChatHistory(userId, friendId);
 
         User friend = userMapper.selectById(friendId);
@@ -46,6 +45,23 @@ public class MessageServiceImpl implements MessageService {
                     User fromUser = userMapper.selectById(msg.getFromUserId());
                     String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
                     String fromUserAvatar = fromUser != null ? fromUser.getAvatar() : null;
+
+                    String content = msg.getContent();
+                    Integer duration = null;
+
+                    // 解析语音消息的时长
+                    if (msg.getMessageType() == 4 && content != null && content.contains("|")) {
+                        String[] parts = content.split("\\|");
+                        content = parts[0];
+                        if (parts.length > 1) {
+                            try {
+                                duration = Integer.parseInt(parts[1]);
+                            } catch (NumberFormatException e) {
+                                duration = null;
+                            }
+                        }
+                    }
+
                     return MessageVO.builder()
                             .id(msg.getId())
                             .fromUserId(msg.getFromUserId())
@@ -55,7 +71,8 @@ public class MessageServiceImpl implements MessageService {
                             .toUserNickname(msg.getToUserId().equals(userId) ?
                                     currentUser.getNickname() : friend.getNickname())
                             .messageType(msg.getMessageType())
-                            .content(msg.getRecallTime() != null ? "对方撤回了一条消息" : msg.getContent())
+                            .content(content)
+                            .duration(duration)
                             .isRead(msg.getIsRead() == 1)
                             .isRecalled(msg.getRecallTime() != null)
                             .sendTime(msg.getSendTime())
@@ -71,8 +88,6 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<MessageVO> downloadChatHistory(Long userId, Long friendId, Integer limit) {
-        log.info("downloadChatHistory: userId={}, friendId={}, limit={}", userId, friendId, limit);
-
         if (limit == null || limit <= 0) {
             limit = MessageConstants.DEFAULT_DOWNLOAD_SIZE;
         }
@@ -81,17 +96,23 @@ public class MessageServiceImpl implements MessageService {
         }
 
         List<Message> messages = messageMapper.findChatHistory(userId, friendId, 0, limit);
-        log.info("查询到消息数量: {}", messages.size());
 
         return messages.stream()
                 .map(msg -> {
                     User fromUser = userMapper.selectById(msg.getFromUserId());
                     String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
+
+                    String content = msg.getContent();
+                    // 下载时去掉时长标记
+                    if (msg.getMessageType() == 4 && content != null && content.contains("|")) {
+                        content = content.split("\\|")[0];
+                    }
+
                     return MessageVO.builder()
                             .id(msg.getId())
                             .fromUserId(msg.getFromUserId())
                             .fromUserNickname(fromUserNickname)
-                            .content(msg.getRecallTime() != null ? "对方撤回了一条消息" : msg.getContent())
+                            .content(content)
                             .sendTime(msg.getSendTime())
                             .build();
                 })
