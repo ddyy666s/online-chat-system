@@ -5,10 +5,8 @@ import cn.hutool.json.JSONUtil;
 import com.chat.chat_backend.common.constant.RedisConstants;
 import com.chat.chat_backend.common.utils.JwtUtil;
 import com.chat.chat_backend.common.utils.RedisUtil;
-import com.chat.chat_backend.mapper.MessageMapper;
-import com.chat.chat_backend.mapper.UserMapper;
-import com.chat.chat_backend.module.entity.Message;
-import com.chat.chat_backend.module.entity.User;
+import com.chat.chat_backend.mapper.*;
+import com.chat.chat_backend.module.entity.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,6 +18,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -32,6 +31,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final WebSocketSessionManager sessionManager;
     private final MessageMapper messageMapper;
     private final UserMapper userMapper;
+    private final GroupMessageMapper groupMessageMapper;
+    private final GroupMemberMapper groupMemberMapper;
+    private final GroupMapper groupMapper;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
@@ -70,27 +72,23 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
         if ("message".equals(type)) {
             handleChatMessage(userId, json);
+        } else if ("group_message".equals(type)) {
+            handleGroupMessage(userId, json);
         } else if ("ping".equals(type)) {
             session.sendMessage(new TextMessage("{\"type\":\"pong\"}"));
         }
     }
 
+    // 单聊消息处理
     private void handleChatMessage(Long fromUserId, JSONObject json) {
         Long toUserId = json.getLong("toUserId");
         String content = json.getStr("content");
         Integer messageType = json.getInt("messageType", 1);
 
-        // 参数校验
-        if (toUserId == null) {
-            log.error("发送消息失败：toUserId为空");
+        if (toUserId == null || content == null || content.trim().isEmpty()) {
+            log.error("消息参数错误");
             return;
         }
-        if (content == null || content.trim().isEmpty()) {
-            log.error("发送消息失败：content为空");
-            return;
-        }
-
-        log.info("处理消息: from={}, to={}, content={}", fromUserId, toUserId, content);
 
         // 保存消息到数据库
         Message msg = new Message();
@@ -100,14 +98,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         msg.setContent(content);
         msg.setIsRead(0);
         msg.setSendTime(LocalDateTime.now());
-
-        try {
-            messageMapper.insert(msg);
-            log.info("消息已保存到数据库: id={}", msg.getId());
-        } catch (Exception e) {
-            log.error("保存消息失败: {}", e.getMessage());
-            return;
-        }
+        messageMapper.insert(msg);
+        log.info("消息已保存: id={}, from={}, to={}", msg.getId(), fromUserId, toUserId);
 
         // 增加Redis未读计数
         String unreadKey = RedisConstants.UNREAD_COUNT + toUserId;
@@ -117,7 +109,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         // 获取发送者信息
         User fromUser = userMapper.selectById(fromUserId);
         String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
-        String fromUserAvatar = fromUser != null ? fromUser.getAvatar() : null;
 
         // 构建消息体
         JSONObject response = JSONUtil.createObj()
@@ -125,7 +116,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 .set("messageId", msg.getId())
                 .set("fromUserId", fromUserId)
                 .set("fromUserNickname", fromUserNickname)
-                .set("fromUserAvatar", fromUserAvatar)
                 .set("content", content)
                 .set("messageType", messageType)
                 .set("sendTime", msg.getSendTime().toString());
@@ -136,6 +126,72 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             log.info("消息已推送给用户 {}", toUserId);
         } else {
             log.info("用户 {} 不在线，消息已保存为未读", toUserId);
+        }
+    }
+
+    // 群聊消息处理
+    private void handleGroupMessage(Long fromUserId, JSONObject json) {
+        Long groupId = json.getLong("groupId");
+        String content = json.getStr("content");
+        Integer messageType = json.getInt("messageType", 1);
+
+        if (groupId == null || content == null || content.trim().isEmpty()) {
+            log.error("群消息参数错误");
+            return;
+        }
+
+        // 检查群是否存在且用户是群成员
+        Group group = groupMapper.selectById(groupId);
+        if (group == null) {
+            log.error("群聊不存在: groupId={}", groupId);
+            return;
+        }
+
+        List<GroupMember> members = groupMemberMapper.findByGroupId(groupId);
+        boolean isMember = members.stream().anyMatch(m -> m.getUserId().equals(fromUserId));
+        if (!isMember) {
+            log.error("用户 {} 不是群 {} 的成员", fromUserId, groupId);
+            return;
+        }
+
+        // 保存群消息
+        GroupMessage msg = new GroupMessage();
+        msg.setGroupId(groupId);
+        msg.setFromUserId(fromUserId);
+        msg.setMessageType(messageType);
+        msg.setContent(content);
+        msg.setSendTime(LocalDateTime.now());
+        groupMessageMapper.insert(msg);
+        log.info("群消息已保存: id={}, groupId={}, from={}", msg.getId(), groupId, fromUserId);
+
+        // 增加所有群成员的未读计数（发送者除外）
+        groupMemberMapper.incrementUnreadCount(groupId, fromUserId);
+
+        // 获取发送者信息
+        User fromUser = userMapper.selectById(fromUserId);
+        String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
+
+        // 构建消息体
+        JSONObject response = JSONUtil.createObj()
+                .set("type", "group_message")
+                .set("messageId", msg.getId())
+                .set("groupId", groupId)
+                .set("fromUserId", fromUserId)
+                .set("fromUserNickname", fromUserNickname)
+                .set("content", content)
+                .set("messageType", messageType)
+                .set("sendTime", msg.getSendTime().toString());
+
+        String responseStr = response.toString();
+
+        // 推送给群内所有在线成员（发送者除外）
+        for (GroupMember member : members) {
+            if (!member.getUserId().equals(fromUserId)) {
+                if (sessionManager.isOnline(member.getUserId())) {
+                    sessionManager.sendMessage(member.getUserId(), responseStr);
+                    log.info("群消息已推送给用户 {}", member.getUserId());
+                }
+            }
         }
     }
 

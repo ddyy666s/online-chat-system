@@ -1,13 +1,17 @@
 <template>
   <div class="main-layout">
-    <Sidebar @select-chat="handleSelectChat" />
+    <Sidebar @select-chat="handleSelectChat" @select-group="handleSelectGroup" />
     <div class="right-panel">
       <Header />
       <div class="content">
-        <ChatWindow v-if="currentChatUser && currentChatUser.userId" :friend="currentChatUser"
+        <!-- 单聊窗口 -->
+        <ChatWindow v-if="currentChatUser && currentChatUser.userId && !currentGroup" :friend="currentChatUser"
           :key="currentChatUser.userId" />
+        <!-- 群聊窗口 -->
+        <GroupChatWindow v-else-if="currentGroup" :group="currentGroup" :key="currentGroup.id"
+          @update:list="refreshGroupList" />
         <div v-else class="empty-chat">
-          <el-empty description="选择好友开始聊天" />
+          <el-empty description="选择好友或群聊开始聊天" />
         </div>
       </div>
     </div>
@@ -15,45 +19,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Sidebar from './Sidebar.vue'
 import Header from './Header.vue'
 import ChatWindow from '@/components/ChatWindow.vue'
-import { useFriendStore } from '@/stores/friendStore'
+import GroupChatWindow from '@/components/GroupChatWindow.vue'
 
 const route = useRoute()
 const router = useRouter()
-const friendStore = useFriendStore()
 const currentChatUser = ref<any>(null)
+const currentGroup = ref<any>(null)
 
-// 根据 friendId 获取好友信息
-const loadFriendById = async (friendId: number) => {
-  // 确保好友列表已加载
-  if (friendStore.friendList.length === 0) {
-    await friendStore.loadFriendList()
-  }
-  const friend = friendStore.getFriendById(friendId)
-  if (friend) {
-    currentChatUser.value = friend
-  } else {
-    // 如果找不到，创建一个临时对象
-    currentChatUser.value = { userId: friendId, nickname: '好友' }
-  }
+const handleSelectChat = (friend: any) => {
+  currentGroup.value = null
+  currentChatUser.value = friend
 }
 
-// 监听路由参数变化
-watch(() => route.query.friendId, (newFriendId) => {
-  if (newFriendId) {
-    loadFriendById(Number(newFriendId))
-  }
-}, { immediate: true })
+const handleSelectGroup = (group: any) => {
+  currentChatUser.value = null
+  currentGroup.value = group
+}
 
-// 从侧边栏选择好友
-const handleSelectChat = (friend: any) => {
-  currentChatUser.value = friend
-  // 清除 URL 中的 friendId 参数（可选）
-  router.push('/')
+const refreshGroupList = () => {
+  // 刷新群聊列表（由 Sidebar 自己处理）
 }
 </script>
 

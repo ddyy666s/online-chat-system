@@ -10,6 +10,7 @@ class WebSocketService {
   private heartbeatTimer: number | null = null
   private messageCallbacks: MessageCallback[] = []
   private statusCallbacks: MessageCallback[] = []
+  private groupMessageCallbacks: MessageCallback[] = []
   
   connect() {
     const userStore = useUserStore()
@@ -38,8 +39,10 @@ class WebSocketService {
         this.messageCallbacks.forEach(cb => cb(data))
       } else if (data.type === 'status') {
         this.statusCallbacks.forEach(cb => cb(data))
+      } else if (data.type === 'group_message') {
+        this.groupMessageCallbacks.forEach(cb => cb(data))
       }
-    }
+  }
     
     this.ws.onclose = () => {
       console.log('WebSocket断开，尝试重连...')
@@ -100,6 +103,7 @@ class WebSocketService {
     this.statusCallbacks.push(callback)
   }
   
+  
   disconnect() {
     this.stopHeartbeat()
     if (this.ws) {
@@ -107,6 +111,22 @@ class WebSocketService {
       this.ws = null
     }
   }
+  sendGroupMessage(groupId: number, content: string, messageType: number = 1) {
+  if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    this.ws.send(JSON.stringify({
+      type: 'group_message',
+      groupId: groupId,
+      content: content,
+      messageType: messageType
+    }))
+  } else {
+    console.warn('WebSocket未连接')
+  }
+}
+
+onGroupMessage(callback: MessageCallback) {
+  this.groupMessageCallbacks.push(callback)
+}
 }
 
 export const websocketService = new WebSocketService()
