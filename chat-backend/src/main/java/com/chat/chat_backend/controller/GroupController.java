@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -102,5 +103,27 @@ public class GroupController {
                     .build();
         }).collect(Collectors.toList());
         return Result.success(result);
+    }
+    /**
+     * 清除群未读消息计数
+     */
+    @PutMapping("/{groupId}/read")
+    public Result<Void> clearUnreadCount(HttpServletRequest request, @PathVariable Long groupId) {
+        Long userId = (Long) request.getAttribute("userId");
+        groupService.clearUnreadCount(userId, groupId);
+        return Result.success("已清除未读", null);
+    }
+
+    /**
+     * 更新群公告（仅群主和管理员）
+     */
+    @PutMapping("/{groupId}/notice")
+    public Result<Void> updateNotice(HttpServletRequest request,
+                                     @PathVariable Long groupId,
+                                     @RequestBody Map<String, String> body) {
+        Long userId = (Long) request.getAttribute("userId");
+        String notice = body.get("notice");
+        groupService.updateNotice(userId, groupId, notice);
+        return Result.success("群公告已更新", null);
     }
 }

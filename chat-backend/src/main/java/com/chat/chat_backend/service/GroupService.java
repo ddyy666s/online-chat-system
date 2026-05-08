@@ -24,4 +24,8 @@ public interface GroupService {
     
     // 解散群聊（仅群主）
     void disbandGroup(Long userId, Long groupId);
+
+    void clearUnreadCount(Long userId, Long groupId);
+
+    void updateNotice(Long userId, Long groupId, String notice);
 }

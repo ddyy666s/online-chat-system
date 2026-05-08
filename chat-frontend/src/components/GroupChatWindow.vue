@@ -16,7 +16,9 @@
           <el-button :icon="Setting" circle text />
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="notice">群公告</el-dropdown-item>
+              <!-- 群主和管理员可以编辑公告 -->
+              <el-dropdown-item command="notice" v-if="canEditNotice">编辑公告</el-dropdown-item>
+              <el-dropdown-item command="viewNotice" v-else>群公告</el-dropdown-item>
               <el-dropdown-item command="members">群成员</el-dropdown-item>
               <el-dropdown-item command="invite">邀请好友</el-dropdown-item>
               <el-dropdown-item command="quit" divided v-if="!isOwner">退出群聊</el-dropdown-item>
@@ -25,6 +27,15 @@
           </template>
         </el-dropdown>
       </div>
+    </div>
+
+    <!-- 群公告显示栏（如果有公告） -->
+    <div class="notice-bar" v-if="group?.notice" @click="showNoticeDialog = true">
+      <el-icon>
+        <InfoFilled />
+      </el-icon>
+      <span class="notice-text">{{ group.notice }}</span>
+      <el-button text size="small">详情</el-button>
     </div>
 
     <!-- 消息列表 -->
@@ -48,7 +59,6 @@
       <div v-if="loading" class="loading">
         <el-skeleton :rows="2" animated />
       </div>
-
       <div ref="scrollBottomRef"></div>
     </div>
 
@@ -57,15 +67,23 @@
       <el-input v-model="inputContent" type="textarea" :rows="3" placeholder="请输入群消息..."
         @keyup.ctrl.enter="sendMessage" />
       <div class="input-actions">
-        <el-button type="primary" @click="sendMessage">
-          发送 (Ctrl+Enter)
-        </el-button>
+        <el-button type="primary" @click="sendMessage">发送 (Ctrl+Enter)</el-button>
       </div>
     </div>
 
-    <!-- 群公告弹窗 -->
-    <el-dialog v-model="showNotice" title="群公告" width="400px">
+    <!-- 查看公告弹窗 -->
+    <el-dialog v-model="showNoticeDialog" title="群公告" width="400px">
       <p>{{ group?.notice || '暂无群公告' }}</p>
+    </el-dialog>
+
+    <!-- 编辑公告弹窗（群主/管理员） -->
+    <el-dialog v-model="showEditNoticeDialog" title="编辑群公告" width="400px">
+      <el-input v-model="editNoticeContent" type="textarea" :rows="4" placeholder="请输入群公告" maxlength="200"
+        show-word-limit />
+      <template #footer>
+        <el-button @click="showEditNoticeDialog = false">取消</el-button>
+        <el-button type="primary" :loading="updatingNotice" @click="handleUpdateNotice">保存</el-button>
+      </template>
     </el-dialog>
 
     <!-- 群成员弹窗 -->
@@ -97,15 +115,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Setting } from '@element-plus/icons-vue'
+import { Setting, InfoFilled } from '@element-plus/icons-vue'
 import {
   getGroupHistoryApi,
   quitGroupApi,
   disbandGroupApi,
   inviteMemberApi,
   getGroupMembersApi,
+  clearGroupUnreadApi,
+  updateGroupNoticeApi,
   type GroupVO,
   type GroupMessageVO,
   type GroupMemberVO
@@ -119,11 +139,17 @@ const props = defineProps<{
   group: GroupVO | null
 }>()
 
-const emit = defineEmits(['update:list'])
+const emit = defineEmits(['update:list', 'updateUnreadCount'])
 
 const userStore = useUserStore()
 const currentUserId = userStore.userInfo?.id
 const isOwner = computed(() => props.group?.ownerId === currentUserId)
+
+// 判断是否可以编辑公告（群主或管理员）
+const canEditNotice = computed(() => {
+  const member = memberList.value.find(m => m.userId === currentUserId)
+  return isOwner.value || member?.role === 1
+})
 
 const messages = ref<GroupMessageVO[]>([])
 const inputContent = ref('')
@@ -133,7 +159,11 @@ const hasMore = ref(true)
 const scrollBottomRef = ref<HTMLElement>()
 const messageListRef = ref<HTMLElement>()
 
-const showNotice = ref(false)
+// 弹窗状态
+const showNoticeDialog = ref(false)
+const showEditNoticeDialog = ref(false)
+const editNoticeContent = ref('')
+const updatingNotice = ref(false)
 const showMembers = ref(false)
 const showInvite = ref(false)
 const memberList = ref<GroupMemberVO[]>([])
@@ -143,13 +173,7 @@ const selectedFriendId = ref<number | null>(null)
 // 加载历史消息
 const loadHistory = async (reset = true) => {
   if (!props.group?.id) return
-
-  if (reset) {
-    page.value = 1
-    hasMore.value = true
-    messages.value = []
-  }
-
+  if (reset) { page.value = 1; hasMore.value = true; messages.value = [] }
   if (!hasMore.value) return
 
   loading.value = true
@@ -159,11 +183,7 @@ const loadHistory = async (reset = true) => {
     messages.value = [...newMessages, ...messages.value]
     hasMore.value = res.records.length > 0
     page.value++
-
-    if (reset) {
-      await nextTick()
-      scrollBottomRef.value?.scrollIntoView({ behavior: 'auto' })
-    }
+    if (reset) { await nextTick(); scrollBottomRef.value?.scrollIntoView({ behavior: 'auto' }) }
   } catch (error) {
     console.error(error)
   } finally {
@@ -171,16 +191,20 @@ const loadHistory = async (reset = true) => {
   }
 }
 
+// 清除未读计数
+const clearUnreadCount = async (groupId: number) => {
+  try {
+    await clearGroupUnreadApi(groupId)
+    emit('updateUnreadCount', groupId)
+  } catch (error) {
+    console.error('清除未读失败', error)
+  }
+}
+
 // 发送消息
 const sendMessage = () => {
-  if (!inputContent.value.trim()) {
-    ElMessage.warning('请输入消息内容')
-    return
-  }
-  if (!props.group?.id) {
-    ElMessage.warning('群聊信息有误')
-    return
-  }
+  if (!inputContent.value.trim()) return ElMessage.warning('请输入消息内容')
+  if (!props.group?.id) return ElMessage.warning('群聊信息有误')
 
   const content = inputContent.value
   const tempMsg: GroupMessageVO = {
@@ -188,7 +212,7 @@ const sendMessage = () => {
     groupId: props.group.id,
     fromUserId: currentUserId!,
     fromUserNickname: userStore.userInfo?.nickname || '我',
-    fromUserAvatar: userStore.userInfo?.avatar ?? null,  // 关键修复
+    fromUserAvatar: userStore.userInfo?.avatar ?? null,
     content: content,
     messageType: 1,
     sendTime: new Date().toISOString()
@@ -196,16 +220,10 @@ const sendMessage = () => {
 
   messages.value.push(tempMsg)
   inputContent.value = ''
-
-  nextTick(() => {
-    scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' })
-  })
-
-  // 发送 WebSocket 消息
+  nextTick(() => scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' }))
   websocketService.sendGroupMessage(props.group.id, content)
 }
 
-// 接收群消息
 // 接收群消息
 const onGroupMessage = (data: any) => {
   if (props.group && data.groupId === props.group.id) {
@@ -214,15 +232,13 @@ const onGroupMessage = (data: any) => {
       groupId: data.groupId,
       fromUserId: data.fromUserId,
       fromUserNickname: data.fromUserNickname,
-      fromUserAvatar: data.fromUserAvatar ?? null,  // 添加 ?? null
+      fromUserAvatar: data.fromUserAvatar ?? null,
       content: data.content,
       messageType: data.messageType,
       sendTime: data.sendTime
     }
     messages.value.push(newMsg)
-    nextTick(() => {
-      scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' })
-    })
+    nextTick(() => scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' }))
   }
 }
 
@@ -234,21 +250,36 @@ const loadMembers = async () => {
     memberList.value = res
   } catch (error) {
     console.error('加载群成员失败', error)
-    ElMessage.error('加载群成员失败')
   }
 }
 
-// 加载好友列表（用于邀请）
+// 加载好友列表
 const loadFriendList = async () => {
   try {
     const res = await getFriendListApi()
     const friends: FriendVO[] = []
-    for (const group of res) {
-      friends.push(...group.friends)
-    }
+    for (const group of res) friends.push(...group.friends)
     friendList.value = friends
   } catch (error) {
     console.error('加载好友列表失败', error)
+  }
+}
+
+// 更新群公告
+const handleUpdateNotice = async () => {
+  if (!props.group?.id) return
+  updatingNotice.value = true
+  try {
+    await updateGroupNoticeApi(props.group.id, editNoticeContent.value)
+    props.group.notice = editNoticeContent.value
+    ElMessage.success('群公告已更新')
+    showEditNoticeDialog.value = false
+    emit('update:list')
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('更新失败')
+  } finally {
+    updatingNotice.value = false
   }
 }
 
@@ -257,7 +288,10 @@ const handleGroupCommand = async (command: string) => {
   if (!props.group) return
 
   if (command === 'notice') {
-    showNotice.value = true
+    editNoticeContent.value = props.group.notice || ''
+    showEditNoticeDialog.value = true
+  } else if (command === 'viewNotice') {
+    showNoticeDialog.value = true
   } else if (command === 'members') {
     await loadMembers()
     showMembers.value = true
@@ -279,12 +313,8 @@ const handleGroupCommand = async (command: string) => {
 
 // 邀请好友
 const handleInvite = async () => {
-  if (!selectedFriendId.value) {
-    ElMessage.warning('请选择好友')
-    return
-  }
+  if (!selectedFriendId.value) return ElMessage.warning('请选择好友')
   if (!props.group?.id) return
-
   try {
     await inviteMemberApi({ groupId: props.group.id, userId: selectedFriendId.value })
     ElMessage.success('邀请已发送')
@@ -300,16 +330,13 @@ const handleInvite = async () => {
 watch(() => props.group, (newGroup) => {
   if (newGroup?.id) {
     loadHistory(true)
+    clearUnreadCount(newGroup.id)
   }
 }, { immediate: true })
 
 // 注册 WebSocket 回调
 onMounted(() => {
   websocketService.onGroupMessage(onGroupMessage)
-})
-
-onUnmounted(() => {
-  // 清理回调（可选）
 })
 </script>
 
@@ -343,6 +370,26 @@ onUnmounted(() => {
 .group-detail .member-count {
   font-size: 12px;
   color: #909399;
+}
+
+/* 公告栏 */
+.notice-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fef0e6;
+  border-bottom: 1px solid #e4e7ed;
+  cursor: pointer;
+}
+
+.notice-bar .notice-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #e6a23c;
 }
 
 .message-list {

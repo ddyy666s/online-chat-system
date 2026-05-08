@@ -81,3 +81,13 @@ export const quitGroupApi = (groupId: number) => {
 export const disbandGroupApi = (groupId: number) => {
   return request.delete(`/group/${groupId}/disband`)
 }
+
+// 清除群未读计数
+export const clearGroupUnreadApi = (groupId: number) => {
+  return request.put(`/group/${groupId}/read`)
+}
+
+// 更新群公告
+export const updateGroupNoticeApi = (groupId: number, notice: string) => {
+  return request.put(`/group/${groupId}/notice`, { notice })
+}

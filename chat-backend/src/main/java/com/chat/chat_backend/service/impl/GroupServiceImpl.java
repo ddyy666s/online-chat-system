@@ -201,4 +201,31 @@ public class GroupServiceImpl implements GroupService {
         // 删除群聊
         groupMapper.deleteById(groupId);
     }
+
+    @Override
+    public void clearUnreadCount(Long userId, Long groupId) {
+        groupMemberMapper.clearUnreadCount(groupId, userId);
+    }
+
+    @Override
+    @Transactional
+    public void updateNotice(Long userId, Long groupId, String notice) {
+        Group group = groupMapper.selectById(groupId);
+        if (group == null) {
+            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "群聊不存在");
+        }
+
+        // 检查是否是群主或管理员
+        LambdaQueryWrapper<GroupMember> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(GroupMember::getGroupId, groupId)
+                .eq(GroupMember::getUserId, userId);
+        GroupMember member = groupMemberMapper.selectOne(wrapper);
+
+        if (member == null || (member.getRole() != 2 && member.getRole() != 1)) {
+            throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "无权限修改群公告");
+        }
+
+        group.setNotice(notice);
+        groupMapper.updateById(group);
+    }
 }
