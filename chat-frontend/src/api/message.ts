@@ -85,3 +85,21 @@ export const getUnreadCountApi = () => {
 export const recallMessageApi = (messageId: number) => {
   return request.put(`/message/recall/${messageId}`)
 }
+
+// 上传图片
+export const uploadImageApi = (file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post<any, string>('/message/upload/image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+// 上传语音
+export const uploadVoiceApi = (file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post<any, string>('/message/upload/voice', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

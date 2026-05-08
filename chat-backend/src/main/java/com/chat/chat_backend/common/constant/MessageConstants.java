@@ -22,4 +22,10 @@ public class MessageConstants {
 
     public static final String DOWNLOAD_FILE_PREFIX = "chat_";
     public static final String DOWNLOAD_FILE_EXTENSION = ".txt";
+
+    // ========== 消息类型 ==========
+     // 文件
+    public static final int MSG_TYPE_VOICE = 4;      // 语音
+    public static final int MSG_TYPE_VIDEO_CALL = 5; // 视频通话
+    public static final int MSG_TYPE_VOICE_CALL = 6; // 语音通话
 }
