@@ -36,18 +36,27 @@ public class MessageServiceImpl implements MessageService {
         User currentUser = userMapper.selectById(userId);
 
         List<MessageVO> voList = messages.stream()
-                .map(msg -> MessageVO.builder()
-                        .id(msg.getId())
-                        .fromUserId(msg.getFromUserId())
-                        .fromUserNickname(msg.getFromUserId().equals(userId) ?
-                                currentUser.getNickname() : friend.getNickname())
-                        .toUserId(msg.getToUserId())
-                        .messageType(msg.getMessageType())
-                        .content(msg.getRecallTime() != null ? "对方撤回了一条消息" : msg.getContent())
-                        .isRead(msg.getIsRead() == 1)
-                        .isRecalled(msg.getRecallTime() != null)
-                        .sendTime(msg.getSendTime())
-                        .build())
+                .map(msg -> {
+                    // 获取发送者信息（重要：需要获取头像）
+                    User fromUser = userMapper.selectById(msg.getFromUserId());
+                    String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
+                    String fromUserAvatar = fromUser != null ? fromUser.getAvatar() : null;
+
+                    return MessageVO.builder()
+                            .id(msg.getId())
+                            .fromUserId(msg.getFromUserId())
+                            .fromUserNickname(fromUserNickname)
+                            .fromUserAvatar(fromUserAvatar)  // 添加这一行
+                            .toUserId(msg.getToUserId())
+                            .toUserNickname(msg.getToUserId().equals(userId) ?
+                                    currentUser.getNickname() : friend.getNickname())
+                            .messageType(msg.getMessageType())
+                            .content(msg.getRecallTime() != null ? "对方撤回了一条消息" : msg.getContent())
+                            .isRead(msg.getIsRead() == 1)
+                            .isRecalled(msg.getRecallTime() != null)
+                            .sendTime(msg.getSendTime())
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         Page<MessageVO> pageResult = new Page<>(page, size);
@@ -63,14 +72,18 @@ public class MessageServiceImpl implements MessageService {
         User currentUser = userMapper.selectById(userId);
 
         return messages.stream()
-                .map(msg -> MessageVO.builder()
-                        .id(msg.getId())
-                        .fromUserId(msg.getFromUserId())
-                        .fromUserNickname(msg.getFromUserId().equals(userId) ?
-                                currentUser.getNickname() : friend.getNickname())
-                        .content(msg.getRecallTime() != null ? "对方撤回了一条消息" : msg.getContent())
-                        .sendTime(msg.getSendTime())
-                        .build())
+                .map(msg -> {
+                    User fromUser = userMapper.selectById(msg.getFromUserId());
+                    String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
+
+                    return MessageVO.builder()
+                            .id(msg.getId())
+                            .fromUserId(msg.getFromUserId())
+                            .fromUserNickname(fromUserNickname)
+                            .content(msg.getRecallTime() != null ? "对方撤回了一条消息" : msg.getContent())
+                            .sendTime(msg.getSendTime())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -95,6 +108,7 @@ public class MessageServiceImpl implements MessageService {
                     return UnreadCountVO.UnreadDetail.builder()
                             .friendId(g.from_user_id)
                             .friendNickname(friend != null ? friend.getNickname() : "未知用户")
+                            .friendAvatar(friend != null ? friend.getAvatar() : null)  // 添加这一行
                             .unreadCount(g.count)
                             .build();
                 })

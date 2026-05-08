@@ -30,7 +30,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void register(RegisterRequest request) {
-        // 检查用户名是否已存在
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, request.getUsername());
         User existUser = userMapper.selectOne(wrapper);
@@ -39,7 +38,6 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.USERNAME_EXISTS);
         }
 
-        // 创建新用户
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -54,7 +52,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        // 查询用户
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, request.getUsername());
         User user = userMapper.selectOne(wrapper);
@@ -63,12 +60,10 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
 
-        // 检查密码
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BusinessException(ResultCode.PASSWORD_ERROR);
         }
 
-        // 检查账号状态
         if (user.getStatus() != 1) {
             throw new BusinessException(ResultCode.USER_DISABLED);
         }
@@ -84,12 +79,12 @@ public class UserServiceImpl implements UserService {
         redisUtil.addToSet(RedisConstants.ONLINE_USERS, String.valueOf(user.getId()));
         redisUtil.expire(RedisConstants.ONLINE_USERS, RedisConstants.ONLINE_EXPIRE_SECONDS, TimeUnit.SECONDS);
 
-        // 构建响应
+        // 构建响应 - 确保包含 avatar
         UserInfoResponse userInfo = UserInfoResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .nickname(user.getNickname())
-                .avatar(user.getAvatar())
+                .avatar(user.getAvatar())  // 关键：必须包含 avatar
                 .signature(user.getSignature())
                 .role(user.getRole())
                 .build();
@@ -111,7 +106,7 @@ public class UserServiceImpl implements UserService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .nickname(user.getNickname())
-                .avatar(user.getAvatar())
+                .avatar(user.getAvatar())  // 关键：必须包含 avatar
                 .signature(user.getSignature())
                 .role(user.getRole())
                 .build();

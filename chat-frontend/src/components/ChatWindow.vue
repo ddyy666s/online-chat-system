@@ -2,7 +2,7 @@
   <div class="chat-window">
     <div class="chat-header">
       <div class="friend-info">
-        <el-avatar :size="40" :src="friend?.avatar || ''">
+        <el-avatar :size="40" :src="friend?.avatar">
           {{ friend?.nickname?.charAt(0) || 'U' }}
         </el-avatar>
         <div class="friend-detail">
@@ -20,12 +20,12 @@
     <div class="message-list" ref="messageListRef">
       <div v-for="msg in messages" :key="msg.id" class="message-item"
         :class="{ own: msg.fromUserId === currentUserId }">
-        <el-avatar :size="32" :src="msg.fromUserAvatar || ''">
-          {{ msg.fromUserNickname?.charAt(0) || 'U' }}
+        <el-avatar :size="32" :src="msg.fromUserAvatar">
+          {{ msg.fromUserNickname?.charAt(0) || '?' }}
         </el-avatar>
         <div class="message-content">
           <div class="message-info">
-            <span class="name">{{ msg.fromUserNickname }}</span>
+            <span class="name">{{ msg.fromUserNickname || '未知用户' }}</span>
             <span class="time">{{ formatRelativeTime(msg.sendTime) }}</span>
           </div>
           <div class="message-bubble">
@@ -79,8 +79,9 @@ const page = ref(1)
 const hasMore = ref(true)
 const scrollBottomRef = ref<HTMLElement>()
 
+// 加载历史消息
 const loadHistory = async (reset = true) => {
-  if (!props.friend || !props.friend.userId) {
+  if (!props.friend?.userId) {
     console.warn('loadHistory: friendId 无效', props.friend)
     return
   }
@@ -113,6 +114,7 @@ const loadHistory = async (reset = true) => {
   }
 }
 
+// 发送消息
 const sendMessage = () => {
   if (!inputContent.value.trim()) {
     ElMessage.warning('请输入消息内容')
@@ -128,6 +130,7 @@ const sendMessage = () => {
     id: Date.now(),
     fromUserId: currentUserId,
     fromUserNickname: userStore.userInfo?.nickname || '我',
+    fromUserAvatar: userStore.userInfo?.avatar,
     content: content,
     sendTime: new Date().toISOString(),
     isRecalled: false
@@ -145,6 +148,7 @@ const sendMessage = () => {
   websocketService.sendMessage(props.friend.userId, content)
 }
 
+// 下载聊天记录
 const downloadHistory = async () => {
   if (!props.friend) return
   try {
@@ -155,6 +159,7 @@ const downloadHistory = async () => {
   }
 }
 
+// 接收新消息
 const onNewMessage = (data: any) => {
   console.log('ChatWindow 收到WebSocket消息:', data)
 
@@ -163,15 +168,18 @@ const onNewMessage = (data: any) => {
     return
   }
 
+  // 只处理来自当前聊天对象的消息
   if (props.friend && data.fromUserId === props.friend.userId) {
-    messages.value.push({
+    const newMsg = {
       id: data.messageId,
       fromUserId: data.fromUserId,
       fromUserNickname: data.fromUserNickname,
+      fromUserAvatar: data.fromUserAvatar,
       content: data.content,
       sendTime: data.sendTime,
       isRecalled: false
-    })
+    }
+    messages.value.push(newMsg)
     nextTick(() => {
       scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' })
     })
@@ -179,6 +187,7 @@ const onNewMessage = (data: any) => {
   }
 }
 
+// 标记已读
 const markAsRead = async () => {
   if (!props.friend) return
   try {
@@ -189,14 +198,16 @@ const markAsRead = async () => {
   }
 }
 
+// 监听好友切换
 watch(() => props.friend, (newFriend) => {
   console.log('ChatWindow: friend 变化:', newFriend)
-  if (newFriend && newFriend.userId) {
+  if (newFriend?.userId) {
     loadHistory(true)
     markAsRead()
   }
 }, { immediate: true, deep: true })
 
+// 注册 WebSocket 回调
 onMounted(() => {
   websocketService.onMessage(onNewMessage)
   console.log('ChatWindow 已注册 WebSocket 消息回调')

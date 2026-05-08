@@ -11,7 +11,9 @@
 
       <el-dropdown @command="handleCommand">
         <div class="user-info">
-          <el-avatar :size="32" :src="userStore.userInfo?.avatar || defaultAvatar" />
+          <el-avatar :size="32" :src="userStore.userInfo?.avatar">
+            {{ userStore.userInfo?.nickname?.charAt(0) || 'U' }}
+          </el-avatar>
           <span>{{ userStore.userInfo?.nickname }}</span>
         </div>
         <template #dropdown>
@@ -23,10 +25,11 @@
       </el-dropdown>
     </div>
 
-    <!-- 消息盒子 -->
     <el-drawer v-model="showMessageBox" title="消息盒子" direction="rtl" size="400px">
       <div v-for="detail in messageStore.unreadCount.details" :key="detail.friendId" class="unread-item">
-        <el-avatar :size="40" :src="detail.friendAvatar || defaultAvatar" />
+        <el-avatar :size="40" :src="detail.friendAvatar">
+          {{ detail.friendNickname?.charAt(0) || 'U' }}
+        </el-avatar>
         <div class="info">
           <div class="name">{{ detail.friendNickname }}</div>
           <div class="message">{{ detail.unreadCount }} 条未读消息</div>
@@ -41,11 +44,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Bell } from '@element-plus/icons-vue'
-import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/userStore'
 import { useMessageStore } from '@/stores/messageStore'
-import defaultAvatar from '@/assets/images/default-avatar.png'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -54,17 +56,21 @@ const showMessageBox = ref(false)
 
 const handleCommand = async (command: string) => {
   if (command === 'logout') {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示')
+    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
     userStore.logout()
     router.push('/login')
   } else if (command === 'profile') {
-    // TODO: 打开个人资料弹窗
+    ElMessage.info('功能开发中')
   }
 }
 
 const jumpToChat = (friendId: number) => {
   showMessageBox.value = false
-  // TODO: 切换到该好友的聊天窗口
+  router.push(`/?friendId=${friendId}`)
 }
 </script>
 

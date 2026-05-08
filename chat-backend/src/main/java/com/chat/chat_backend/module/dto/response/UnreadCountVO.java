@@ -9,12 +9,13 @@ import java.util.List;
 public class UnreadCountVO {
     private Integer total;
     private List<UnreadDetail> details;
-    
+
     @Data
     @Builder
     public static class UnreadDetail {
         private Long friendId;
         private String friendNickname;
+        private String friendAvatar;
         private Integer unreadCount;
     }
 }
