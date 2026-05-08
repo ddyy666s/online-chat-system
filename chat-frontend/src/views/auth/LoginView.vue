@@ -58,21 +58,14 @@ const handleLogin = async () => {
   loading.value = true
   try {
     const res = await loginApi(form)
-    console.log('登录响应:', res)  // 调试：查看返回数据
+    console.log('登录响应:', res)
 
-    // 检查返回数据是否有效
-    if (!res || !res.token) {
-      throw new Error('登录响应数据异常')
-    }
-
+    // res 已经是 { token, user } 类型
     userStore.setToken(res.token)
     userStore.setUserInfo(res.user)
     ElMessage.success('登录成功')
 
-    // 延迟一下再跳转，确保状态已更新
-    await new Promise(resolve => setTimeout(resolve, 100))
     await router.push('/')
-
   } catch (error: any) {
     console.error('登录失败:', error)
     ElMessage.error(error?.message || '登录失败')

@@ -64,7 +64,7 @@ const handleCommand = async (command: string) => {
     userStore.logout()
     router.push('/login')
   } else if (command === 'profile') {
-    ElMessage.info('功能开发中')
+    router.push('/profile')
   }
 }
 

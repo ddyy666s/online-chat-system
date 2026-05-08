@@ -3,11 +3,13 @@ package com.chat.chat_backend.controller;
 import com.chat.chat_backend.common.result.Result;
 import com.chat.chat_backend.module.dto.request.LoginRequest;
 import com.chat.chat_backend.module.dto.request.RegisterRequest;
+import com.chat.chat_backend.module.dto.request.UpdateProfileRequest;
 import com.chat.chat_backend.module.dto.response.LoginResponse;
 import com.chat.chat_backend.module.dto.response.UserInfoResponse;
 import com.chat.chat_backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
@@ -34,5 +36,21 @@ public class UserController {
         Long userId = (Long) request.getAttribute("userId");
         UserInfoResponse response = userService.getUserInfo(userId);
         return Result.success(response);
+    }
+
+    @PutMapping("/profile")
+    public Result<UserInfoResponse> updateProfile(HttpServletRequest request,
+                                                  @RequestBody UpdateProfileRequest updateRequest) {
+        Long userId = (Long) request.getAttribute("userId");
+        UserInfoResponse response = userService.updateProfile(userId, updateRequest);
+        return Result.success(response);
+    }
+
+    @PostMapping("/avatar")
+    public Result<String> updateAvatar(HttpServletRequest request,
+                                       @RequestParam("file") MultipartFile file) {
+        Long userId = (Long) request.getAttribute("userId");
+        String avatarUrl = userService.updateAvatar(userId, file);
+        return Result.success(avatarUrl);
     }
 }

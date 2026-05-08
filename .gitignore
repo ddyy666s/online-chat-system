@@ -6,14 +6,35 @@
 # 后端
 **/target/
 **/application-dev.yaml
+**/application-dev.yml
 **/application-prod.yaml
+**/application-prod.yml
+*.log
 
 # 前端
 **/node_modules/
 **/dist/
+**/dist-ssr/
 **/.env.development
 **/.env.production
+**/.env.local
 
 # 系统文件
 .DS_Store
 Thumbs.db
+
+# 环境变量文件
+.env
+.env.*
+!.env.example
+
+# 编译产物
+**/*.class
+**/*.jar
+**/*.war
+
+# 日志
+logs/
+*.log
+
+chat-backend/.env

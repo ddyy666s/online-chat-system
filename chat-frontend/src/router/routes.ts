@@ -20,6 +20,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, title: '聊天' }
   },
   {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/profile/ProfileView.vue'),
+    meta: { requiresAuth: true, title: '个人资料' }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/admin/AdminView.vue'),

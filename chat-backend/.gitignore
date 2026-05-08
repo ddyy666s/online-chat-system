@@ -35,3 +35,7 @@ build/
 # 私有配置（不提交）
 **/application-dev.yaml
 **/application-prod.yaml
+
+# Environment variables
+chat-backend/.env
+.env
