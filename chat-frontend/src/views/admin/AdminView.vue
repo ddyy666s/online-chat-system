@@ -1,6 +1,10 @@
 <template>
   <div class="admin-view">
-    <h2>管理后台</h2>
+    <div class="admin-header">
+      <el-button :icon="ArrowLeft" @click="goBack">返回聊天</el-button>
+      <h2>管理后台</h2>
+      <div></div>
+    </div>
 
     <!-- 统计卡片 -->
     <div class="stats-cards">
@@ -102,7 +106,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import {
   getAdminUsersApi,
   updateUserStatusApi,
@@ -112,6 +118,12 @@ import {
   StatisticsVO
 } from '@/api/admin'
 import { formatDate } from '@/utils/date'
+
+const router = useRouter()
+
+const goBack = () => {
+  router.push('/')
+}
 
 const stats = ref<StatisticsVO>({
   totalUsers: 0,
@@ -191,6 +203,17 @@ onMounted(() => {
   padding: 20px;
   background: #f5f5f5;
   min-height: 100%;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.admin-header h2 {
+  margin: 0;
 }
 
 .stats-cards {
