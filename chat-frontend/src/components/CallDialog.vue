@@ -6,7 +6,7 @@
         <video ref="remoteVideoRef" autoplay playsinline class="video-element"></video>
         <div class="remote-placeholder" v-if="!isConnected">
           <el-avatar :size="100" :src="targetUser?.avatar || ''">{{ targetUser?.nickname?.charAt(0) || 'U'
-            }}</el-avatar>
+          }}</el-avatar>
           <div class="status-text">{{ callStatusText }}</div>
         </div>
       </div>
@@ -100,27 +100,30 @@ const createPeerConnection = async () => {
   peerConnection.onconnectionstatechange = () => {
     if (peerConnection?.connectionState === 'connected') {
       isConnected.value = true
+      ElMessage.success('通话已建立')
       if (durationTimer) clearInterval(durationTimer)
       durationTimer = setInterval(() => callDuration.value++, 1000) as unknown as number
     } else if (peerConnection?.connectionState === 'disconnected') {
+      ElMessage.info('通话已结束')
       hangupCall()
     }
   }
 }
-
-// 主动发起通话
+// 发起通话
 const startCall = async () => {
   const targetId = getTargetUserId()
   if (!targetId) {
-    console.error('目标用户ID不存在', props.targetUser)
     ElMessage.error('通话对象信息错误')
     hangupCall()
     return
   }
 
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: props.callType === 'video' })
-    if (localVideoRef.value) localVideoRef.value.srcObject = localStream
+    // 先请求权限
+    localStream = await requestMediaPermissions()
+    if (localVideoRef.value) {
+      localVideoRef.value.srcObject = localStream
+    }
     await createPeerConnection()
     const offer = await peerConnection!.createOffer()
     await peerConnection!.setLocalDescription(offer)
@@ -131,8 +134,7 @@ const startCall = async () => {
       sdp: offer.sdp
     })
   } catch (err) {
-    console.error('获取媒体设备失败', err)
-    ElMessage.error('无法获取摄像头/麦克风权限')
+    console.error('发起通话失败:', err)
     hangupCall()
   }
 }
@@ -141,15 +143,17 @@ const startCall = async () => {
 const acceptCall = async () => {
   const targetId = getTargetUserId()
   if (!targetId) {
-    console.error('目标用户ID不存在', props.targetUser)
     ElMessage.error('通话对象信息错误')
     hangupCall()
     return
   }
 
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: props.callType === 'video' })
-    if (localVideoRef.value) localVideoRef.value.srcObject = localStream
+    // 先请求权限
+    localStream = await requestMediaPermissions()
+    if (localVideoRef.value) {
+      localVideoRef.value.srcObject = localStream
+    }
     await createPeerConnection()
     const answer = await peerConnection!.createAnswer()
     await peerConnection!.setLocalDescription(answer)
@@ -160,8 +164,7 @@ const acceptCall = async () => {
       sdp: answer.sdp
     })
   } catch (err) {
-    console.error('获取媒体设备失败', err)
-    ElMessage.error('无法获取摄像头/麦克风权限')
+    console.error('接听通话失败:', err)
     hangupCall()
   }
 }
@@ -232,6 +235,28 @@ watch(() => props.modelValue, async (val) => {
 }, { immediate: true })
 
 onUnmounted(() => hangupCall())
+
+// 请求权限的通用方法
+const requestMediaPermissions = async () => {
+  try {
+    const constraints = {
+      audio: true,
+      video: props.callType === 'video'
+    }
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+    return stream
+  } catch (err: any) {
+    console.error('获取媒体设备失败:', err)
+    if (err.name === 'NotAllowedError') {
+      ElMessage.error('请允许摄像头/麦克风权限后重试')
+    } else if (err.name === 'NotFoundError') {
+      ElMessage.error('未检测到麦克风/摄像头设备')
+    } else {
+      ElMessage.error('无法获取摄像头/麦克风权限')
+    }
+    throw err
+  }
+}
 </script>
 
 <style scoped>
