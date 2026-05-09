@@ -3,6 +3,8 @@ spring:
     name: chat-backend
   profiles:
     active: dev
+  cache:
+    type: simple
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/chat_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
@@ -26,8 +28,10 @@ server:
   port: ${SERVER_PORT:8080}
 
 mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
   global-config:
     db-config:
       id-type: auto

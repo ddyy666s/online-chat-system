@@ -7,7 +7,8 @@ import com.chat.chat_backend.module.dto.request.SendFriendRequest;
 import com.chat.chat_backend.module.dto.response.FriendGroupVO;
 import com.chat.chat_backend.module.dto.response.FriendRequestVO;
 import com.chat.chat_backend.module.dto.response.FriendVO;
-import com.chat.chat_backend.service.FriendService;
+import com.chat.chat_backend.service.friend.FriendRelationService;
+import com.chat.chat_backend.service.friend.FriendRequestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -20,85 +21,57 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FriendController {
 
-    private final FriendService friendService;
+    private final FriendRelationService friendRelationService;
+    private final FriendRequestService friendRequestService;
 
     @GetMapping("/search")
     public Result<List<FriendVO>> searchUsers(HttpServletRequest request, @RequestParam String keyword) {
         Long userId = (Long) request.getAttribute("userId");
-        if (userId == null) {
-            return Result.error("用户未登录");
-        }
-        List<FriendVO> result = friendService.searchUsers(userId, keyword);
-        return Result.success(result);
+        return Result.success(friendRelationService.searchUsers(userId, keyword));
     }
 
     @PostMapping("/request")
-    public Result<Void> sendFriendRequest(HttpServletRequest request, @RequestBody SendFriendRequest sendRequest) {
+    public Result<Void> sendFriendRequest(HttpServletRequest request, @RequestBody SendFriendRequest req) {
         Long userId = (Long) request.getAttribute("userId");
-        if (userId == null) {
-            return Result.error("用户未登录");
-        }
-        friendService.sendFriendRequest(userId, sendRequest);
+        friendRequestService.sendFriendRequest(userId, req);
         return Result.success("好友申请已发送", null);
     }
 
     @GetMapping("/requests")
     public Result<List<FriendRequestVO>> getFriendRequests(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        if (userId == null) {
-            return Result.error("用户未登录");
-        }
-        List<FriendRequestVO> result = friendService.getFriendRequests(userId);
-        return Result.success(result);
+        return Result.success(friendRequestService.getFriendRequests(userId));
     }
 
     @PutMapping("/request/{requestId}")
     public Result<Void> handleFriendRequest(HttpServletRequest request,
                                             @PathVariable Long requestId,
-                                            @RequestBody HandleFriendRequest handleRequest) {
+                                            @RequestBody HandleFriendRequest req) {
         Long userId = (Long) request.getAttribute("userId");
-        if (userId == null) {
-            return Result.error("用户未登录");
-        }
-        friendService.handleFriendRequest(userId, requestId, handleRequest);
-        String message = handleRequest.getStatus() == 1 ? "已同意好友申请" : "已拒绝好友申请";
-        return Result.success(message, null);
+        friendRequestService.handleFriendRequest(userId, requestId, req);
+        String msg = req.getStatus() == 1 ? "已同意" : "已拒绝";
+        return Result.success(msg, null);
     }
 
     @GetMapping("/list")
     public Result<List<FriendGroupVO>> getFriendList(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        log.info("getFriendList - userId from request: {}", userId);
-
-        if (userId == null) {
-            log.warn("getFriendList - userId is null");
-            return Result.error("用户未登录");
-        }
-
-        List<FriendGroupVO> result = friendService.getFriendList(userId);
-        log.info("getFriendList - result size: {}", result != null ? result.size() : 0);
-        return Result.success(result);
+        return Result.success(friendRelationService.getFriendList(userId));
     }
 
     @DeleteMapping("/{friendId}")
     public Result<Void> deleteFriend(HttpServletRequest request, @PathVariable Long friendId) {
         Long userId = (Long) request.getAttribute("userId");
-        if (userId == null) {
-            return Result.error("用户未登录");
-        }
-        friendService.deleteFriend(userId, friendId);
+        friendRelationService.deleteFriend(userId, friendId);
         return Result.success("删除成功", null);
     }
 
     @PutMapping("/{friendId}/group")
     public Result<Void> moveFriendGroup(HttpServletRequest request,
                                         @PathVariable Long friendId,
-                                        @RequestBody MoveFriendGroupRequest moveRequest) {
+                                        @RequestBody MoveFriendGroupRequest req) {
         Long userId = (Long) request.getAttribute("userId");
-        if (userId == null) {
-            return Result.error("用户未登录");
-        }
-        friendService.moveFriendGroup(userId, friendId, moveRequest);
+        friendRelationService.moveFriendGroup(userId, friendId, req);
         return Result.success("移动成功", null);
     }
 
@@ -107,10 +80,7 @@ public class FriendController {
                                            @PathVariable Long friendId,
                                            @RequestParam String remark) {
         Long userId = (Long) request.getAttribute("userId");
-        if (userId == null) {
-            return Result.error("用户未登录");
-        }
-        friendService.updateFriendRemark(userId, friendId, remark);
+        friendRelationService.updateFriendRemark(userId, friendId, remark);
         return Result.success("修改成功", null);
     }
 }

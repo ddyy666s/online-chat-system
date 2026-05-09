@@ -15,9 +15,12 @@ import com.chat.chat_backend.module.entity.Message;
 import com.chat.chat_backend.module.entity.User;
 import com.chat.chat_backend.service.AdminService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,9 +36,7 @@ public class AdminServiceImpl implements AdminService {
     public Page<UserManageVO> getUserList(Integer page, Integer size, String keyword) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(User::getUsername, keyword)
-                    .or()
-                    .like(User::getNickname, keyword);
+            wrapper.like(User::getUsername, keyword).or().like(User::getNickname, keyword);
         }
         wrapper.orderByDesc(User::getCreatedAt);
 
@@ -43,13 +44,8 @@ public class AdminServiceImpl implements AdminService {
 
         List<UserManageVO> records = userPage.getRecords().stream()
                 .map(user -> UserManageVO.builder()
-                        .id(user.getId())
-                        .username(user.getUsername())
-                        .nickname(user.getNickname())
-                        .role(user.getRole())
-                        .status(user.getStatus())
-                        .createdAt(user.getCreatedAt())
-                        .build())
+                        .id(user.getId()).username(user.getUsername()).nickname(user.getNickname())
+                        .role(user.getRole()).status(user.getStatus()).createdAt(user.getCreatedAt()).build())
                 .collect(Collectors.toList());
 
         Page<UserManageVO> result = new Page<>(page, size);
@@ -61,15 +57,10 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void updateUserStatus(Long userId, Integer status) {
         User user = userMapper.selectById(userId);
-        if (user == null) {
-            throw new BusinessException(ResultCode.USER_NOT_FOUND);
-        }
-
-        // 不能禁用管理员自己
+        if (user == null) throw new BusinessException(ResultCode.USER_NOT_FOUND);
         if ("admin".equals(user.getRole()) && status == 0) {
             throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "不能禁用管理员账号");
         }
-
         user.setStatus(status);
         userMapper.updateById(user);
     }
@@ -79,12 +70,8 @@ public class AdminServiceImpl implements AdminService {
                                                Long fromUserId, Long toUserId,
                                                String startTime, String endTime) {
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
-        if (fromUserId != null) {
-            wrapper.eq(Message::getFromUserId, fromUserId);
-        }
-        if (toUserId != null) {
-            wrapper.eq(Message::getToUserId, toUserId);
-        }
+        if (fromUserId != null) wrapper.eq(Message::getFromUserId, fromUserId);
+        if (toUserId != null) wrapper.eq(Message::getToUserId, toUserId);
         if (startTime != null && !startTime.isEmpty()) {
             wrapper.ge(Message::getSendTime, LocalDateTime.parse(startTime + "T00:00:00"));
         }
@@ -95,17 +82,16 @@ public class AdminServiceImpl implements AdminService {
 
         Page<Message> msgPage = messageMapper.selectPage(new Page<>(page, size), wrapper);
 
-        // 获取用户信息（简化版，实际可用缓存）
         List<MessageAuditVO> records = msgPage.getRecords().stream()
                 .map(msg -> {
-                    User fromUser = userMapper.selectById(msg.getFromUserId());
-                    User toUser = userMapper.selectById(msg.getToUserId());
+                    User from = userMapper.selectById(msg.getFromUserId());
+                    User to = userMapper.selectById(msg.getToUserId());
                     return MessageAuditVO.builder()
                             .id(msg.getId())
                             .fromUserId(msg.getFromUserId())
-                            .fromUserNickname(fromUser != null ? fromUser.getNickname() : "未知")
+                            .fromUserNickname(from != null ? from.getNickname() : "未知")
                             .toUserId(msg.getToUserId())
-                            .toUserNickname(toUser != null ? toUser.getNickname() : "未知")
+                            .toUserNickname(to != null ? to.getNickname() : "未知")
                             .content(msg.getRecallTime() != null ? "[已撤回]" : msg.getContent())
                             .sendTime(msg.getSendTime())
                             .build();
@@ -120,28 +106,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public StatisticsVO getStatistics() {
-        // 总用户数
-        Long totalUsers = userMapper.selectCount(null);
-
-        // 今日活跃用户（最后登录时间在今天）
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-        LambdaQueryWrapper<User> activeWrapper = new LambdaQueryWrapper<>();
-        activeWrapper.ge(User::getLastLoginTime, todayStart);
-        Long todayActiveUsers = userMapper.selectCount(activeWrapper);
-
-        // 今日消息总数
-        LambdaQueryWrapper<Message> msgWrapper = new LambdaQueryWrapper<>();
-        msgWrapper.ge(Message::getSendTime, todayStart);
-        Long todayMessages = messageMapper.selectCount(msgWrapper);
-
-        // 在线用户数
-        Integer onlineUsers = redisUtil.getSetMembers(RedisConstants.ONLINE_USERS).size();
-
         return StatisticsVO.builder()
-                .totalUsers(totalUsers)
-                .todayActiveUsers(todayActiveUsers)
-                .todayMessages(todayMessages)
-                .onlineUsers(onlineUsers)
+                .totalUsers(userMapper.selectCount(null))
+                .todayActiveUsers(userMapper.selectCount(new LambdaQueryWrapper<User>().ge(User::getLastLoginTime, todayStart)))
+                .todayMessages(messageMapper.selectCount(new LambdaQueryWrapper<Message>().ge(Message::getSendTime, todayStart)))
+                .onlineUsers(redisUtil.getSetMembers(RedisConstants.ONLINE_USERS).size())
                 .build();
     }
 }

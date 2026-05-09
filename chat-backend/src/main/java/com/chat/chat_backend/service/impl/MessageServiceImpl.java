@@ -10,6 +10,8 @@ import com.chat.chat_backend.mapper.MessageMapper;
 import com.chat.chat_backend.mapper.UserMapper;
 import com.chat.chat_backend.module.dto.response.MessageVO;
 import com.chat.chat_backend.module.dto.response.UnreadCountVO;
+import com.chat.chat_backend.module.dto.response.UnreadGroupDTO;
+import com.chat.chat_backend.module.dto.response.UnreadMessageDetailDTO;
 import com.chat.chat_backend.module.entity.Message;
 import com.chat.chat_backend.module.entity.User;
 import com.chat.chat_backend.service.MessageService;
@@ -129,10 +131,12 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public UnreadCountVO getUnreadCount(Long userId) {
         Integer total = messageMapper.countUnreadTotal(userId);
-        List<MessageMapper.UnreadGroup> groups = messageMapper.groupUnreadByFriend(userId);
+
+        // 使用新的 DTO 类
+        List<UnreadGroupDTO> groups = messageMapper.groupUnreadByFriend(userId);
 
         List<UnreadCountVO.UnreadDetail> details = new ArrayList<>();
-        for (MessageMapper.UnreadGroup group : groups) {
+        for (UnreadGroupDTO group : groups) {
             if (group.getFromUserId() == null) continue;
             User friend = userMapper.selectById(group.getFromUserId());
             if (friend != null) {
@@ -145,9 +149,10 @@ public class MessageServiceImpl implements MessageService {
             }
         }
 
+        // 使用新的 DTO 类
+        List<UnreadMessageDetailDTO> unreadMessages = messageMapper.findUnreadMessages(userId);
         List<UnreadCountVO.UnreadMessage> messages = new ArrayList<>();
-        List<MessageMapper.UnreadMessageDetail> unreadMessages = messageMapper.findUnreadMessages(userId);
-        for (MessageMapper.UnreadMessageDetail msg : unreadMessages) {
+        for (UnreadMessageDetailDTO msg : unreadMessages) {
             String content = msg.getContent();
             if (content.length() > 50) {
                 content = content.substring(0, 50) + "...";

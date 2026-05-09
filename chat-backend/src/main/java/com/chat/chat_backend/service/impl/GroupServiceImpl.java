@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -69,26 +70,28 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public List<GroupVO> getUserGroups(Long userId) {
         List<Group> groups = groupMapper.findGroupsByUserId(userId);
+        if (groups.isEmpty()) return new ArrayList<>();
+
+        // 一次查询所有群成员信息
+        List<Long> groupIds = groups.stream().map(Group::getId).collect(Collectors.toList());
+        LambdaQueryWrapper<GroupMember> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(GroupMember::getUserId, userId)
+                .in(GroupMember::getGroupId, groupIds);
+        List<GroupMember> members = groupMemberMapper.selectList(wrapper);
+        Map<Long, Integer> unreadMap = members.stream()
+                .collect(Collectors.toMap(GroupMember::getGroupId, GroupMember::getUnreadCount));
+
         return groups.stream()
-                .map(group -> {
-                    // 获取未读消息数
-                    LambdaQueryWrapper<GroupMember> wrapper = new LambdaQueryWrapper<>();
-                    wrapper.eq(GroupMember::getGroupId, group.getId())
-                           .eq(GroupMember::getUserId, userId);
-                    GroupMember member = groupMemberMapper.selectOne(wrapper);
-                    Integer unreadCount = member != null ? member.getUnreadCount() : 0;
-                    
-                    return GroupVO.builder()
-                            .id(group.getId())
-                            .name(group.getName())
-                            .avatar(group.getAvatar())
-                            .notice(group.getNotice())
-                            .ownerId(group.getOwnerId())
-                            .memberCount(group.getMemberCount())
-                            .unreadCount(unreadCount)
-                            .createdAt(group.getCreatedAt())
-                            .build();
-                })
+                .map(group -> GroupVO.builder()
+                        .id(group.getId())
+                        .name(group.getName())
+                        .avatar(group.getAvatar())
+                        .notice(group.getNotice())
+                        .ownerId(group.getOwnerId())
+                        .memberCount(group.getMemberCount())
+                        .unreadCount(unreadMap.getOrDefault(group.getId(), 0))
+                        .createdAt(group.getCreatedAt())
+                        .build())
                 .collect(Collectors.toList());
     }
 
