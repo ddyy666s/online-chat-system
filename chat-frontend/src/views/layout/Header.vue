@@ -1,7 +1,7 @@
 <template>
   <div class="header">
     <div class="logo">
-      <span>在线聊天系统</span>
+      <span>快来聊天吧</span>
     </div>
 
     <div class="actions">
