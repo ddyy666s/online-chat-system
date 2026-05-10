@@ -16,6 +16,7 @@ export interface MessageAuditVO {
   toUserNickname: string
   content: string
   sendTime: string
+  messageType: number
 }
 
 export interface StatisticsVO {
