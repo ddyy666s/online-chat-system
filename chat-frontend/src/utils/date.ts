@@ -24,3 +24,10 @@ export const formatRelativeTime = (date: string | Date): string => {
 export const isToday = (date: string | Date): boolean => {
   return dayjs(date).isSame(dayjs(), 'day')
 }
+
+// utils/date.ts 中添加
+export const formatDuration = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
