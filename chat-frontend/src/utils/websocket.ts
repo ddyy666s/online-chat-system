@@ -13,6 +13,7 @@ class WebSocketService {
   private groupMessageCallbacks: MessageCallback[] = []
   private callSignalCallbacks: MessageCallback[] = []
   
+  // 添加：检查连接状态
   isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN
   }
@@ -86,6 +87,7 @@ class WebSocketService {
     }
   }
   
+  // 发送单聊消息
   sendMessage(toUserId: number, content: string, messageType: number = 1, duration?: number) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const message: any = {
@@ -104,6 +106,7 @@ class WebSocketService {
     }
   }
   
+  // 发送群消息
   sendGroupMessage(groupId: number, content: string, messageType: number = 1) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({
@@ -117,6 +120,7 @@ class WebSocketService {
     }
   }
   
+  // 发送通话信令
   sendCallSignal(data: any) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       console.log('发送通话信令:', data)
@@ -126,6 +130,7 @@ class WebSocketService {
     }
   }
   
+  // 注册回调
   onMessage(callback: MessageCallback) {
     this.messageCallbacks.push(callback)
   }
@@ -150,5 +155,7 @@ class WebSocketService {
     }
   }
 }
+
+
 
 export const websocketService = new WebSocketService()
