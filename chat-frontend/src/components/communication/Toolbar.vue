@@ -1,0 +1,79 @@
+<template>
+  <div class="toolbar" v-show="isExpanded">
+    <div class="tool-item" @click="$emit('openImageUpload')">
+      <el-icon :size="24">
+        <Picture />
+      </el-icon>
+      <span>图片</span>
+    </div>
+    <div class="tool-item" @mousedown="$emit('startRecord')" @mouseup="$emit('stopRecord')"
+      @mouseleave="$emit('cancelRecord')">
+      <el-icon :size="24">
+        <Microphone />
+      </el-icon>
+      <span>语音</span>
+    </div>
+    <div class="tool-item" @click="$emit('startVoiceCall')">
+      <el-icon :size="24">
+        <Phone />
+      </el-icon>
+      <span>语音通话</span>
+    </div>
+    <div class="tool-item" @click="$emit('startVideoCall')">
+      <el-icon :size="24">
+        <VideoCamera />
+      </el-icon>
+      <span>视频通话</span>
+    </div>
+    <div class="tool-item" @click="$emit('openEmojiPicker')">
+      <div class="icon-text">😊</div>
+      <span>表情</span>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { Picture, Microphone, Phone, VideoCamera } from '@element-plus/icons-vue'
+
+defineProps<{
+  isExpanded: boolean
+}>()
+
+defineEmits<{
+  (e: 'openImageUpload'): void
+  (e: 'startRecord'): void
+  (e: 'stopRecord'): void
+  (e: 'cancelRecord'): void
+  (e: 'startVoiceCall'): void
+  (e: 'startVideoCall'): void
+  (e: 'openEmojiPicker'): void
+}>()
+</script>
+
+<style scoped>
+.toolbar {
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 16px;
+}
+
+.tool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: #606266;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.tool-item:hover {
+  color: #409eff;
+  background: #f0f7ff;
+}
+
+.icon-text {
+  font-size: 20px;
+}
+</style>

@@ -25,9 +25,17 @@ export const isToday = (date: string | Date): boolean => {
   return dayjs(date).isSame(dayjs(), 'day')
 }
 
-// utils/date.ts 中添加
-export const formatDuration = (seconds: number): string => {
+// 格式化语音时长（秒 -> mm:ss）
+export const formatVoiceDuration = (seconds?: number): string => {
+  if (!seconds || seconds <= 0) return '0:05'
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+// 通用时长格式化（别名，避免与 formatVoiceDuration 重复）
+export const formatDuration = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }

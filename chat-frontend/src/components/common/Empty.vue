@@ -21,13 +21,6 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  title?: string
-  description?: string
-  icon?: any
-  size?: number
-}>()
-
 withDefaults(defineProps<{
   title?: string
   description?: string
