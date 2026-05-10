@@ -24,8 +24,7 @@ public class RedisConfig {
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer =
-                new Jackson2JsonRedisSerializer<>(Object.class);
-        jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+                new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
 
         StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
 

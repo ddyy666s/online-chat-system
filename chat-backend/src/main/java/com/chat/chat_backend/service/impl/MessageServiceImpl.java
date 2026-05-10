@@ -10,8 +10,8 @@ import com.chat.chat_backend.mapper.MessageMapper;
 import com.chat.chat_backend.mapper.UserMapper;
 import com.chat.chat_backend.module.dto.response.MessageVO;
 import com.chat.chat_backend.module.dto.response.UnreadCountVO;
-import com.chat.chat_backend.module.dto.response.UnreadGroupDTO;
-import com.chat.chat_backend.module.dto.response.UnreadMessageDetailDTO;
+import com.chat.chat_backend.module.dto.response.UnreadGroupVO;
+import com.chat.chat_backend.module.dto.response.UnreadMessageDetailVO;
 import com.chat.chat_backend.module.entity.Message;
 import com.chat.chat_backend.module.entity.User;
 import com.chat.chat_backend.service.MessageService;
@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -133,10 +132,10 @@ public class MessageServiceImpl implements MessageService {
         Integer total = messageMapper.countUnreadTotal(userId);
 
         // 使用新的 DTO 类
-        List<UnreadGroupDTO> groups = messageMapper.groupUnreadByFriend(userId);
+        List<UnreadGroupVO> groups = messageMapper.groupUnreadByFriend(userId);
 
         List<UnreadCountVO.UnreadDetail> details = new ArrayList<>();
-        for (UnreadGroupDTO group : groups) {
+        for (UnreadGroupVO group : groups) {
             if (group.getFromUserId() == null) continue;
             User friend = userMapper.selectById(group.getFromUserId());
             if (friend != null) {
@@ -150,9 +149,9 @@ public class MessageServiceImpl implements MessageService {
         }
 
         // 使用新的 DTO 类
-        List<UnreadMessageDetailDTO> unreadMessages = messageMapper.findUnreadMessages(userId);
+        List<UnreadMessageDetailVO> unreadMessages = messageMapper.findUnreadMessages(userId);
         List<UnreadCountVO.UnreadMessage> messages = new ArrayList<>();
-        for (UnreadMessageDetailDTO msg : unreadMessages) {
+        for (UnreadMessageDetailVO msg : unreadMessages) {
             String content = msg.getContent();
             if (content.length() > 50) {
                 content = content.substring(0, 50) + "...";

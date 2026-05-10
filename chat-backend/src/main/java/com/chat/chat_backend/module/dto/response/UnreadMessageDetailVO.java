@@ -4,7 +4,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class UnreadMessageDetailDTO {
+public class UnreadMessageDetailVO {
     private Long id;
     private Long fromUserId;
     private String fromUserNickname;

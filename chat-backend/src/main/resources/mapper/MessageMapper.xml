@@ -4,12 +4,12 @@
 <mapper namespace="com.chat.chat_backend.mapper.MessageMapper">
 
     <!-- 结果映射 -->
-    <resultMap id="UnreadGroupResultMap" type="com.chat.chat_backend.module.dto.response.UnreadGroupDTO">
+    <resultMap id="UnreadGroupResultMap" type="com.chat.chat_backend.module.dto.response.UnreadGroupVO">
         <result property="fromUserId" column="fromUserId"/>
         <result property="count" column="count"/>
     </resultMap>
 
-    <resultMap id="UnreadMessageDetailResultMap" type="com.chat.chat_backend.module.dto.response.UnreadMessageDetailDTO">
+    <resultMap id="UnreadMessageDetailResultMap" type="com.chat.chat_backend.module.dto.response.UnreadMessageDetailVO">
         <id property="id" column="id"/>
         <result property="fromUserId" column="fromUserId"/>
         <result property="fromUserNickname" column="fromUserNickname"/>

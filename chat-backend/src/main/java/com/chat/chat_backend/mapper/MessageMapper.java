@@ -1,8 +1,8 @@
 package com.chat.chat_backend.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.chat.chat_backend.module.dto.response.UnreadGroupDTO;
-import com.chat.chat_backend.module.dto.response.UnreadMessageDetailDTO;
+import com.chat.chat_backend.module.dto.response.UnreadGroupVO;
+import com.chat.chat_backend.module.dto.response.UnreadMessageDetailVO;
 import com.chat.chat_backend.module.entity.Message;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,9 +21,9 @@ public interface MessageMapper extends BaseMapper<Message> {
 
     Integer countUnreadTotal(@Param("userId") Long userId);
 
-    List<UnreadGroupDTO> groupUnreadByFriend(@Param("userId") Long userId);
+    List<UnreadGroupVO> groupUnreadByFriend(@Param("userId") Long userId);
 
-    List<UnreadMessageDetailDTO> findUnreadMessages(@Param("userId") Long userId);
+    List<UnreadMessageDetailVO> findUnreadMessages(@Param("userId") Long userId);
 
     Integer markAsRead(@Param("userId") Long userId, @Param("friendId") Long friendId);
 
