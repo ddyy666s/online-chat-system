@@ -21,6 +21,7 @@ export const useWebRTC = (callType: 'voice' | 'video', targetUserId: number) => 
   }
 
   const createPeerConnection = async (onTrack: (stream: MediaStream) => void) => {
+    console.log('🔧 createPeerConnection, targetUserId:', targetUserId)
     peerConnection = new RTCPeerConnection(configuration)
     
     if (localStream) {
@@ -31,6 +32,7 @@ export const useWebRTC = (callType: 'voice' | 'video', targetUserId: number) => 
     
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log('📨 发送 ICE 候选')
         websocketService.sendCallSignal({
           action: 'ice-candidate',
           toUserId: targetUserId,
@@ -43,6 +45,7 @@ export const useWebRTC = (callType: 'voice' | 'video', targetUserId: number) => 
     }
     
     peerConnection.onconnectionstatechange = () => {
+      console.log('🔌 连接状态变化:', peerConnection?.connectionState)
       if (peerConnection?.connectionState === 'connected') {
         isConnected.value = true
         ElMessage.success('通话已建立')
@@ -57,11 +60,13 @@ export const useWebRTC = (callType: 'voice' | 'video', targetUserId: number) => 
   }
 
   const startLocalStream = async () => {
+    console.log('🎤 startLocalStream')
     localStream = await requestMediaPermissions()
     return localStream
   }
 
   const createOffer = async () => {
+    console.log('📞 createOffer, targetUserId:', targetUserId)
     const offer = await peerConnection!.createOffer()
     await peerConnection!.setLocalDescription(offer)
     websocketService.sendCallSignal({
@@ -73,6 +78,7 @@ export const useWebRTC = (callType: 'voice' | 'video', targetUserId: number) => 
   }
 
   const createAnswer = async () => {
+    console.log('📞 createAnswer, targetUserId:', targetUserId)
     const answer = await peerConnection!.createAnswer()
     await peerConnection!.setLocalDescription(answer)
     websocketService.sendCallSignal({
@@ -84,10 +90,12 @@ export const useWebRTC = (callType: 'voice' | 'video', targetUserId: number) => 
   }
 
   const setRemoteDescription = async (sdp: string, type: 'offer' | 'answer') => {
+    console.log('📨 setRemoteDescription, type:', type)
     await peerConnection!.setRemoteDescription(new RTCSessionDescription({ type, sdp }))
   }
 
   const addIceCandidate = async (candidate: string, sdpMid: string, sdpMLineIndex: number) => {
+    console.log('📨 addIceCandidate')
     await peerConnection?.addIceCandidate(new RTCIceCandidate({ candidate, sdpMid, sdpMLineIndex }))
   }
 
@@ -97,6 +105,7 @@ export const useWebRTC = (callType: 'voice' | 'video', targetUserId: number) => 
   }
 
   const hangup = () => {
+    console.log('📞 hangup')
     if (peerConnection) peerConnection.close()
     if (localStream) localStream.getTracks().forEach(track => track.stop())
     if (durationTimer) clearInterval(durationTimer)

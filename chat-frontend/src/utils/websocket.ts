@@ -13,6 +13,11 @@ class WebSocketService {
   private groupMessageCallbacks: MessageCallback[] = []
   private callSignalCallbacks: MessageCallback[] = []
   
+  // 添加：检查连接状态
+  isConnected(): boolean {
+    return this.ws !== null && this.ws.readyState === WebSocket.OPEN
+  }
+  
   connect() {
     const userStore = useUserStore()
     const token = userStore.token

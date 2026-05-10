@@ -2,18 +2,16 @@
   <el-dialog v-model="visible" :title="callTitle" :width="callType === 'video' ? '800px' : '400px'"
     :before-close="handleClose" :close-on-click-modal="false" :show-close="false">
     <div class="call-container" :class="{ 'video-call': callType === 'video' }">
-      <!-- 视频通话布局 -->
       <template v-if="callType === 'video'">
         <RemoteVideo :target-user="targetUser" :is-connected="isConnected" :status-text="callStatusText"
           :stream="remoteStream" />
         <LocalVideo :stream="localStream" />
       </template>
-
-      <!-- 语音通话布局 -->
-      <VoiceCallUI v-else :target-user="targetUser" :is-connected="isConnected" :status-text="callStatusText"
-        :duration="callDuration" />
+      <template v-else>
+        <VoiceCallUI :target-user="targetUser" :is-connected="isConnected" :status-text="callStatusText"
+          :duration="callDuration" />
+      </template>
     </div>
-
     <template #footer>
       <CallActions :is-connected="isConnected" :is-caller="isCaller" @accept="acceptCall" @hangup="hangupCall" />
     </template>
@@ -24,7 +22,6 @@
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { websocketService } from '@/utils/websocket'
-import { formatDuration } from '@/utils/date'
 import { useWebRTC } from '@/composables/useWebRTC'
 import RemoteVideo from './call/RemoteVideo.vue'
 import LocalVideo from './call/LocalVideo.vue'
@@ -41,8 +38,10 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue', 'endCall'])
 
 const visible = ref(false)
-const targetUserId = computed(() => props.targetUser?.id || props.targetUser?.userId)
 const remoteStream = ref<MediaStream | null>(null)
+
+// 唯一修改：优先使用 userId
+const targetUserId = computed(() => props.targetUser?.userId || props.targetUser?.id)
 
 const {
   isConnected,
@@ -60,11 +59,10 @@ const {
 const callTitle = computed(() => `${props.callType === 'voice' ? '语音' : '视频'}通话 - ${props.targetUser?.nickname}`)
 const callStatusText = computed(() => isConnected.value ? '通话中' : (props.isCaller ? '正在呼叫...' : '来电'))
 
-// 主动发起通话
 const startCall = async () => {
   if (!targetUserId.value) {
     ElMessage.error('通话对象信息错误')
-    hangup()
+    hangupCall()
     return
   }
 
@@ -80,7 +78,6 @@ const startCall = async () => {
   }
 }
 
-// 接听通话
 const acceptCall = async () => {
   try {
     await startLocalStream()
@@ -94,7 +91,6 @@ const acceptCall = async () => {
   }
 }
 
-// 处理接收到的信令
 const handleCallSignal = async (data: any) => {
   if (data.fromUserId !== targetUserId.value) return
 
@@ -113,7 +109,6 @@ const handleCallSignal = async (data: any) => {
   }
 }
 
-// 挂断通话
 const hangupCall = () => {
   hangup()
   remoteStream.value = null
