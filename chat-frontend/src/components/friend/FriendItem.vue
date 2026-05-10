@@ -1,0 +1,120 @@
+<template>
+  <div class="friend-item" :class="{ active: isActive }" @click="$emit('click')">
+    <div class="avatar">
+      <el-avatar :size="40" :src="friend.avatar || ''">
+        {{ friend.nickname?.charAt(0) || 'U' }}
+      </el-avatar>
+      <span class="online-dot" :class="{ online: friend.isOnline }" />
+    </div>
+
+    <div class="friend-info">
+      <div class="name">{{ friend.remark || friend.nickname }}</div>
+      <div class="message">{{ friend.signature || '这个人很懒，什么都没写' }}</div>
+    </div>
+
+    <div v-if="friend.unreadCount > 0" class="unread-badge">
+      {{ friend.unreadCount > 99 ? '99+' : friend.unreadCount }}
+    </div>
+
+    <el-dropdown trigger="click" @command="handleCommand">
+      <el-button :icon="MoreFilled" size="small" text @click.stop />
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item command="remark">修改备注</el-dropdown-item>
+          <el-dropdown-item command="move">移动分组</el-dropdown-item>
+          <el-dropdown-item command="delete" divided>删除好友</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { MoreFilled } from '@element-plus/icons-vue'
+
+const props = defineProps<{
+  friend: any
+  isActive: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'click'): void
+  (e: 'command', command: string, friend: any): void
+}>()
+
+const handleCommand = (command: string) => {
+  emit('command', command, props.friend)
+}
+</script>
+
+<style scoped>
+.friend-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.friend-item:hover {
+  background: #e4e7ed;
+}
+
+.friend-item.active {
+  background: #e6f7ff;
+}
+
+.avatar {
+  position: relative;
+  margin-right: 12px;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #c0c4cc;
+  border: 1px solid #fff;
+}
+
+.online-dot.online {
+  background: #67c23a;
+}
+
+.friend-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.message {
+  font-size: 12px;
+  color: #909399;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unread-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #f56c6c;
+  color: white;
+  font-size: 11px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+}
+</style>

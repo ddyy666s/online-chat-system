@@ -1,123 +1,29 @@
 <template>
   <div class="group-chat-window">
-    <!-- 群聊头部 -->
-    <div class="chat-header">
-      <div class="group-info">
-        <el-avatar :size="40" :src="group?.avatar || ''">
-          {{ group?.name?.charAt(0) || '群' }}
-        </el-avatar>
-        <div class="group-detail">
-          <div class="name">{{ group?.name }}</div>
-          <div class="member-count">{{ group?.memberCount }}人</div>
-        </div>
-      </div>
-      <div class="actions">
-        <el-dropdown @command="handleGroupCommand">
-          <el-button :icon="Setting" circle text />
-          <template #dropdown>
-            <el-dropdown-menu>
-              <!-- 群主和管理员可以编辑公告 -->
-              <el-dropdown-item command="notice" v-if="canEditNotice">编辑公告</el-dropdown-item>
-              <el-dropdown-item command="viewNotice" v-else>群公告</el-dropdown-item>
-              <el-dropdown-item command="members">群成员</el-dropdown-item>
-              <el-dropdown-item command="invite">邀请好友</el-dropdown-item>
-              <el-dropdown-item command="quit" divided v-if="!isOwner">退出群聊</el-dropdown-item>
-              <el-dropdown-item command="disband" divided v-if="isOwner" style="color: #f56c6c">解散群聊</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-    </div>
+    <GroupChatHeader :group="group" :can-edit-notice="canEditNotice" :is-owner="isOwner"
+      @command="handleGroupCommand" />
 
-    <!-- 群公告显示栏（如果有公告） -->
-    <div class="notice-bar" v-if="group?.notice" @click="showNoticeDialog = true">
-      <el-icon>
-        <InfoFilled />
-      </el-icon>
-      <span class="notice-text">{{ group.notice }}</span>
-      <el-button text size="small">详情</el-button>
-    </div>
+    <!-- 修复：确保传入 string | null 类型，过滤 undefined -->
+    <GroupNoticeBar :notice="group?.notice ?? null" @click="openNotice" />
 
-    <!-- 消息列表 -->
-    <div class="message-list" ref="messageListRef">
-      <div v-for="msg in messages" :key="msg.id" class="message-item"
-        :class="{ own: msg.fromUserId === currentUserId }">
-        <el-avatar :size="32" :src="msg.fromUserAvatar || ''">
-          {{ msg.fromUserNickname?.charAt(0) || 'U' }}
-        </el-avatar>
-        <div class="message-content">
-          <div class="message-info">
-            <span class="name">{{ msg.fromUserNickname }}</span>
-            <span class="time">{{ formatRelativeTime(msg.sendTime) }}</span>
-          </div>
-          <div class="message-bubble">
-            <span>{{ msg.content }}</span>
-          </div>
-        </div>
-      </div>
+    <GroupMessageList ref="messageListRef" :messages="messages" :current-user-id="currentUserId" :loading="loading"
+      @load-more="loadMore" />
 
-      <div v-if="loading" class="loading">
-        <el-skeleton :rows="2" animated />
-      </div>
-      <div ref="scrollBottomRef"></div>
-    </div>
+    <GroupMessageInput @send="sendMessage" />
 
-    <!-- 消息输入框 -->
-    <div class="message-input">
-      <el-input v-model="inputContent" type="textarea" :rows="3" placeholder="请输入群消息..."
-        @keyup.ctrl.enter="sendMessage" />
-      <div class="input-actions">
-        <el-button type="primary" @click="sendMessage">发送 (Ctrl+Enter)</el-button>
-      </div>
-    </div>
+    <!-- 修复：确保传入 string | null 类型 -->
+    <GroupNoticeDialog v-model="showNoticeDialog" :notice="group?.notice ?? null" :can-edit="canEditNotice"
+      @save="handleUpdateNotice" />
 
-    <!-- 查看公告弹窗 -->
-    <el-dialog v-model="showNoticeDialog" title="群公告" width="400px">
-      <p>{{ group?.notice || '暂无群公告' }}</p>
-    </el-dialog>
+    <GroupMembersDialog v-model="showMembers" :members="memberList" />
 
-    <!-- 编辑公告弹窗（群主/管理员） -->
-    <el-dialog v-model="showEditNoticeDialog" title="编辑群公告" width="400px">
-      <el-input v-model="editNoticeContent" type="textarea" :rows="4" placeholder="请输入群公告" maxlength="200"
-        show-word-limit />
-      <template #footer>
-        <el-button @click="showEditNoticeDialog = false">取消</el-button>
-        <el-button type="primary" :loading="updatingNotice" @click="handleUpdateNotice">保存</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 群成员弹窗 -->
-    <el-dialog v-model="showMembers" title="群成员" width="400px">
-      <div v-for="member in memberList" :key="member.userId" class="member-item">
-        <el-avatar :size="32" :src="member.avatar || ''">
-          {{ member.nickname?.charAt(0) || 'U' }}
-        </el-avatar>
-        <div class="member-info">
-          <span>{{ member.nickname }}</span>
-          <span v-if="member.role === 2" class="owner-tag">群主</span>
-          <span v-else-if="member.role === 1" class="admin-tag">管理员</span>
-        </div>
-      </div>
-    </el-dialog>
-
-    <!-- 邀请好友弹窗 -->
-    <el-dialog v-model="showInvite" title="邀请好友" width="400px">
-      <el-select v-model="selectedFriendId" placeholder="选择好友" filterable style="width: 100%">
-        <el-option v-for="friend in friendList" :key="friend.userId" :label="friend.remark || friend.nickname"
-          :value="friend.userId" />
-      </el-select>
-      <template #footer>
-        <el-button @click="showInvite = false">取消</el-button>
-        <el-button type="primary" @click="handleInvite">邀请</el-button>
-      </template>
-    </el-dialog>
+    <InviteFriendDialog v-model="showInvite" :friends="friendList" @invite="handleInvite" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Setting, InfoFilled } from '@element-plus/icons-vue'
 import {
   getGroupHistoryApi,
   quitGroupApi,
@@ -133,7 +39,13 @@ import {
 import { getFriendListApi, type FriendVO } from '@/api/friend'
 import { websocketService } from '@/utils/websocket'
 import { useUserStore } from '@/stores/userStore'
-import { formatRelativeTime } from '@/utils/date'
+import GroupChatHeader from './group/GroupChatHeader.vue'
+import GroupNoticeBar from './group/GroupNoticeBar.vue'
+import GroupMessageList from './group/GroupMessageList.vue'
+import GroupMessageInput from './group/GroupMessageInput.vue'
+import GroupNoticeDialog from './group/GroupNoticeDialog.vue'
+import GroupMembersDialog from './group/GroupMembersDialog.vue'
+import InviteFriendDialog from './group/InviteFriendDialog.vue'
 
 const props = defineProps<{
   group: GroupVO | null
@@ -145,45 +57,45 @@ const userStore = useUserStore()
 const currentUserId = userStore.userInfo?.id
 const isOwner = computed(() => props.group?.ownerId === currentUserId)
 
-// 判断是否可以编辑公告（群主或管理员）
 const canEditNotice = computed(() => {
   const member = memberList.value.find(m => m.userId === currentUserId)
   return isOwner.value || member?.role === 1
 })
 
 const messages = ref<GroupMessageVO[]>([])
-const inputContent = ref('')
 const loading = ref(false)
 const page = ref(1)
 const hasMore = ref(true)
-const scrollBottomRef = ref<HTMLElement>()
-const messageListRef = ref<HTMLElement>()
+const messageListRef = ref()
 
 // 弹窗状态
 const showNoticeDialog = ref(false)
-const showEditNoticeDialog = ref(false)
-const editNoticeContent = ref('')
-const updatingNotice = ref(false)
 const showMembers = ref(false)
 const showInvite = ref(false)
 const memberList = ref<GroupMemberVO[]>([])
 const friendList = ref<FriendVO[]>([])
-const selectedFriendId = ref<number | null>(null)
 
 // 加载历史消息
 const loadHistory = async (reset = true) => {
   if (!props.group?.id) return
-  if (reset) { page.value = 1; hasMore.value = true; messages.value = [] }
+  if (reset) {
+    page.value = 1
+    hasMore.value = true
+    messages.value = []
+  }
   if (!hasMore.value) return
 
   loading.value = true
   try {
     const res = await getGroupHistoryApi(props.group.id, page.value, 20)
     const newMessages = res.records.reverse()
-    messages.value = [...newMessages, ...messages.value]
-    hasMore.value = res.records.length > 0
+    if (reset) {
+      messages.value = newMessages
+    } else {
+      messages.value = [...newMessages, ...messages.value]
+    }
+    hasMore.value = newMessages.length > 0
     page.value++
-    if (reset) { await nextTick(); scrollBottomRef.value?.scrollIntoView({ behavior: 'auto' }) }
   } catch (error) {
     console.error(error)
   } finally {
@@ -191,22 +103,27 @@ const loadHistory = async (reset = true) => {
   }
 }
 
+const loadMore = () => {
+  if (!loading.value && hasMore.value) {
+    loadHistory(false)
+  }
+}
+
 // 清除未读计数
-const clearUnreadCount = async (groupId: number) => {
+const clearUnreadCount = async () => {
+  if (!props.group?.id) return
   try {
-    await clearGroupUnreadApi(groupId)
-    emit('updateUnreadCount', groupId)
+    await clearGroupUnreadApi(props.group.id)
+    emit('updateUnreadCount', props.group.id)
   } catch (error) {
     console.error('清除未读失败', error)
   }
 }
 
 // 发送消息
-const sendMessage = () => {
-  if (!inputContent.value.trim()) return ElMessage.warning('请输入消息内容')
-  if (!props.group?.id) return ElMessage.warning('群聊信息有误')
-
-  const content = inputContent.value
+const sendMessage = (content: string) => {
+  if (!props.group?.id) return
+  // 添加临时消息到列表
   const tempMsg: GroupMessageVO = {
     id: Date.now(),
     groupId: props.group.id,
@@ -217,10 +134,8 @@ const sendMessage = () => {
     messageType: 1,
     sendTime: new Date().toISOString()
   }
-
   messages.value.push(tempMsg)
-  inputContent.value = ''
-  nextTick(() => scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' }))
+  messageListRef.value?.scrollToBottom()
   websocketService.sendGroupMessage(props.group.id, content)
 }
 
@@ -238,7 +153,7 @@ const onGroupMessage = (data: any) => {
       sendTime: data.sendTime
     }
     messages.value.push(newMsg)
-    nextTick(() => scrollBottomRef.value?.scrollIntoView({ behavior: 'smooth' }))
+    messageListRef.value?.scrollToBottom()
   }
 }
 
@@ -246,8 +161,7 @@ const onGroupMessage = (data: any) => {
 const loadMembers = async () => {
   if (!props.group?.id) return
   try {
-    const res = await getGroupMembersApi(props.group.id)
-    memberList.value = res
+    memberList.value = await getGroupMembersApi(props.group.id)
   } catch (error) {
     console.error('加载群成员失败', error)
   }
@@ -266,21 +180,23 @@ const loadFriendList = async () => {
 }
 
 // 更新群公告
-const handleUpdateNotice = async () => {
+const handleUpdateNotice = async (notice: string) => {
   if (!props.group?.id) return
-  updatingNotice.value = true
   try {
-    await updateGroupNoticeApi(props.group.id, editNoticeContent.value)
-    props.group.notice = editNoticeContent.value
+    await updateGroupNoticeApi(props.group.id, notice)
+    if (props.group) props.group.notice = notice
     ElMessage.success('群公告已更新')
-    showEditNoticeDialog.value = false
     emit('update:list')
   } catch (error) {
     console.error(error)
     ElMessage.error('更新失败')
-  } finally {
-    updatingNotice.value = false
+    throw error
   }
+}
+
+// 打开公告弹窗
+const openNotice = () => {
+  showNoticeDialog.value = true
 }
 
 // 群管理命令
@@ -288,9 +204,6 @@ const handleGroupCommand = async (command: string) => {
   if (!props.group) return
 
   if (command === 'notice') {
-    editNoticeContent.value = props.group.notice || ''
-    showEditNoticeDialog.value = true
-  } else if (command === 'viewNotice') {
     showNoticeDialog.value = true
   } else if (command === 'members') {
     await loadMembers()
@@ -312,17 +225,15 @@ const handleGroupCommand = async (command: string) => {
 }
 
 // 邀请好友
-const handleInvite = async () => {
-  if (!selectedFriendId.value) return ElMessage.warning('请选择好友')
+const handleInvite = async (userId: number) => {
   if (!props.group?.id) return
   try {
-    await inviteMemberApi({ groupId: props.group.id, userId: selectedFriendId.value })
+    await inviteMemberApi({ groupId: props.group.id, userId })
     ElMessage.success('邀请已发送')
-    showInvite.value = false
-    selectedFriendId.value = null
   } catch (error) {
     console.error(error)
     ElMessage.error('邀请失败')
+    throw error
   }
 }
 
@@ -330,7 +241,7 @@ const handleInvite = async () => {
 watch(() => props.group, (newGroup) => {
   if (newGroup?.id) {
     loadHistory(true)
-    clearUnreadCount(newGroup.id)
+    clearUnreadCount()
   }
 }, { immediate: true })
 
@@ -346,135 +257,5 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   background: white;
-}
-
-.chat-header {
-  padding: 12px 20px;
-  border-bottom: 1px solid #e4e7ed;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.group-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.group-detail .name {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.group-detail .member-count {
-  font-size: 12px;
-  color: #909399;
-}
-
-/* 公告栏 */
-.notice-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #fef0e6;
-  border-bottom: 1px solid #e4e7ed;
-  cursor: pointer;
-}
-
-.notice-bar .notice-text {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-  color: #e6a23c;
-}
-
-.message-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  background: #f5f5f5;
-}
-
-.message-item {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.message-item.own {
-  flex-direction: row-reverse;
-}
-
-.message-item.own .message-content {
-  align-items: flex-end;
-}
-
-.message-content {
-  display: flex;
-  flex-direction: column;
-  max-width: 60%;
-}
-
-.message-info {
-  display: flex;
-  gap: 8px;
-  font-size: 12px;
-  color: #909399;
-  margin-bottom: 4px;
-}
-
-.message-bubble {
-  background: white;
-  padding: 8px 12px;
-  border-radius: 12px;
-  word-wrap: break-word;
-}
-
-.message-item.own .message-bubble {
-  background: #95ec69;
-}
-
-.message-input {
-  padding: 12px;
-  border-top: 1px solid #e4e7ed;
-}
-
-.input-actions {
-  margin-top: 8px;
-  text-align: right;
-}
-
-.member-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.member-info {
-  flex: 1;
-}
-
-.owner-tag,
-.admin-tag {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: 8px;
-}
-
-.owner-tag {
-  background: #e6a23c;
-  color: white;
-}
-
-.admin-tag {
-  background: #409eff;
-  color: white;
 }
 </style>
