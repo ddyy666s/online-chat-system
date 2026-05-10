@@ -124,7 +124,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { User, Message, Star, Setting, ChatDotRound, Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 import { useFriendStore } from '@/stores/friendStore'
@@ -144,7 +144,6 @@ const activeTab = ref('friends')
 const currentChatUserId = ref<number | null>(null)
 const currentGroupId = ref<number | null>(null)
 
-// 群聊相关
 const groupList = ref<GroupVO[]>([])
 const showCreateGroupDialog = ref(false)
 const creatingGroup = ref(false)
@@ -155,7 +154,6 @@ const createGroupForm = ref({
   memberIds: [] as number[]
 })
 
-// 加载群聊列表
 const loadGroupList = async () => {
   try {
     const res = await getGroupListApi()
@@ -165,13 +163,11 @@ const loadGroupList = async () => {
   }
 }
 
-// 选择群聊
 const selectGroup = (group: GroupVO) => {
   currentGroupId.value = group.id
   emit('selectGroup', group)
 }
 
-// 创建群聊
 const handleCreateGroup = async () => {
   if (!createGroupForm.value.name.trim()) {
     ElMessage.warning('请输入群名称')
@@ -198,7 +194,6 @@ const handleCreateGroup = async () => {
   }
 }
 
-// 加载好友列表（用于创建群聊时邀请）
 const loadFriendListForGroup = async () => {
   const res = await getFriendListApi()
   const friends: FriendVO[] = []
@@ -208,7 +203,6 @@ const loadFriendListForGroup = async () => {
   friendListForGroup.value = friends
 }
 
-// 格式化时间
 const formatGroupTime = (time: string) => {
   const date = new Date(time)
   const now = new Date()
@@ -221,7 +215,6 @@ const formatGroupTime = (time: string) => {
   return date.toLocaleDateString()
 }
 
-// 处理好友申请
 const handleRequest = async (requestId: number, status: number) => {
   try {
     await handleFriendRequestApi(requestId, status)
@@ -234,7 +227,6 @@ const handleRequest = async (requestId: number, status: number) => {
   }
 }
 
-// 选择好友
 const handleSelectChat = (friend: any) => {
   const userId = friend?.userId || friend?.id
   if (userId) {
@@ -250,12 +242,10 @@ const handleSelectChat = (friend: any) => {
   }
 }
 
-// 跳转管理后台
 const goToAdmin = () => {
   router.push('/admin')
 }
 
-// 监听群消息更新未读数
 const onGroupMessage = (data: any) => {
   const group = groupList.value.find(g => g.id === data.groupId)
   if (group && currentGroupId.value !== data.groupId) {
@@ -279,26 +269,33 @@ onMounted(() => {
 
 <style scoped>
 .sidebar {
-  width: 300px;
+  width: 280px;
   background: #fff;
-  border-right: 1px solid #e4e7ed;
+  border-right: 1px solid #e8ecf0;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .sidebar-header {
-  padding: 16px;
-  border-bottom: 1px solid #e4e7ed;
+  padding: 20px 16px;
+  border-bottom: 1px solid #e8ecf0;
 }
 
 .sidebar-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #409eff, #67c23a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .sidebar-tabs {
   display: flex;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid #e8ecf0;
+  background: #fafafa;
 }
 
 .tab-item {
@@ -306,26 +303,39 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 12px 0;
+  gap: 6px;
+  padding: 14px 0;
   cursor: pointer;
   position: relative;
+  font-size: 14px;
+  color: #606266;
+  transition: all 0.2s;
+}
+
+.tab-item:hover {
+  color: #409eff;
+  background: #f0f2f5;
 }
 
 .tab-item.active {
   color: #409eff;
+  background: #fff;
   border-bottom: 2px solid #409eff;
 }
 
 .badge {
   position: absolute;
-  top: 6px;
+  top: 8px;
   right: 20px;
   background: #f56c6c;
   color: white;
   font-size: 10px;
-  padding: 0 4px;
-  border-radius: 8px;
+  padding: 0 5px;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
 }
 
 .sidebar-content {
@@ -335,12 +345,11 @@ onMounted(() => {
 
 /* 群聊列表样式 */
 .group-list {
-  padding: 8px;
+  padding: 12px;
 }
 
 .group-header-actions {
-  padding: 8px;
-  margin-bottom: 8px;
+  padding: 0 4px 12px 4px;
 }
 
 .group-item {
@@ -348,13 +357,14 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  margin-bottom: 4px;
 }
 
 .group-item:hover {
-  background: #f5f5f5;
+  background: #f5f7fa;
 }
 
 .group-item.active {
@@ -373,9 +383,11 @@ onMounted(() => {
   background: #f56c6c;
   color: white;
   font-size: 10px;
-  padding: 0 4px;
+  padding: 0 5px;
   border-radius: 10px;
   min-width: 18px;
+  height: 18px;
+  line-height: 18px;
   text-align: center;
 }
 
@@ -388,6 +400,7 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 4px;
+  color: #303133;
 }
 
 .group-desc {
@@ -397,7 +410,7 @@ onMounted(() => {
 
 /* 申请列表样式 */
 .request-list {
-  padding: 8px;
+  padding: 12px;
 }
 
 .request-item {
@@ -405,7 +418,13 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-radius: 12px;
+  transition: background 0.2s;
+  margin-bottom: 4px;
+}
+
+.request-item:hover {
+  background: #f5f7fa;
 }
 
 .request-item .info {
@@ -415,6 +434,7 @@ onMounted(() => {
 .request-item .name {
   font-weight: 500;
   margin-bottom: 4px;
+  font-size: 14px;
 }
 
 .request-item .message {
