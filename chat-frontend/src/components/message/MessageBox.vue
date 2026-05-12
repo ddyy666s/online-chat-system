@@ -1,5 +1,5 @@
 <template>
-  <el-drawer v-model="visible" title="消息盒子" direction="rtl" size="420px" :before-close="handleClose">
+  <el-drawer v-model="visible" title="消息盒子" direction="rtl" size="440px" :before-close="handleClose" class="beautiful-drawer">
     <div class="message-box-tabs">
       <el-tabs v-model="activeTab">
         <el-tab-pane label="聊天消息" name="chat">
@@ -8,7 +8,9 @@
         <el-tab-pane :label="`系统通知${notificationCount > 0 ? ` (${notificationCount})` : ''}`" name="notification">
           <div class="notification-list" v-if="notifications.length > 0">
             <div v-for="n in notifications" :key="n.id" class="notification-item" @click="openNotification(n)">
-              <el-icon class="notif-icon"><Bell /></el-icon>
+              <div class="notif-icon-wrap">
+                <el-icon class="notif-icon"><Bell /></el-icon>
+              </div>
               <div class="notif-content">
                 <div class="notif-title">{{ n.title }}</div>
                 <div class="notif-meta">{{ n.adminNickname }} · {{ formatTime(n.createdAt) }}</div>
@@ -168,26 +170,74 @@ watch(() => props.modelValue, (val) => {
 .notification-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 12px;
-  border-radius: 12px;
-  margin-bottom: 8px;
+  gap: 14px;
+  padding: 16px 14px;
+  border-radius: 14px;
+  margin-bottom: 10px;
   cursor: pointer;
-  transition: all 0.2s;
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  transition: all 0.25s;
+  background: var(--bg-color-white);
+  border: 1px solid var(--border-color-extra-light);
+  position: relative;
+  overflow: hidden;
+  animation: slideInItem 0.35s ease both;
+}
+
+@keyframes slideInItem {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.notification-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: linear-gradient(180deg, var(--color-warning), #f0a830);
+  border-radius: 0 3px 3px 0;
+  opacity: 0;
+  transition: opacity 0.25s;
 }
 
 .notification-item:hover {
-  background: #fff9f0;
+  background: linear-gradient(135deg, #fef9e7, #fef3d5);
   border-color: #ffe7ba;
-  transform: translateX(2px);
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(230, 162, 60, 0.12);
+}
+
+.notification-item:hover::before {
+  opacity: 1;
+}
+
+.notif-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fef3d5, #fdecc0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.25s;
+}
+
+.notification-item:hover .notif-icon-wrap {
+  background: linear-gradient(135deg, var(--color-warning), #f0a830);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.3);
 }
 
 .notif-icon {
   font-size: 20px;
-  color: #e6a23c;
-  flex-shrink: 0;
+  color: #b8860b;
+  transition: color 0.25s;
+}
+
+.notification-item:hover .notif-icon {
+  color: white;
 }
 
 .notif-content {
@@ -198,17 +248,24 @@ watch(() => props.modelValue, (val) => {
 .notif-title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .notif-meta {
   font-size: 12px;
-  color: #c0c4cc;
+  color: var(--text-secondary);
 }
 
 .notif-arrow {
-  color: #c0c4cc;
+  color: var(--text-secondary);
   flex-shrink: 0;
+  font-size: 16px;
+  transition: all 0.25s;
+}
+
+.notification-item:hover .notif-arrow {
+  color: #b8860b;
+  transform: translateX(4px);
 }
 </style>

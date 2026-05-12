@@ -11,6 +11,7 @@
       <div class="prompt-message">{{ message }}</div>
       <el-input v-model="inputVal" :placeholder="placeholder" class="prompt-input"
         @keyup.enter="handleConfirm" />
+      <div v-if="inputError" class="prompt-error">{{ inputError }}</div>
     </div>
     <template #footer>
       <div class="prompt-footer">
@@ -85,16 +86,18 @@ const handleCancel = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 24px 16px 8px;
+  gap: 20px;
+  padding: 32px 16px 8px;
 }
 .prompt-icon :deep(.el-icon) { display: flex; }
-.prompt-icon.warning svg { color: #e6a23c; }
-.prompt-icon.danger svg { color: #f56c6c; }
-.prompt-icon.info svg { color: #409eff; }
-.prompt-message { font-size: 15px; color: #303133; text-align: center; line-height: 1.6; }
-.prompt-input { width: 80%; }
-.prompt-footer { display: flex; justify-content: center; gap: 16px; padding: 0 0 8px; }
-.btn-cancel { min-width: 100px; border-radius: 20px; }
-.btn-confirm { min-width: 100px; border-radius: 20px; }
+.prompt-icon.warning svg { color: var(--color-warning); }
+.prompt-icon.danger svg { color: var(--color-danger); }
+.prompt-icon.info svg { color: var(--color-primary); }
+.prompt-message { font-size: 16px; color: var(--text-primary); text-align: center; line-height: 1.7; font-weight: 500; }
+.prompt-input { width: 85%; }
+.prompt-input :deep(.el-input__wrapper) { border-radius: 12px !important; }
+.prompt-error { color: var(--color-danger); font-size: 13px; margin-top: -8px; }
+.prompt-footer { display: flex; justify-content: center; gap: 12px; padding: 0 0 8px; }
+.btn-cancel { min-width: 110px; border-radius: 12px !important; font-weight: 600 !important; }
+.btn-confirm { min-width: 110px; border-radius: 12px !important; font-weight: 600 !important; }
 </style>

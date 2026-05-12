@@ -38,12 +38,42 @@ const handleSend = () => {
 
 <style scoped>
 .message-input {
-  padding: 12px;
-  border-top: 1px solid #e4e7ed;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-color-lighter);
+  background: var(--bg-color-white);
+}
+
+.message-input :deep(.el-textarea__inner) {
+  border: 2px solid transparent;
+  outline: none;
+  background-color: #f5f5f5;
+  border-radius: 14px !important;
+  transition: all 0.4s;
+  padding: 12px 16px;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.message-input :deep(.el-textarea__inner:hover) {
+  border: 2px solid var(--color-primary-light);
+  background-color: white;
+}
+
+.message-input :deep(.el-textarea__inner:focus) {
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+  background-color: white;
 }
 
 .input-actions {
-  margin-top: 8px;
+  margin-top: 10px;
   text-align: right;
+}
+
+.input-actions .el-button {
+  border-radius: 12px !important;
+  padding: 8px 24px !important;
+  font-weight: 600 !important;
 }
 </style>

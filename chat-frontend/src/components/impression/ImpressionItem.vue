@@ -11,8 +11,9 @@
       <div class="time">{{ formatDate(impression.createdAt) }}</div>
     </div>
     <div v-if="showDelete" class="actions">
-      <el-button type="danger" size="small" text @click="$emit('delete', impression.id)">
-        删除
+      <el-button class="delete-btn" size="small" @click="$emit('delete', impression.id)">
+        <el-icon :size="13"><Delete /></el-icon>
+        <span>删除</span>
       </el-button>
     </div>
   </div>
@@ -21,6 +22,7 @@
 <script setup lang="ts">
 /** 评价项展示组件 @component */
 import { computed } from 'vue'
+import { Delete } from '@element-plus/icons-vue'
 import type { ImpressionVO } from '@/api/impression'
 import { formatDate } from '@/utils/date'
 
@@ -62,8 +64,17 @@ const showDelete = computed(() => props.type === 'by-me')
 .impression-item {
   display: flex;
   gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #e4e7ed;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-color-lighter);
+  transition: background 0.2s;
+}
+
+.impression-item:hover {
+  background: #fafaff;
+  margin: 0 -8px;
+  padding: 14px 8px;
+  border-radius: 12px;
+  border-bottom-color: transparent;
 }
 
 .impression-item .content {
@@ -72,24 +83,56 @@ const showDelete = computed(() => props.type === 'by-me')
 
 .impression-item .name {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .impression-item .text {
   font-size: 14px;
-  color: #606266;
+  color: var(--text-regular);
   margin-bottom: 4px;
   word-break: break-word;
+  line-height: 1.6;
 }
 
 .impression-item .time {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 
 .impression-item .actions {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+}
+
+.delete-btn {
+  height: 32px;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  gap: 4px;
+  border: 1.5px solid var(--color-danger) !important;
+  color: var(--color-danger) !important;
+  background: #fff5f5 !important;
+  transition: all 0.2s !important;
+  opacity: 0;
+}
+
+.impression-item:hover .delete-btn {
+  opacity: 1;
+}
+
+.delete-btn:hover {
+  background: var(--color-danger) !important;
+  color: white !important;
+  transform: scale(1.05);
+  box-shadow: 0 3px 10px rgba(255, 118, 117, 0.3);
+}
+
+.delete-btn:active {
+  transform: scale(0.95);
 }
 </style>

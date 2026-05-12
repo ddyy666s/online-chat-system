@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" :title="title" :width="width" @close="handleClose" top="8vh">
+  <el-dialog v-model="visible" :title="title" :width="width" @close="handleClose" top="6vh" class="beautiful-view-dialog">
     <slot />
   </el-dialog>
 </template>

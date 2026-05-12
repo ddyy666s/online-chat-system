@@ -15,12 +15,14 @@
       </div>
 
       <div class="message-preview">
-        <el-icon v-if="message.messageType === 3" class="impression-icon">
-          <Star />
-        </el-icon>
-        <el-icon v-else class="message-icon">
-          <ChatDotRound />
-        </el-icon>
+        <span class="preview-icon-wrap" :class="message.messageType === 3 ? 'impression' : 'message'">
+          <el-icon v-if="message.messageType === 3" class="preview-icon">
+            <Star />
+          </el-icon>
+          <el-icon v-else class="preview-icon">
+            <ChatDotRound />
+          </el-icon>
+        </span>
         <span class="content">{{ message.content }}</span>
       </div>
     </div>
@@ -75,29 +77,38 @@ const formatTime = (time: string) => {
 <style scoped>
 .message-item {
   display: flex;
-  gap: 12px;
-  padding: 14px 12px;
-  border-radius: 12px;
+  gap: 14px;
+  padding: 14px 14px;
+  border-radius: 14px;
   margin-bottom: 8px;
   cursor: pointer;
-  transition: all 0.2s;
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  transition: all 0.25s;
+  background: var(--bg-color-white);
+  border: 1px solid var(--border-color-extra-light);
   position: relative;
+  animation: slideInItem 0.35s ease both;
+}
+
+@keyframes slideInItem {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .message-item:hover {
-  background: #f5f7fa;
-  transform: translateX(2px);
+  background: #f3f0ff;
+  border-color: var(--color-primary-light);
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.08);
 }
 
 .message-item.is-impression {
-  background: #fff9f0;
+  background: linear-gradient(135deg, #fef9e7, #fef3d5);
   border-color: #ffe7ba;
 }
 
 .message-item.is-impression:hover {
-  background: #fff5e6;
+  background: linear-gradient(135deg, #fef3d5, #fdecc0);
+  box-shadow: 0 4px 16px rgba(230, 162, 60, 0.12);
 }
 
 .avatar-wrapper {
@@ -112,8 +123,9 @@ const formatTime = (time: string) => {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #67c23a;
-  border: 2px solid #fff;
+  background: var(--color-success);
+  border: 2px solid var(--bg-color-white);
+  box-shadow: 0 1px 3px rgba(0, 184, 148, 0.3);
 }
 
 .message-content {
@@ -131,36 +143,70 @@ const formatTime = (time: string) => {
 .message-header .name {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .message-header .time {
   font-size: 11px;
-  color: #c0c4cc;
+  color: var(--text-secondary);
 }
 
 .message-preview {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   overflow: hidden;
 }
 
-.message-preview .impression-icon {
-  color: #e6a23c;
-  font-size: 14px;
+.preview-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  transition: all 0.25s;
 }
 
-.message-preview .message-icon {
-  color: #409eff;
+.preview-icon-wrap.message {
+  background: #f3f0ff;
+}
+
+.preview-icon-wrap.impression {
+  background: #fef3d5;
+}
+
+.message-item:hover .preview-icon-wrap.message {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  transform: scale(1.1);
+}
+
+.message-item:hover .preview-icon-wrap.impression {
+  background: linear-gradient(135deg, var(--color-warning), #f0a830);
+  transform: scale(1.1);
+}
+
+.preview-icon {
   font-size: 14px;
-  flex-shrink: 0;
+  transition: color 0.25s;
+}
+
+.preview-icon-wrap.message .preview-icon {
+  color: var(--color-primary);
+}
+
+.preview-icon-wrap.impression .preview-icon {
+  color: #b8860b;
+}
+
+.message-item:hover .preview-icon {
+  color: white;
 }
 
 .message-preview .content {
   font-size: 13px;
-  color: #606266;
+  color: var(--text-regular);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -170,5 +216,9 @@ const formatTime = (time: string) => {
 .message-badge {
   flex-shrink: 0;
   margin-left: 8px;
+}
+
+.message-badge :deep(.el-badge__content) {
+  border: 2px solid var(--bg-color-white) !important;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="邀请好友" width="400px">
+  <BaseDialog v-model="visible" title="邀请好友" width="420px">
     <el-select v-model="selectedId" placeholder="选择好友" filterable style="width: 100%">
       <el-option v-for="friend in friends" :key="friend.userId" :label="friend.remark || friend.nickname"
         :value="friend.userId" />
@@ -9,13 +9,14 @@
       <el-button @click="visible = false">取消</el-button>
       <el-button type="primary" :loading="loading" @click="handleInvite">邀请</el-button>
     </template>
-  </el-dialog>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 /** 邀请好友加入群聊对话框 @component */
 import { ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import { notify } from '@/utils/notify'
 import Empty from '@/components/common/Empty.vue'
 
 /** 组件属性：显示状态、好友列表 */
@@ -50,15 +51,12 @@ watch(visible, (val) => {
 /** 执行邀请 @returns Promise<void> */
 const handleInvite = async () => {
   if (!selectedId.value) {
-    ElMessage.warning('请选择好友')
+    notify.warning('请选择好友')
     return
   }
   loading.value = true
-  try {
-    await emit('invite', selectedId.value)
-    visible.value = false
-  } finally {
-    loading.value = false
-  }
+  emit('invite', selectedId.value)
+  visible.value = false
+  loading.value = false
 }
 </script>

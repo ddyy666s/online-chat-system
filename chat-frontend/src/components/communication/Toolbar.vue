@@ -26,7 +26,9 @@
       <span>视频通话</span>
     </div>
     <div class="tool-item" @click="$emit('openEmojiPicker')">
-      <div class="icon-text">😊</div>
+      <el-icon :size="24">
+        <Sunny />
+      </el-icon>
       <span>表情</span>
     </div>
   </div>
@@ -34,7 +36,7 @@
 
 <script setup lang="ts">
 /** 工具栏组件，展示图片/语音/通话/表情功能入口 @component */
-import { Picture, Microphone, Phone, VideoCamera } from '@element-plus/icons-vue'
+import { Picture, Microphone, Phone, VideoCamera, Sunny } from '@element-plus/icons-vue'
 
 /** 组件属性：是否展开 */
 defineProps<{
@@ -66,17 +68,21 @@ defineEmits<{
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  color: #606266;
-  padding: 6px 12px;
-  border-radius: 8px;
+  color: var(--text-regular);
+  padding: 8px 16px;
+  border-radius: 14px;
+  transition: all 0.25s;
 }
 
 .tool-item:hover {
-  color: #409eff;
-  background: #f0f7ff;
+  color: var(--color-primary);
+  background: #f3f0ff;
+  transform: translateY(-2px);
 }
 
-.icon-text {
-  font-size: 20px;
+.tool-item:active {
+  transform: translateY(0) scale(0.95);
 }
+
+
 </style>

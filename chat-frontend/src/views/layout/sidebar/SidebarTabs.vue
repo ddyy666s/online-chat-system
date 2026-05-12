@@ -61,8 +61,9 @@ const handleTabClick = (tab: any) => {
 <style scoped>
 .sidebar-tabs {
   display: flex;
-  border-bottom: 1px solid #e8ecf0;
-  background: #fafafa;
+  padding: 12px 16px;
+  gap: 8px;
+  background: var(--bg-color);
 }
 
 .tab-item {
@@ -71,37 +72,59 @@ const handleTabClick = (tab: any) => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 14px 0;
+  padding: 14px 6px;
   cursor: pointer;
   position: relative;
   font-size: 14px;
-  color: #606266;
-  transition: all 0.2s;
+  color: var(--text-secondary);
+  transition: all 0.25s;
+  border-radius: 16px;
+  background: transparent;
+  border: 1.5px solid transparent;
 }
 
 .tab-item:hover {
-  color: #409eff;
-  background: #f0f2f5;
+  color: var(--color-primary);
+  background: #f3f0ff;
+  border-color: #d0e5ff;
+  transform: translateY(-1px);
+}
+
+.tab-item:active {
+  transform: scale(0.95);
 }
 
 .tab-item.active {
-  color: #409eff;
-  background: #fff;
-  border-bottom: 2px solid #409eff;
+  color: var(--color-primary);
+  background: var(--bg-color-white);
+  font-weight: 600;
+  border-color: #b3d9ff;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.12);
+}
+
+.tab-item .el-icon {
+  font-size: 20px;
+  transition: transform 0.25s;
+}
+
+.tab-item:hover .el-icon {
+  transform: scale(1.15);
 }
 
 .badge {
   position: absolute;
-  top: 8px;
-  right: 20px;
-  background: #f56c6c;
+  top: 2px;
+  right: 10px;
+  background: var(--color-danger);
   color: white;
   font-size: 10px;
-  padding: 0 5px;
+  padding: 0 6px;
   border-radius: 10px;
   min-width: 18px;
   height: 18px;
   line-height: 18px;
   text-align: center;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(255, 118, 117, 0.3);
 }
 </style>

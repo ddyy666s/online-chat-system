@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="语音通话" width="400px" :close-on-click-modal="false" :show-close="false">
+  <BaseDialog v-model="visible" title="语音通话" width="400px" :close-on-click-modal="false" :show-close="false">
     <div style="text-align:center;padding:20px">
       <el-avatar :size="100">{{ (targetNickname || 'U').charAt(0) }}</el-avatar>
       <div style="margin-top:12px;font-size:18px">{{ targetNickname || '对方' }}</div>
@@ -9,13 +9,14 @@
       <el-button type="danger" @click="hangupCall">挂断</el-button>
       <el-button v-if="!isCaller && !isConnected" type="success" @click="acceptCallHandler">接听</el-button>
     </template>
-  </el-dialog>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 /** 语音通话对话框组件（基于阿里云 RTC 的简化版） @component */
 import { ref, watch, onUnmounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import { notify } from '@/utils/notify'
 import { websocketService } from '@/utils/websocket'
 import { useUserStore } from '@/stores/userStore'
 import { useAliRTC } from '@/composables/useAliRTC'
@@ -49,7 +50,7 @@ const hangupCall = async () => {
 
 /** 接听通话处理器 @returns Promise<void> */
 const acceptCallHandler = async () => {
-  if (!channelId) { ElMessage.error('房间信息缺失'); return }
+  if (!channelId) { notify.error('房间信息缺失'); return }
   await acceptCall(channelId, String(userStore.userInfo?.id), userStore.userInfo?.nickname || '用户')
 }
 

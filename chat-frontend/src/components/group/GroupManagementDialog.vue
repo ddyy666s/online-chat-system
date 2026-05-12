@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="群管理" width="620px" @close="handleClose">
+  <BaseDialog v-model="visible" title="群管理" width="640px">
     <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
       <el-button v-if="canManage" size="small" @click="toggleSelectAll">全选/取消</el-button>
       <el-button v-if="selectedIds.length > 0" size="small" type="warning"
@@ -47,13 +47,14 @@
       confirm-text="确定" cancel-text="取消" input-value="60"
       :input-pattern="/^\d+$/" input-error-message="请输入数字"
       @confirm="onBatchMuteConfirm" />
-  </el-dialog>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 /** 群管理对话框组件，支持查看成员、设置管理员、禁言、移除等操作 @component */
 import { ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import { notify } from '@/utils/notify'
 import {
   setGroupAdminApi, removeGroupAdminApi,
   removeGroupMemberApi, muteGroupMemberApi, unmuteGroupMemberApi, batchMuteGroupApi,
@@ -146,11 +147,11 @@ const onMuteConfirm = async (minutes: string) => {
   if (!props.groupId || !pendingMuteRow.value) return
   try {
     await muteGroupMemberApi(props.groupId, pendingMuteRow.value.userId, muteMinutesResult.value)
-    ElMessage.success(`已禁言 ${muteMinutesResult.value} 分钟`)
+    notify.success(`已禁言 ${muteMinutesResult.value} 分钟`)
     pendingMuteRow.value = null
     emit('refresh')
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || '操作失败')
+    notify.error(e?.response?.data?.message || '操作失败')
   }
 }
 
@@ -160,14 +161,14 @@ const toggleAdmin = async (row: GroupMemberVO) => {
   try {
     if (row.role === 1) {
       await removeGroupAdminApi(props.groupId, row.userId)
-      ElMessage.success('已取消管理员')
+      notify.success('已取消管理员')
     } else {
       await setGroupAdminApi(props.groupId, row.userId)
-      ElMessage.success('已设置管理员')
+      notify.success('已设置管理员')
     }
     emit('refresh')
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || '操作失败')
+    notify.error(e?.response?.data?.message || '操作失败')
   }
 }
 
@@ -182,11 +183,11 @@ const confirmKick = async () => {
   if (!props.groupId || !kickTarget.value) return
   try {
     await removeGroupMemberApi(props.groupId, kickTarget.value.userId)
-    ElMessage.success('已移除')
+    notify.success('已移除')
     showKickDialog.value = false
     emit('refresh')
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || '移除失败')
+    notify.error(e?.response?.data?.message || '移除失败')
   }
 }
 
@@ -196,10 +197,10 @@ const toggleMute = async (row: GroupMemberVO) => {
   if (row.muted) {
     try {
       await unmuteGroupMemberApi(props.groupId, row.userId)
-      ElMessage.success('已取消禁言')
+      notify.success('已取消禁言')
       emit('refresh')
     } catch (e: any) {
-      ElMessage.error(e?.response?.data?.message || '操作失败')
+      notify.error(e?.response?.data?.message || '操作失败')
     }
   } else {
     openMutePrompt(row)
@@ -221,17 +222,12 @@ const onBatchMuteConfirm = async (minutes: string) => {
   const m = parseInt(minutes, 10)
   try {
     await batchMuteGroupApi(props.groupId, selectedIds.value, m)
-    ElMessage.success(`已批量禁言 ${selectedIds.value.length} 人`)
+    notify.success(`已批量禁言 ${selectedIds.value.length} 人`)
     selectedIds.value = []
     emit('refresh')
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || '批量禁言失败')
+    notify.error(e?.response?.data?.message || '批量禁言失败')
   }
 }
 
-/** 关闭对话框 @returns void */
-const handleClose = () => {
-  visible.value = false
-  emit('update:modelValue', false)
-}
 </script>

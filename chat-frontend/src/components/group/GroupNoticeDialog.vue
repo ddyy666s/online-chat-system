@@ -3,18 +3,19 @@
     <p>{{ notice || '暂无群公告' }}</p>
   </ViewDialog>
 
-  <el-dialog v-model="showEdit" title="编辑群公告" width="400px">
+  <BaseDialog v-model="showEdit" title="编辑群公告" width="420px">
     <el-input v-model="editContent" type="textarea" :rows="4" placeholder="请输入群公告" maxlength="200" show-word-limit />
     <template #footer>
       <el-button @click="showEdit = false">取消</el-button>
       <el-button type="primary" :loading="loading" @click="handleSave">保存</el-button>
     </template>
-  </el-dialog>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 /** 群公告查看/编辑对话框 @component */
 import { ref, watch } from 'vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import ViewDialog from '@/components/common/ViewDialog.vue'
 
 /** 组件属性：显示状态、公告内容、是否可编辑 */
@@ -54,14 +55,11 @@ watch(showEdit, (val) => {
   if (!val) emit('update:modelValue', false)
 })
 
-/** 保存公告 @returns Promise<void> */
-const handleSave = async () => {
+/** 保存公告 @returns void */
+const handleSave = () => {
   loading.value = true
-  try {
-    await emit('save', editContent.value)
-    showEdit.value = false
-  } finally {
-    loading.value = false
-  }
+  emit('save', editContent.value)
+  showEdit.value = false
+  loading.value = false
 }
 </script>

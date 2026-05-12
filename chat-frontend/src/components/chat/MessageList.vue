@@ -71,12 +71,12 @@ defineExpose({ scrollToBottom })
 .message-list {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
-  background: #f5f5f5;
+  padding: 20px 16px;
+  background: var(--bg-color);
 }
 
 .loading {
-  padding: 16px;
+  padding: 24px;
   text-align: center;
 }
 
@@ -85,22 +85,17 @@ defineExpose({ scrollToBottom })
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px;
-  color: #909399;
-  font-size: 12px;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 .is-loading {
-  animation: rotate 1.5s linear infinite;
+  animation: rotate 1.2s linear infinite;
 }
 
 @keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

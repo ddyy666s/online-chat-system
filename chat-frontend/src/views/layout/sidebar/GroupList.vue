@@ -69,23 +69,33 @@ const formatTime = (time: string) => {
   padding: 0 4px 12px 4px;
 }
 
+.group-header-actions .el-button {
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  width: 100%;
+  height: 46px;
+  font-size: 15px !important;
+}
+
 .group-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 4px;
+  margin: 2px 4px;
 }
 
 .group-item:hover {
-  background: #f5f7fa;
+  background: #f3f0ff;
+  transform: translateX(2px);
 }
 
 .group-item.active {
-  background: #e6f7ff;
+  background: linear-gradient(135deg, #f3f0ff, #e8e3ff);
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.08);
 }
 
 .group-avatar {
@@ -93,19 +103,29 @@ const formatTime = (time: string) => {
   flex-shrink: 0;
 }
 
+.group-avatar :deep(.el-avatar) {
+  border: 2px solid transparent;
+}
+
+.group-item.active .group-avatar :deep(.el-avatar) {
+  border-color: var(--color-primary-light);
+}
+
 .unread-dot {
   position: absolute;
   top: -4px;
   right: -4px;
-  background: #f56c6c;
+  background: var(--color-danger);
   color: white;
   font-size: 10px;
+  font-weight: 600;
   padding: 0 5px;
   border-radius: 10px;
   min-width: 18px;
   height: 18px;
   line-height: 18px;
   text-align: center;
+  box-shadow: 0 2px 6px rgba(255, 118, 117, 0.3);
 }
 
 .group-info {
@@ -114,14 +134,18 @@ const formatTime = (time: string) => {
 }
 
 .group-name {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 4px;
-  color: #303133;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  color: var(--text-primary);
+}
+
+.group-item.active .group-name {
+  color: var(--color-primary);
 }
 
 .group-desc {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 </style>

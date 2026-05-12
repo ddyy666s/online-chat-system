@@ -92,17 +92,18 @@ const handleReject = async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  background: #fff;
-  border-radius: 12px;
+  padding: 14px 12px;
+  background: var(--bg-color-white);
+  border-radius: 14px;
   margin-bottom: 8px;
   transition: all 0.2s;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-color-extra-light);
 }
 
 .friend-request-item:hover {
-  background: #fafafa;
-  transform: translateX(2px);
+  background: #f3f0ff;
+  border-color: var(--color-primary-light);
+  transform: translateX(3px);
 }
 
 .info {
@@ -113,13 +114,13 @@ const handleReject = async () => {
 .nickname {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .message {
   font-size: 13px;
-  color: #909399;
+  color: var(--text-secondary);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -128,13 +129,20 @@ const handleReject = async () => {
 
 .time {
   font-size: 11px;
-  color: #c0c4cc;
+  color: var(--text-secondary);
 }
 
 .actions {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.actions .el-button {
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 6px 14px !important;
 }
 
 .status-badge {

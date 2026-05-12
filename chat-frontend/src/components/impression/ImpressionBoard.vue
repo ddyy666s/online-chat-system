@@ -189,4 +189,12 @@ onMounted(() => {
   margin-bottom: 16px;
   text-align: right;
 }
+
+.impression-header .el-button {
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  height: 44px;
+  font-size: 15px !important;
+  padding: 0 22px !important;
+}
 </style>

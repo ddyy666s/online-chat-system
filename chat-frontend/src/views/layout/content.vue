@@ -17,7 +17,10 @@ import AdminView from '@/views/admin/AdminView.vue'
 <style scoped>
 .content {
   flex: 1;
-  overflow: auto;
-  background: #f5f7fa;
+  overflow: hidden;
+  background: var(--bg-color-white);
+  border: 3px solid #b3d9ff;
+  border-radius: 24px;
+  box-shadow: var(--box-shadow-base);
 }
 </style>

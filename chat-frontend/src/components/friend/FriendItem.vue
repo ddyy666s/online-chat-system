@@ -59,38 +59,53 @@ const handleCommand = (command: string) => {
 .friend-item {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
+  padding: 12px 16px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
   position: relative;
+  margin: 2px 8px;
+  border-radius: 14px;
 }
 
 .friend-item:hover {
-  background: #e4e7ed;
+  background: #f3f0ff;
+  transform: translateX(2px);
 }
 
 .friend-item.active {
-  background: #e6f7ff;
+  background: linear-gradient(135deg, #f3f0ff, #e8e3ff);
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.08);
 }
 
 .avatar {
   position: relative;
-  margin-right: 12px;
+  margin-right: 14px;
+}
+
+.avatar :deep(.el-avatar) {
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.friend-item.active .avatar :deep(.el-avatar) {
+  border-color: var(--color-primary-light);
 }
 
 .online-dot {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
+  bottom: 3px;
+  right: 3px;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #c0c4cc;
-  border: 1px solid #fff;
+  background: var(--text-secondary);
+  border: 2px solid var(--bg-color-white);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .online-dot.online {
-  background: #67c23a;
+  background: var(--color-success);
+  box-shadow: 0 0 6px rgba(0, 184, 148, 0.4);
 }
 
 .friend-info {
@@ -99,30 +114,37 @@ const handleCommand = (command: string) => {
 }
 
 .name {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  color: var(--text-primary);
+}
+
+.friend-item.active .name {
+  color: var(--color-primary);
 }
 
 .message {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .unread-badge {
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  background: #f56c6c;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--color-danger);
   color: white;
   font-size: 11px;
-  border-radius: 9px;
+  font-weight: 600;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-left: 8px;
+  box-shadow: 0 2px 6px rgba(255, 118, 117, 0.3);
 }
 </style>

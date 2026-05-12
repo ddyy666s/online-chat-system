@@ -33,7 +33,7 @@ defineEmits<{
 .emoji-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 
 .emoji-item {
@@ -43,18 +43,25 @@ defineEmits<{
   gap: 6px;
   cursor: pointer;
   padding: 10px;
-  border-radius: 12px;
+  border-radius: 14px;
   position: relative;
+  transition: all 0.2s;
 }
 
 .emoji-item:hover {
-  background: #f5f5f5;
+  background: #f3f0ff;
+  transform: translateY(-2px);
+}
+
+.emoji-item:active {
+  transform: scale(0.95);
 }
 
 .emoji-item img {
   width: 48px;
   height: 48px;
   object-fit: contain;
+  border-radius: 8px;
 }
 
 .delete-btn {
@@ -62,6 +69,7 @@ defineEmits<{
   top: 0;
   right: 0;
   opacity: 0;
+  transition: opacity 0.2s;
 }
 
 .emoji-item:hover .delete-btn {

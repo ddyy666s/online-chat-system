@@ -68,6 +68,7 @@ const incomingCaller = ref<any>(null)
 const incomingCallType = ref<'voice' | 'video'>('voice')
 /** 待处理的 Offer */
 const pendingOffer = ref<any>(null)
+
 /** 铃声 URL（缓存） */
 let _ringUrl: string | null = null
 /** 获取铃声 URL @returns 铃声地址 */
@@ -287,6 +288,7 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: white;
+  background: var(--bg-color-white);
 }
+
 </style>

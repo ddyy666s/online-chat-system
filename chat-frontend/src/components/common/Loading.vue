@@ -38,34 +38,38 @@ defineProps<{
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(2px);
 }
 
 .loading-spinner {
   background: white;
-  padding: 20px 30px;
-  border-radius: 8px;
+  padding: 24px 36px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  color: #409eff;
+  gap: 14px;
+  font-size: 15px;
+  color: var(--color-primary);
+  font-weight: 600;
+  box-shadow: var(--box-shadow-dark);
+  animation: popIn 0.3s ease;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .is-loading {
-  animation: rotate 1.5s linear infinite;
+  animation: rotate 1.2s linear infinite;
 }
 
 @keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

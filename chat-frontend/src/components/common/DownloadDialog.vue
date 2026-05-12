@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="下载聊天记录" width="400px" :before-close="handleClose">
+  <BaseDialog v-model="visible" title="下载聊天记录" width="400px">
     <div class="download-dialog">
       <div class="info">
         <p>当前共有 <strong>{{ totalMessages }}</strong> 条聊天记录</p>
@@ -15,16 +15,21 @@
     </div>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="handleDownload">下载</el-button>
+      <el-button class="btn-cancel" @click="handleClose">取消</el-button>
+      <button class="download-btn" :disabled="loading" @click="handleDownload">
+        <el-icon v-if="!loading" style="font-size:18px"><Download /></el-icon>
+        <span class="button-content">{{ loading ? '下载中...' : '下载' }}</span>
+      </button>
     </template>
-  </el-dialog>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 /** 聊天记录下载对话框组件 @component */
 import { ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import { notify } from '@/utils/notify'
+import { Download } from '@element-plus/icons-vue'
 
 /** 组件属性：显示状态、好友信息、总消息数、最大下载限制 */
 const props = defineProps<{
@@ -77,7 +82,7 @@ const handleDownload = async () => {
     emit('download', form.value.limit)
     handleClose()
   } catch (error) {
-    ElMessage.error('下载失败')
+    notify.error('下载失败')
   } finally {
     loading.value = false
   }
@@ -99,21 +104,75 @@ watch(() => props.modelValue, (val) => {
 }
 
 .info {
-  background: #f5f7fa;
-  padding: 12px;
-  border-radius: 8px;
+  background: var(--bg-color);
+  padding: 16px;
+  border-radius: 14px;
   margin-bottom: 20px;
   text-align: center;
 }
 
+.info p {
+  font-size: 14px;
+  color: var(--text-regular);
+}
+
 .info strong {
-  color: #409eff;
-  font-size: 20px;
+  color: var(--color-primary);
+  font-size: 22px;
+  font-weight: 700;
 }
 
 .tip {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
   margin-top: 8px;
+}
+
+.btn-cancel {
+  height: 44px;
+  padding: 0 28px;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+.btn-cancel:hover {
+  border-color: var(--color-primary-light) !important;
+  color: var(--color-primary) !important;
+  background: #f3f0ff !important;
+}
+
+.download-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 28px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: #fff;
+  border: 2px solid var(--color-primary);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  margin-left: 12px;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 92, 231, 0.3);
+  border-color: var(--color-primary-light);
+}
+.download-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+.download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 </style>

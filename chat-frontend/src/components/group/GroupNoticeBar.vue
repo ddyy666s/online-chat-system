@@ -28,10 +28,21 @@ defineEmits<{
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  background: #fef0e6;
-  border-bottom: 1px solid #e4e7ed;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #fef9e7, #fef3d5);
+  border-bottom: 1px solid var(--border-color-lighter);
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.notice-bar:hover {
+  background: linear-gradient(135deg, #fef3d5, #fdecc0);
+}
+
+.notice-bar .el-icon {
+  color: var(--color-warning);
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 .notice-bar .notice-text {
@@ -40,6 +51,7 @@ defineEmits<{
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
-  color: #e6a23c;
+  color: #b8860b;
+  font-weight: 500;
 }
 </style>

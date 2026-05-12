@@ -74,7 +74,7 @@ onMounted(() => {
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--bg-color);
 }
 
 .admin-main {
@@ -85,6 +85,6 @@ onMounted(() => {
 }
 
 .admin-content {
-  padding: 20px;
+  padding: 24px;
 }
 </style>

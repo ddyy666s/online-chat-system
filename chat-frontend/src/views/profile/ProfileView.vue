@@ -174,33 +174,51 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #fd79a8 100%);
+  background-size: 200% 200%;
+  animation: gradient 8s ease infinite;
   padding: 20px;
+  position: relative;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .profile-card {
-  width: 500px;
-  background: white;
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  width: 520px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 36px;
+  box-shadow: 0 20px 60px rgba(108, 92, 231, 0.2);
+  animation: cardIn 0.5s ease;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 }
 
 .profile-header h2 {
   margin: 0;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .avatar-section {
   display: flex;
   justify-content: center;
-  margin-bottom: 30px;
+  margin-bottom: 32px;
 }
 
 .avatar-wrapper {
@@ -209,18 +227,19 @@ onMounted(() => {
 }
 
 .profile-avatar {
-  width: 100px;
-  height: 100px;
-  font-size: 40px;
+  width: 110px;
+  height: 110px;
+  font-size: 44px;
+  border: 3px solid var(--color-primary-light) !important;
 }
 
 .avatar-overlay {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  width: 110px;
+  height: 110px;
+  background: rgba(108, 92, 231, 0.8);
   border-radius: 50%;
   display: flex;
   flex-direction: column;
@@ -230,18 +249,31 @@ onMounted(() => {
   opacity: 0;
   transition: opacity 0.3s;
   cursor: pointer;
+  backdrop-filter: blur(2px);
 }
 
 .avatar-overlay .el-icon {
-  font-size: 24px;
+  font-size: 26px;
   margin-bottom: 4px;
 }
 
 .avatar-overlay span {
   font-size: 12px;
+  font-weight: 500;
 }
 
 .avatar-wrapper:hover .avatar-overlay {
   opacity: 1;
+}
+
+.profile-card :deep(.el-form-item__label) {
+  font-weight: 600;
+  color: var(--text-regular);
+}
+
+.profile-card :deep(.el-button--primary) {
+  border-radius: 12px !important;
+  padding: 10px 32px !important;
+  font-weight: 600 !important;
 }
 </style>

@@ -49,22 +49,25 @@ const handleClose = () => {
 
 .notification-title {
   font-size: 18px;
-  font-weight: 600;
-  color: #303133;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
 }
 
 .notification-body {
   font-size: 14px;
-  color: #606266;
-  line-height: 1.8;
+  color: var(--text-regular);
+  line-height: 1.9;
   white-space: pre-wrap;
 }
 
 .notification-meta {
   display: flex;
   justify-content: space-between;
-  margin-top: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color-lighter);
   font-size: 12px;
-  color: #c0c4cc;
+  color: var(--text-secondary);
 }
 </style>

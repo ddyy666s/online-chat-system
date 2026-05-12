@@ -79,14 +79,21 @@ defineExpose({ scrollToBottom })
 .message-list {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
-  background: #f5f5f5;
+  padding: 20px 16px;
+  background: var(--bg-color);
 }
 
 .message-item {
   display: flex;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  padding: 0 8px;
+  animation: messageIn 0.25s ease;
+}
+
+@keyframes messageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .message-item.own {
@@ -100,30 +107,43 @@ defineExpose({ scrollToBottom })
 .message-content {
   display: flex;
   flex-direction: column;
-  max-width: 60%;
+  max-width: 65%;
 }
 
 .message-info {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   font-size: 12px;
-  color: #909399;
-  margin-bottom: 4px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.message-info .name {
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 .message-bubble {
-  background: white;
-  padding: 8px 12px;
-  border-radius: 12px;
+  background: var(--bg-color-white);
+  padding: 10px 16px;
+  border-radius: 18px;
   word-wrap: break-word;
+  line-height: 1.5;
+  font-size: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border-bottom-left-radius: 4px;
 }
 
 .message-item.own .message-bubble {
-  background: #95ec69;
+  background: linear-gradient(135deg, var(--color-primary), #8b7cf7);
+  color: white;
+  border-bottom-right-radius: 4px;
+  border-bottom-left-radius: 18px;
+  border-top-right-radius: 4px;
 }
 
 .loading {
-  padding: 16px;
+  padding: 24px;
   text-align: center;
 }
 
@@ -132,22 +152,17 @@ defineExpose({ scrollToBottom })
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px;
-  color: #909399;
-  font-size: 12px;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 .is-loading {
-  animation: rotate 1.5s linear infinite;
+  animation: rotate 1.2s linear infinite;
 }
 
 @keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

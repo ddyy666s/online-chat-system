@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="添加评价" width="400px" @close="handleClose">
+  <BaseDialog v-model="visible" title="添加评价" width="400px" @close="handleClose">
     <el-form :model="form" label-width="80px">
       <el-form-item label="选择好友">
         <el-select v-model="form.toUserId" placeholder="请选择要评价的好友" filterable style="width: 100%" :loading="loading">
@@ -18,13 +18,14 @@
         提交
       </el-button>
     </template>
-  </el-dialog>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 /** 添加好友评价对话框 @component */
 import { ref, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import { notify } from '@/utils/notify'
 
 /** 组件属性：显示状态、好友列表、加载状态、预选好友ID */
 const props = defineProps<{
@@ -73,20 +74,17 @@ const handleClose = () => {
 /** 提交评价 @returns Promise<void> */
 const handleSubmit = async () => {
   if (!form.value.toUserId) {
-    ElMessage.warning('请选择要评价的好友')
+    notify.warning('请选择要评价的好友')
     return
   }
   if (!form.value.content.trim()) {
-    ElMessage.warning('请输入评价内容')
+    notify.warning('请输入评价内容')
     return
   }
 
   submitting.value = true
-  try {
-    await emit('submit', form.value.toUserId, form.value.content)
-    handleClose()
-  } finally {
-    submitting.value = false
-  }
+  emit('submit', form.value.toUserId, form.value.content)
+  handleClose()
+  submitting.value = false
 }
 </script>

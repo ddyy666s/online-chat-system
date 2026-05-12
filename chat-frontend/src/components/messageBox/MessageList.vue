@@ -87,15 +87,28 @@ const handleClick = (userId: number) => {
 
 .date-divider {
   text-align: center;
-  margin: 16px 0;
+  margin: 18px 0;
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.date-divider::before,
+.date-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-color), transparent);
 }
 
 .date-divider span {
   font-size: 12px;
-  color: #909399;
-  background: #f5f7fa;
-  padding: 4px 12px;
+  color: var(--text-secondary);
+  background: var(--bg-color);
+  padding: 4px 16px;
   border-radius: 20px;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 </style>

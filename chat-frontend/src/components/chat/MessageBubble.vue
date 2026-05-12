@@ -77,7 +77,14 @@ const handleRecall = async () => {
 .message-item {
   display: flex;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  padding: 0 8px;
+  animation: messageIn 0.25s ease;
+}
+
+@keyframes messageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .message-item.own {
@@ -91,26 +98,40 @@ const handleRecall = async () => {
 .message-content {
   display: flex;
   flex-direction: column;
-  max-width: 60%;
+  max-width: 65%;
 }
 
 .message-info {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   font-size: 12px;
-  color: #909399;
-  margin-bottom: 4px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
 }
 
 .message-bubble {
-  background: white;
-  padding: 8px 12px;
-  border-radius: 12px;
+  background: var(--bg-color-white);
+  padding: 10px 16px;
+  border-radius: 18px;
   word-wrap: break-word;
+  line-height: 1.5;
+  font-size: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  position: relative;
+  border-bottom-left-radius: 4px;
+}
+
+.message-item:not(.own) .message-bubble {
+  border-bottom-left-radius: 4px;
+  border-top-left-radius: 18px;
 }
 
 .message-item.own .message-bubble {
-  background: #95ec69;
+  background: linear-gradient(135deg, var(--color-primary), #8b7cf7);
+  color: white;
+  border-bottom-right-radius: 4px;
+  border-bottom-left-radius: 18px;
+  border-top-right-radius: 4px;
 }
 
 .image-message {
@@ -118,12 +139,9 @@ const handleRecall = async () => {
 }
 
 .message-image {
-  max-width: 200px;
-  border-radius: 8px;
-}
-
-.message-bubble {
-  position: relative;
+  max-width: 220px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color-lighter);
 }
 
 .message-bubble:hover .recall-btn {
@@ -132,15 +150,21 @@ const handleRecall = async () => {
 
 .recall-btn {
   position: absolute;
-  top: -24px;
+  top: -26px;
   right: 0;
   display: none;
-  font-size: 12px;
-  color: #409eff;
+  font-size: 11px;
+  color: var(--color-primary);
+}
+
+.message-item.own .recall-btn {
+  color: white;
+  opacity: 0.8;
 }
 
 .recalled {
-  color: #909399;
+  color: var(--text-secondary);
   font-style: italic;
+  font-size: 13px;
 }
 </style>

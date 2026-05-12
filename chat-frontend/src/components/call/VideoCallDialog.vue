@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" :title="dialogTitle" width="800px" :close-on-click-modal="false" :show-close="true"
+  <BaseDialog v-model="visible" :title="dialogTitle" width="800px" :close-on-click-modal="false" :show-close="true"
     @close="handleClose">
     <div class="video-call-container">
       <div class="remote-video-area">
@@ -25,14 +25,14 @@
         </el-button>
       </div>
     </template>
-  </el-dialog>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 /** 视频通话对话框组件（基于阿里云 RTC） @component */
 import { ref, computed, watch, onUnmounted } from 'vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import { VideoCamera } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import { websocketService } from '@/utils/websocket'
 import { useUserStore } from '@/stores/userStore'
 import { useAliRTC } from '@/composables/useAliRTC'

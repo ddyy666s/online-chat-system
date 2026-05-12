@@ -60,16 +60,19 @@ onMounted(() => {
 
 <style scoped>
 .app-container {
-  height: 100%;
+  height: 100vh;
   width: 100%;
-  background: #f5f7fa;
+  background: linear-gradient(135deg, #e8ecf4 0%, #f0f2f8 50%, #e4e8f2 100%);
+  padding: 14px;
+  overflow: hidden;
 }
 
 .main-layout {
   display: flex;
-  height: 100vh;
+  height: 100%;
   width: 100%;
-  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  gap: 14px;
 }
 
 .right-panel {
@@ -78,5 +81,6 @@ onMounted(() => {
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
+  gap: 14px;
 }
 </style>

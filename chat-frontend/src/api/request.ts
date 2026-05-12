@@ -40,7 +40,7 @@ request.interceptors.request.use(
   }
 )
 
-/** 响应拦截器：统一处理状态码，业务错误交由调用方自行处理避免重复弹窗 */
+/** 响应拦截器：统一处理状态码和错误提示 */
 request.interceptors.response.use(
   (response): any => {
     const { code, message, data } = response.data as ApiResponse
@@ -57,7 +57,8 @@ request.interceptors.response.use(
       return Promise.reject(new Error(message))
     }
     
-    return Promise.reject(new Error(message || '请求失败'))
+    ElMessage.error(message || '请求失败')
+    return Promise.reject(new Error(message))
   },
   (error) => {
     if (error.response) {
@@ -66,7 +67,15 @@ request.interceptors.response.use(
         const userStore = useUserStore()
         userStore.logout()
         window.location.href = '/login'
+      } else if (status === 403) {
+        ElMessage.error('无权限访问')
+      } else if (status === 404) {
+        ElMessage.error('请求资源不存在')
+      } else {
+        ElMessage.error(error.message || '网络错误')
       }
+    } else {
+      ElMessage.error('网络连接失败')
     }
     return Promise.reject(error)
   }

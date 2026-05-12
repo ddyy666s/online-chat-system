@@ -1,6 +1,6 @@
 <template>
-  <el-dialog v-model="visible" :title="callTitle" :width="callType === 'video' ? '800px' : '400px'"
-    :before-close="handleClose" :close-on-click-modal="false" :show-close="false" destroy-on-close>
+  <BaseDialog v-model="visible" :title="callTitle" :width="callType === 'video' ? '800px' : '400px'"
+    :close-on-click-modal="false" :show-close="false" destroy-on-close @close="hangupCall">
     <div class="call-container" :class="{ 'video-call': callType === 'video' }">
       <template v-if="callType === 'video'">
         <RemoteVideo :target-user="targetUser" :is-connected="isConnected" :status-text="callStatusText" :stream="remoteStream" />
@@ -13,13 +13,14 @@
     <template #footer>
       <CallActions :is-connected="isConnected" :is-caller="isCaller" @accept="acceptCall" @hangup="hangupCall" />
     </template>
-  </el-dialog>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 /** 通话对话框组件（语音/视频），管理 WebRTC 通话生命周期 @component */
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import { notify } from '@/utils/notify'
 import { websocketService } from '@/utils/websocket'
 import { useWebRTC } from '@/composables/useWebRTC'
 import RemoteVideo from './RemoteVideo.vue'
@@ -74,7 +75,7 @@ const doHangup = (showMessage: string | null) => {
   hangupSent = true
   hangup()
   remoteStream.value = null
-  if (showMessage) ElMessage.info(showMessage)
+  if (showMessage) notify.info(showMessage)
   if (visible.value) {
     visible.value = false
     emit('update:modelValue', false)
@@ -136,8 +137,6 @@ const hangupCall = () => {
   doHangup(null)
 }
 
-/** 关闭对话框时自动挂断 @returns void */
-const handleClose = () => hangupCall()
 
 /** 是否已注册信令回调 */
 let registered = false

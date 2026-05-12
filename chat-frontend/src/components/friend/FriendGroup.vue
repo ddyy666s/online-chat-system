@@ -33,18 +33,26 @@ defineEmits<{
 
 <style scoped>
 .friend-group {
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
 
 .group-header {
-  padding: 8px 16px;
+  padding: 10px 20px;
   font-size: 13px;
-  color: #909399;
-  background: #f5f5f5;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.5px;
 }
 
 .count {
-  margin-left: 8px;
-  font-size: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--border-color-lighter);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 500;
 }
 </style>

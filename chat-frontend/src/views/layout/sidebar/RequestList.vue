@@ -43,14 +43,17 @@ defineEmits<{
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  transition: background 0.2s;
+  padding: 14px 12px;
+  border-radius: 14px;
+  transition: all 0.2s;
   margin-bottom: 4px;
+  background: var(--bg-color-white);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
 
 .request-item:hover {
-  background: #f5f7fa;
+  background: #f3f0ff;
+  transform: translateX(2px);
 }
 
 .request-item .info {
@@ -58,18 +61,26 @@ defineEmits<{
 }
 
 .request-item .name {
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-weight: 600;
+  margin-bottom: 3px;
   font-size: 14px;
+  color: var(--text-primary);
 }
 
 .request-item .message {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 
 .request-item .actions {
   display: flex;
   gap: 8px;
+}
+
+.request-item .actions .el-button {
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 6px 14px !important;
 }
 </style>

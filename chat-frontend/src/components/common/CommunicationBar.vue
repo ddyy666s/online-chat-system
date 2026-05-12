@@ -238,19 +238,20 @@ onUnmounted(() => {
 
 <style scoped>
 .communication-bar {
-  border-top: 1px solid #e4e7ed;
-  background: #fff;
+  border-top: 1px solid var(--border-color-lighter);
+  background: var(--bg-color-white);
 }
 
 .toggle-btn {
   display: flex;
   justify-content: center;
-  padding: 8px 0;
+  padding: 6px 0;
   cursor: pointer;
-  color: #909399;
+  color: var(--text-secondary);
+  transition: color 0.2s;
 }
 
 .toggle-btn:hover {
-  color: #409eff;
+  color: var(--color-primary);
 }
 </style>

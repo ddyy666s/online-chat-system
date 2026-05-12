@@ -56,31 +56,61 @@ const handleSelect = (index: string) => {
 .admin-sidebar {
   width: 240px;
   height: 100vh;
-  background: #fff;
-  border-right: 1px solid #e4e7ed;
+  background: var(--bg-color-white);
+  border-right: 1px solid var(--border-color-lighter);
   position: fixed;
   left: 0;
   top: 0;
   display: flex;
   flex-direction: column;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.04);
 }
 
 .logo {
-  height: 60px;
+  height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid #e4e7ed;
-  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color-lighter);
+  padding: 0 20px;
 }
 
 .logo h3 {
   margin: 0;
-  color: #409eff;
+  font-size: 22px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-success));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: 2px;
 }
 
 .sidebar-menu {
   border-right: none;
   flex: 1;
+  padding: 8px;
+}
+
+.sidebar-menu :deep(.el-menu-item) {
+  border-radius: 12px !important;
+  margin: 2px 0;
+  height: 48px;
+  line-height: 48px;
+  font-weight: 500;
+}
+
+.sidebar-menu :deep(.el-menu-item.is-active) {
+  background: #f3f0ff !important;
+  color: var(--color-primary) !important;
+  font-weight: 600;
+}
+
+.sidebar-menu :deep(.el-menu-item:hover) {
+  background: #f8f6ff !important;
+}
+
+.sidebar-menu :deep(.el-menu-item .el-icon) {
+  font-size: 18px;
 }
 </style>

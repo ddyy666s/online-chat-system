@@ -5,8 +5,10 @@
     </div>
 
     <div class="actions">
-      <el-badge :value="messageStore.unreadCount?.total || 0" :hidden="!messageStore.unreadCount?.total">
-        <el-button :icon="Bell" circle @click="showMessageBox = true" />
+      <el-badge :value="messageStore.unreadCount?.total || 0" :hidden="!messageStore.unreadCount?.total" class="bell-badge">
+        <el-button circle @click="showMessageBox = true" class="bell-btn">
+          <el-icon :size="20"><Bell /></el-icon>
+        </el-button>
       </el-badge>
 
       <el-dropdown @command="handleCommand">
@@ -95,28 +97,63 @@ onMounted(() => {
 
 <style scoped>
 .header {
-  height: 60px;
-  padding: 0 24px;
-  border-bottom: 1px solid #e8ecf0;
+  height: var(--header-height);
+  padding: 0 32px;
+  border: 3px solid #b3d9ff;
+  border-radius: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fff;
+  background: var(--bg-color-white);
   flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  box-shadow: var(--box-shadow-light);
 }
 .logo {
-  font-size: 18px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #409eff, #67c23a);
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-success));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  letter-spacing: 1px;
 }
-.actions { display: flex; align-items: center; gap: 16px; }
+.actions { display: flex; align-items: center; gap: 24px; }
 .user-info {
-  display: flex; align-items: center; gap: 10px; cursor: pointer;
-  padding: 6px 12px; border-radius: 24px; transition: background 0.2s;
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  padding: 8px 18px; border-radius: 30px; transition: all 0.2s;
 }
-.user-info:hover { background: #f5f7fa; }
-.user-info span { font-size: 14px; font-weight: 500; color: #303133; }
+.user-info:hover {
+  background: #f3f0ff;
+  transform: translateY(-1px);
+}
+.user-info span { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+
+.bell-badge :deep(.el-badge__content) {
+  border: 2px solid var(--bg-color-white) !important;
+}
+
+.bell-btn {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 14px !important;
+  background: var(--bg-color) !important;
+  border: 1px solid transparent !important;
+  font-size: 20px;
+  transition: all 0.25s !important;
+  color: var(--text-regular);
+}
+
+.bell-btn:hover {
+  transform: translateY(-2px) !important;
+  background: #f3f0ff !important;
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary-light) !important;
+  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.15) !important;
+}
+
+.bell-btn:active {
+  transform: scale(0.95) !important;
+}
 </style>

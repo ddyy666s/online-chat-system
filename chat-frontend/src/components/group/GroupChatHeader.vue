@@ -47,26 +47,30 @@ defineEmits<{
 
 <style scoped>
 .chat-header {
-  padding: 12px 20px;
-  border-bottom: 1px solid #e4e7ed;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border-color-lighter);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: var(--bg-color-white);
 }
 
 .group-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .group-detail .name {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
 }
 
 .group-detail .member-count {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 </style>

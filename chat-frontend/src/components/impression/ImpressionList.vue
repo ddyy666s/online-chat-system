@@ -148,7 +148,13 @@ watch(() => props.impressionsByMe, () => {
 .no-more {
   text-align: center;
   padding: 16px 0;
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.impression-list :deep(.el-tabs__item) {
+  font-size: 14px;
+  font-weight: 500;
 }
 </style>

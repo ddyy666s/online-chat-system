@@ -126,7 +126,21 @@ watch(() => props.stats, () => {
 
 <style scoped>
 .chart-card {
-  margin-top: 20px;
+  margin-top: 0;
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+}
+
+.chart-card :deep(.el-card__header) {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color-lighter);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.chart-card :deep(.el-card__body) {
+  padding: 20px;
 }
 
 .chart-container {

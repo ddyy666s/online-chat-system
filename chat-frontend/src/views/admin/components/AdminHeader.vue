@@ -29,15 +29,26 @@ const goBack = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding: 0 20px;
-  height: 60px;
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  margin-bottom: 0;
+  padding: 0 24px;
+  height: var(--header-height);
+  background: var(--bg-color-white);
+  border-bottom: 1px solid var(--border-color-lighter);
+  flex-shrink: 0;
 }
 
 .admin-header h2 {
   margin: 0;
   font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.admin-header .el-button {
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  height: 44px;
+  font-size: 15px !important;
+  padding: 0 24px !important;
 }
 </style>

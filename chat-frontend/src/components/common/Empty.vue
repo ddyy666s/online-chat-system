@@ -38,32 +38,43 @@ withDefaults(defineProps<{
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 60px 20px;
 }
 
 .empty-content {
   text-align: center;
+  animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .empty-default-icon {
-  margin-bottom: 16px;
-  opacity: 0.6;
+  margin-bottom: 20px;
+  opacity: 0.5;
+  transition: transform 0.3s ease;
+}
+
+.empty-container:hover .empty-default-icon {
+  transform: scale(1.1) rotate(-3deg);
 }
 
 .empty-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #606266;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
 .empty-description {
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 
 .empty-action {
-  margin-top: 16px;
+  margin-top: 20px;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <el-drawer v-model="visible" title="表情包" direction="btt" size="400px" @close="handleClose">
+  <el-drawer v-model="visible" title="表情包" direction="btt" size="420px" @close="handleClose" class="beautiful-drawer">
     <div class="emoji-container">
       <div class="emoji-tabs">
         <el-button size="small" :type="activeTab === 'system' ? 'primary' : 'default'" @click="activeTab = 'system'">
@@ -67,5 +67,10 @@ const handleClose = () => {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.emoji-tabs .el-button {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
 }
 </style>

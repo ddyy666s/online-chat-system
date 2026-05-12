@@ -2,7 +2,10 @@
   <div class="friend-list">
     <div class="friend-header">
       <h3>好友列表</h3>
-      <el-button :icon="Plus" size="small" circle @click="showAddDialog = true" />
+      <el-button class="add-friend-btn" @click="showAddDialog = true">
+        <el-icon :size="16"><Plus /></el-icon>
+        <span>添加</span>
+      </el-button>
     </div>
 
     <el-scrollbar class="friend-scroll">
@@ -134,24 +137,52 @@ const refresh = () => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #f5f5f5;
+  background: var(--bg-color-white);
 }
 
 .friend-header {
-  padding: 12px 16px;
+  padding: 14px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--border-color-lighter);
 }
 
 .friend-header h3 {
   margin: 0;
   font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.add-friend-btn {
+  height: 36px;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  gap: 5px;
+  border: 2px solid var(--border-color) !important;
+  color: var(--text-regular) !important;
+  transition: all 0.25s !important;
+}
+
+.add-friend-btn:hover {
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
+  background: #f3f0ff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.12);
+}
+
+.add-friend-btn:active {
+  transform: scale(0.97);
 }
 
 .friend-scroll {
   flex: 1;
   overflow-y: auto;
+  padding: 4px 0;
 }
+
 </style>

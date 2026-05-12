@@ -166,16 +166,34 @@ onMounted(() => {
 
 <style scoped>
 .sidebar {
-  width: 280px;
-  background: #fff;
-  border-right: 1px solid #e8ecf0;
+  width: var(--sidebar-width);
+  background: var(--bg-color-white);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  position: relative;
+  z-index: 20;
+  border: 3px solid #b3d9ff;
+  border-radius: 24px;
+  box-shadow: var(--box-shadow-base);
 }
 
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.sidebar-content:hover::-webkit-scrollbar-thumb {
+  background: var(--text-secondary);
 }
 </style>

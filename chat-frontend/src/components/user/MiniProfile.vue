@@ -50,8 +50,6 @@ const emit = defineEmits<{
   (e: 'startChat', userId: number): void
   (e: 'writeImpression', userId: number): void
 }>()
-
-const router = useRouter()
 /** 用户信息 */
 const userInfo = ref<any>(null)
 /** 共同好友数 */
@@ -84,7 +82,7 @@ onMounted(() => {
 
 <style scoped>
 .mini-profile {
-  padding: 8px;
+  padding: 12px;
 }
 
 .profile-header {
@@ -94,40 +92,54 @@ onMounted(() => {
 }
 
 .info .name {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
   margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .info .status {
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .info .status.online {
-  color: #67c23a;
+  color: var(--color-success);
 }
 
 .profile-detail {
   margin-bottom: 16px;
+  background: var(--bg-color);
+  padding: 12px 14px;
+  border-radius: 12px;
 }
 
 .profile-detail .row {
   font-size: 13px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+}
+
+.profile-detail .row:last-child {
+  margin-bottom: 0;
 }
 
 .profile-detail .label {
-  color: #909399;
+  color: var(--text-secondary);
 }
 
 .profile-detail .value {
-  color: #606266;
+  color: var(--text-regular);
 }
 
 .profile-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+}
+
+.profile-actions .el-button {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
 }
 </style>
