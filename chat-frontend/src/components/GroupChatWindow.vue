@@ -18,12 +18,16 @@
     <GroupMembersDialog v-model="showMembers" :members="memberList" />
 
     <InviteFriendDialog v-model="showInvite" :friends="friendList" @invite="handleInvite" />
+    <ConfirmDialog v-model="showQuitDialog" title="退出群聊" message="确定要退出该群聊吗？"
+      type="warning" confirm-text="退出" cancel-text="取消" @confirm="confirmQuit" />
+    <ConfirmDialog v-model="showDisbandDialog" title="解散群聊" message="确定要解散该群聊吗？此操作不可恢复"
+      type="danger" confirm-text="解散" cancel-text="取消" @confirm="confirmDisband" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import {
   getGroupHistoryApi,
   quitGroupApi,
@@ -46,6 +50,7 @@ import GroupMessageInput from './group/GroupMessageInput.vue'
 import GroupNoticeDialog from './group/GroupNoticeDialog.vue'
 import GroupMembersDialog from './group/GroupMembersDialog.vue'
 import InviteFriendDialog from './group/InviteFriendDialog.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const props = defineProps<{
   group: GroupVO | null
@@ -72,6 +77,8 @@ const messageListRef = ref()
 const showNoticeDialog = ref(false)
 const showMembers = ref(false)
 const showInvite = ref(false)
+const showQuitDialog = ref(false)
+const showDisbandDialog = ref(false)
 const memberList = ref<GroupMemberVO[]>([])
 const friendList = ref<FriendVO[]>([])
 
@@ -212,16 +219,22 @@ const handleGroupCommand = async (command: string) => {
     await loadFriendList()
     showInvite.value = true
   } else if (command === 'quit') {
-    await ElMessageBox.confirm('确定要退出该群聊吗？', '提示', { type: 'warning' })
-    await quitGroupApi(props.group.id)
-    ElMessage.success('已退出群聊')
-    emit('update:list')
+    showQuitDialog.value = true
   } else if (command === 'disband') {
-    await ElMessageBox.confirm('确定要解散该群聊吗？此操作不可恢复', '提示', { type: 'warning' })
-    await disbandGroupApi(props.group.id)
-    ElMessage.success('群聊已解散')
-    emit('update:list')
+    showDisbandDialog.value = true
   }
+}
+
+const confirmQuit = async () => {
+  await quitGroupApi(props.group!.id)
+  ElMessage.success('已退出群聊')
+  emit('update:list')
+}
+
+const confirmDisband = async () => {
+  await disbandGroupApi(props.group!.id)
+  ElMessage.success('群聊已解散')
+  emit('update:list')
 }
 
 // 邀请好友

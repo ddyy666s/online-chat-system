@@ -1,25 +1,30 @@
 <template>
-  <el-dialog v-model="visible" :title="title" :width="width" :before-close="handleCancel">
-    <div class="confirm-content">
-      <el-icon :size="24" :color="type === 'danger' ? '#f56c6c' : '#409eff'">
-        <WarningFilled v-if="type === 'warning'" />
-        <CircleCloseFilled v-else-if="type === 'danger'" />
-        <InfoFilled v-else />
-      </el-icon>
-      <span class="message">{{ message }}</span>
+  <el-dialog v-model="visible" :title="title" :width="width" :before-close="handleCancel"
+    class="beautiful-confirm" top="30vh" center>
+    <div class="confirm-body">
+      <div class="confirm-icon" :class="type">
+        <el-icon :size="48">
+          <WarningFilled v-if="type === 'warning'" />
+          <CircleCloseFilled v-else-if="type === 'danger'" />
+          <SuccessFilled v-else />
+        </el-icon>
+      </div>
+      <div class="confirm-message">{{ message }}</div>
     </div>
     <template #footer>
-      <el-button @click="handleCancel">{{ cancelText }}</el-button>
-      <el-button :type="type === 'danger' ? 'danger' : 'primary'" @click="handleConfirm">
-        {{ confirmText }}
-      </el-button>
+      <div class="confirm-footer">
+        <el-button class="btn-cancel" @click="handleCancel">{{ cancelText }}</el-button>
+        <el-button class="btn-confirm" :type="btnType" @click="handleConfirm" :icon="confirmIcon">
+          {{ confirmText }}
+        </el-button>
+      </div>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { WarningFilled, CircleCloseFilled, InfoFilled } from '@element-plus/icons-vue'
+import { WarningFilled, CircleCloseFilled, SuccessFilled } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -38,27 +43,61 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const handleConfirm = () => {
-  emit('confirm')
-  visible.value = false
-}
+const btnType = computed(() => props.type === 'danger' ? 'danger' : 'primary')
+const confirmIcon = computed(() => {
+  if (props.type === 'danger') return 'Delete'
+  if (props.type === 'warning') return 'WarningFilled'
+  return 'Check'
+})
 
-const handleCancel = () => {
-  emit('cancel')
-  visible.value = false
-}
+const handleConfirm = () => { emit('confirm'); visible.value = false }
+const handleCancel = () => { emit('cancel'); visible.value = false }
 </script>
 
 <style scoped>
-.confirm-content {
+.confirm-body {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 16px 0;
+  gap: 20px;
+  padding: 24px 16px 8px;
 }
 
-.message {
-  font-size: 14px;
-  color: #606266;
+.confirm-icon :deep(.el-icon) { display: flex; }
+.confirm-icon.warning svg { color: #e6a23c; }
+.confirm-icon.danger svg { color: #f56c6c; }
+.confirm-icon.info svg { color: #409eff; }
+
+.confirm-message {
+  font-size: 15px;
+  color: #303133;
+  text-align: center;
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+.confirm-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 0 0 8px;
+}
+
+.btn-cancel {
+  min-width: 100px;
+  border-radius: 20px;
+}
+
+.btn-confirm {
+  min-width: 100px;
+  border-radius: 20px;
+}
+
+.beautiful-confirm :deep(.el-dialog__header) {
+  display: none;
+}
+
+.beautiful-confirm :deep(.el-dialog__body) {
+  padding: 8px 24px 16px;
 }
 </style>

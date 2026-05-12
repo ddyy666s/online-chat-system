@@ -63,16 +63,20 @@ function getRingUrl(): string {
 let _ringAudio: HTMLAudioElement | null = null
 function startRingtone() {
   const url = getRingUrl()
-  if (!url) return
+  if (!url || _ringAudio) return
   try {
     _ringAudio = new Audio(url)
     _ringAudio.loop = true
     _ringAudio.volume = 0.5
-    _ringAudio.play().catch(() => {})
+    _ringAudio.preload = 'auto'
+    _ringAudio.load()
+    _ringAudio.addEventListener('canplaythrough', () => {
+      _ringAudio?.play().catch(() => {})
+    }, { once: true })
   } catch { /* ignore */ }
 }
 function stopRingtone() {
-  if (_ringAudio) { _ringAudio.pause(); _ringAudio.loop = false; _ringAudio = null }
+  if (_ringAudio) { _ringAudio.pause(); _ringAudio.loop = false; _ringAudio.currentTime = 0; _ringAudio = null }
 }
 
 const maxDownloadLimit = 500

@@ -12,6 +12,8 @@
     </el-scrollbar>
 
     <AddFriendDialog v-model="showAddDialog" @success="refresh" />
+    <ConfirmDialog v-model="showDeleteDialog" title="删除好友" :message="deleteMessage" type="danger"
+      confirm-text="删除" cancel-text="取消" @confirm="confirmDelete" />
   </div>
 </template>
 
@@ -23,6 +25,7 @@ import { useFriendStore } from '@/stores/friendStore'
 import { deleteFriendApi, updateFriendRemarkApi, moveFriendGroupApi } from '@/api/friend'
 import FriendGroup from './friend/FriendGroup.vue'
 import AddFriendDialog from './friend/AddFriendDialog.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const props = defineProps<{
   currentChatUserId: number | null
@@ -34,6 +37,9 @@ const emit = defineEmits<{
 
 const friendStore = useFriendStore()
 const showAddDialog = ref(false)
+const showDeleteDialog = ref(false)
+const deleteMessage = ref('')
+const deleteTargetId = ref<number>(0)
 
 onMounted(() => {
   friendStore.loadFriendList()
@@ -78,19 +84,18 @@ const handleCommand = async (command: string, friend: any) => {
       }
     }
   } else if (command === 'delete') {
-    await ElMessageBox.confirm(`确定要删除好友 ${friend.nickname} 吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    try {
-      await deleteFriendApi(friend.userId)
-      ElMessage.success('删除成功')
-      refresh()
-    } catch (error) {
-      ElMessage.error('删除失败')
-    }
+    deleteMessage.value = `确定要删除好友 <strong>${friend.nickname}</strong> 吗？`
+    deleteTargetId.value = friend.userId
+    showDeleteDialog.value = true
   }
+}
+
+const confirmDelete = async () => {
+  try {
+    await deleteFriendApi(deleteTargetId.value)
+    ElMessage.success('删除成功')
+    refresh()
+  } catch { ElMessage.error('删除失败') }
 }
 
 const refresh = () => {

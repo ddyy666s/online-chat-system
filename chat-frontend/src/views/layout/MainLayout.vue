@@ -29,15 +29,23 @@ const handleSelectGroup = (group: any) => {
   router.push({ name: 'Main', query: { groupId: group.id } })
 }
 
+let audioUnlocked = false
 const unlockAudio = () => {
+  if (audioUnlocked) return
+  audioUnlocked = true
   if (navigator.mediaDevices) {
     navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        stream.getTracks().forEach(track => track.stop())
-        console.log('音频权限已获取')
-      })
-      .catch(err => console.log('权限获取失败', err))
+      .then(stream => stream.getTracks().forEach(t => t.stop()))
+      .catch(() => {})
   }
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    osc.frequency.value = 1
+    osc.connect(ctx.destination)
+    osc.start()
+    osc.stop(0.001)
+  } catch { /* ignore */ }
 }
 
 onMounted(() => {

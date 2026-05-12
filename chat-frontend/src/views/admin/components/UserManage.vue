@@ -7,6 +7,8 @@
     <el-input v-model="keyword" placeholder="搜索用户名/昵称" style="width: 300px; margin-bottom: 16px" @clear="loadUsers"
       clearable />
 
+    <ConfirmDialog v-model="showToggleDialog" title="提示" :message="toggleMsg" type="warning"
+      confirm-text="确定" cancel-text="取消" @confirm="confirmToggle" />
     <el-table :data="users" border stripe>
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="username" label="用户名" width="150" />
@@ -38,14 +40,18 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { getAdminUsersApi, updateUserStatusApi, type UserManageVO } from '@/api/admin'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const users = ref<UserManageVO[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const keyword = ref('')
+const showToggleDialog = ref(false)
+const toggleMsg = ref('')
+const toggleTarget = ref<{ id: number; newStatus: number } | null>(null)
 
 const loadUsers = async () => {
   const res = await getAdminUsersApi(currentPage.value, pageSize.value, keyword.value || undefined)
@@ -55,9 +61,14 @@ const loadUsers = async () => {
 
 const toggleStatus = async (row: UserManageVO) => {
   const newStatus = row.status === 1 ? 0 : 1
-  const confirmMsg = newStatus === 0 ? '确定要禁用该用户吗？' : '确定要启用该用户吗？'
-  await ElMessageBox.confirm(confirmMsg, '提示', { type: 'warning' })
-  await updateUserStatusApi(row.id, newStatus)
+  toggleMsg.value = newStatus === 0 ? '确定要禁用该用户吗？' : '确定要启用该用户吗？'
+  toggleTarget.value = { id: row.id, newStatus }
+  showToggleDialog.value = true
+}
+
+const confirmToggle = async () => {
+  if (!toggleTarget.value) return
+  await updateUserStatusApi(toggleTarget.value.id, toggleTarget.value.newStatus)
   ElMessage.success('操作成功')
   loadUsers()
 }

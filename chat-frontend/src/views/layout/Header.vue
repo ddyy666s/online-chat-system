@@ -27,6 +27,8 @@
     </div>
 
     <MessageBox v-model="showMessageBox" />
+    <ConfirmDialog v-model="showLogoutConfirm" title="退出登录" message="确定要退出登录吗？"
+      type="warning" confirm-text="退出" cancel-text="取消" @confirm="confirmLogout" />
   </div>
 </template>
 
@@ -38,21 +40,27 @@ import { useUserStore } from '@/stores/userStore'
 import { useMessageStore } from '@/stores/messageStore'
 import { websocketService } from '@/utils/websocket'
 import MessageBox from '@/components/MessageBox.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const showMessageBox = ref(false)
+const showLogoutConfirm = ref(false)
 
 const handleCommand = async (command: string) => {
   if (command === 'logout') {
-    userStore.logout()
-    router.push('/login')
+    showLogoutConfirm.value = true
   } else if (command === 'profile') {
     router.push('/profile')
   } else if (command === 'admin') {
     router.push('/admin')
   }
+}
+
+const confirmLogout = () => {
+  userStore.logout()
+  router.push('/login')
 }
 
 let _notifSoundUrl: string | null = null
