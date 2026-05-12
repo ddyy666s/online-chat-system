@@ -186,13 +186,8 @@ const onNewMessage = (data: any) => {
 }
 
 const onCallSignal = (data: any) => {
-<<<<<<< HEAD
   if (data.action === 'offer' && data.fromUserId !== currentUserId) {
     pendingOffer.value = data
-=======
-  console.log('收到通话信令:', data)
-  if (data.action === 'call-request' && data.fromUserId !== currentUserId) {
->>>>>>> 6c92023f4f78951a0d3c61a8865456843a074ff7
     incomingCaller.value = {
       id: data.fromUserId,
       userId: data.fromUserId,

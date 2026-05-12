@@ -25,7 +25,6 @@ const props = defineProps<{
 const isPlaying = ref(false)
 let audio: HTMLAudioElement | null = null
 
-<<<<<<< HEAD
 const formatDuration = computed(() => {
   const d = props.duration
   if (!d || d <= 0) return '0:05'
@@ -37,13 +36,6 @@ const formatDuration = computed(() => {
 const cleanup = () => {
   if (audio) { audio.pause(); audio.src = ''; audio.load(); audio = null }
   isPlaying.value = false
-=======
-const formatDuration = (duration?: number) => {
-  const secs = duration && duration > 0 ? Math.round(duration) : 0
-  const mins = Math.floor(secs / 60)
-  const remaining = secs % 60
-  return `${mins}:${remaining.toString().padStart(2, '0')}`
->>>>>>> 6c92023f4f78951a0d3c61a8865456843a074ff7
 }
 
 const playUrl = (url: string, useProxy: boolean): Promise<void> => {
