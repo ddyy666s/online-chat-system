@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { SystemNotification } from '@/api/systemNotification'
+import type { SystemNotification } from '@/api/notification'
 
 const props = defineProps<{
   modelValue: boolean

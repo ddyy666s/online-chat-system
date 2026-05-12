@@ -18,6 +18,7 @@
             <el-dropdown-item command="viewNotice" v-else>群公告</el-dropdown-item>
             <el-dropdown-item command="members">群成员</el-dropdown-item>
             <el-dropdown-item command="invite">邀请好友</el-dropdown-item>
+            <el-dropdown-item command="manage" v-if="canEditNotice" divided>群管理</el-dropdown-item>
             <el-dropdown-item command="quit" divided v-if="!isOwner">退出群聊</el-dropdown-item>
             <el-dropdown-item command="disband" divided v-if="isOwner" style="color: #f56c6c">解散群聊</el-dropdown-item>
           </el-dropdown-menu>

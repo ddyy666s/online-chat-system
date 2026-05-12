@@ -40,7 +40,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { sendNotificationApi, getAdminNotificationsApi, type SystemNotification } from '@/api/systemNotification'
+import { sendNotificationApi, getAdminNotificationsApi, type SystemNotification } from '@/api/notification'
 
 const formRef = ref()
 const sending = ref(false)

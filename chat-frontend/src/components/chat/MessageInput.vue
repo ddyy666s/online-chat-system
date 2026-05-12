@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import CommunicationBar from '@/components/CommunicationBar.vue'
+import CommunicationBar from '@/components/common/CommunicationBar.vue'
 
 defineProps<{
   currentChatUserId?: number

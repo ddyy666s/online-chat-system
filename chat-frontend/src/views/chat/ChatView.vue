@@ -13,8 +13,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import ChatWindow from '@/components/ChatWindow.vue'
-import GroupChatWindow from '@/components/GroupChatWindow.vue'
+import ChatWindow from '@/components/message/ChatWindow.vue'
+import GroupChatWindow from '@/components/group/GroupChatWindow.vue'
 import { useFriendStore } from '@/stores/friendStore'
 import { getGroupDetailApi } from '@/api/group'
 

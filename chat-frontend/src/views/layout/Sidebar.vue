@@ -7,19 +7,19 @@
 
     <div class="sidebar-content">
       <!-- 好友列表 -->
-      <FriendList v-if="activeTab === 'friends'" :current-chat-user-id="currentChatUserId"
+      <FriendList v-show="activeTab === 'friends'" :current-chat-user-id="currentChatUserId"
         @select-chat="handleSelectChat" />
 
       <!-- 群聊列表 -->
-      <GroupList v-else-if="activeTab === 'groups'" :groups="groupList" :current-group-id="currentGroupId"
+      <GroupList v-show="activeTab === 'groups'" :groups="groupList" :current-group-id="currentGroupId"
         @select="selectGroup" @create="showCreateGroupDialog = true" />
 
       <!-- 申请列表 -->
-      <RequestList v-else-if="activeTab === 'requests'" :requests="friendStore.friendRequests"
+      <RequestList v-show="activeTab === 'requests'" :requests="friendStore.friendRequests"
         @agree="handleRequest($event, 1)" @reject="handleRequest($event, 2)" />
 
-      <!-- 印象板 -->
-      <ImpressionBoard v-else-if="activeTab === 'impressions'" />
+      <!-- 印象列表 -->
+      <ImpressionBoard v-show="activeTab === 'impressions'" />
     </div>
 
     <!-- 创建群聊弹窗 -->
@@ -37,8 +37,8 @@ import { handleFriendRequestApi } from '@/api/friend'
 import { getGroupListApi, createGroupApi, type GroupVO } from '@/api/group'
 import { getFriendListApi, type FriendVO } from '@/api/friend'
 import { websocketService } from '@/utils/websocket'
-import FriendList from '@/components/FriendList.vue'
-import ImpressionBoard from '@/components/ImpressionBoard.vue'
+import FriendList from '@/components/friend/FriendList.vue'
+import ImpressionBoard from '@/components/impression/ImpressionBoard.vue'
 import SidebarHeader from './sidebar/SidebarHeader.vue'
 import SidebarTabs from './sidebar/SidebarTabs.vue'
 import GroupList from './sidebar/GroupList.vue'

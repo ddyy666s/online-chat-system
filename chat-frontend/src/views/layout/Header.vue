@@ -39,7 +39,7 @@ import { Bell } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 import { useMessageStore } from '@/stores/messageStore'
 import { websocketService } from '@/utils/websocket'
-import MessageBox from '@/components/MessageBox.vue'
+import MessageBox from '@/components/message/MessageBox.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()

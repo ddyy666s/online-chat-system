@@ -1,14 +1,22 @@
 <template>
   <div class="message-input">
-    <el-input v-model="content" type="textarea" :rows="3" placeholder="请输入群消息..." @keyup.ctrl.enter="handleSend" />
+    <el-input v-model="content" type="textarea" :rows="3"
+      :disabled="muted"
+      :placeholder="muted ? '你已被禁言' : '请输入群消息...'"
+      @keyup.ctrl.enter="handleSend" />
     <div class="input-actions">
-      <el-button type="primary" @click="handleSend">发送 (Ctrl+Enter)</el-button>
+      <el-tag v-if="muted" type="danger" effect="dark" size="small">你已被禁言</el-tag>
+      <el-button v-else type="primary" @click="handleSend">发送 (Ctrl+Enter)</el-button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+
+defineProps<{
+  muted?: boolean
+}>()
 
 const emit = defineEmits<{
   (e: 'send', content: string): void

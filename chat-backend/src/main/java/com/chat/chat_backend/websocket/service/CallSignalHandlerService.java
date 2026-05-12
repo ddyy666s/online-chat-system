@@ -1,8 +1,8 @@
 package com.chat.chat_backend.websocket.service;
 
 import cn.hutool.json.JSONUtil;
-import com.chat.chat_backend.mapper.UserMapper;
-import com.chat.chat_backend.module.entity.User;
+import com.chat.chat_backend.modules.user.mapper.UserMapper;
+import com.chat.chat_backend.modules.user.entity.User;
 import com.chat.chat_backend.websocket.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

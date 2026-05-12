@@ -1,0 +1,197 @@
+<template>
+  <el-drawer v-model="visible" title="消息盒子" direction="rtl" size="420px" :before-close="handleClose">
+    <div class="message-box-tabs">
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="聊天消息" name="chat">
+          <MessageList :messages="unreadMessages" @click="handleMessageClick" />
+        </el-tab-pane>
+        <el-tab-pane :label="`系统通知${notificationCount > 0 ? ` (${notificationCount})` : ''}`" name="notification">
+          <div class="notification-list" v-if="notifications.length > 0">
+            <div v-for="n in notifications" :key="n.id" class="notification-item" @click="openNotification(n)">
+              <el-icon class="notif-icon"><Bell /></el-icon>
+              <div class="notif-content">
+                <div class="notif-title">{{ n.title }}</div>
+                <div class="notif-meta">{{ n.adminNickname }} · {{ formatTime(n.createdAt) }}</div>
+              </div>
+              <el-icon class="notif-arrow"><ArrowRight /></el-icon>
+            </div>
+          </div>
+          <Empty v-else title="暂无系统通知" />
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+
+    <NotificationDialog v-model="showNotificationDetail" :notification="selectedNotification"
+      @close="handleNotificationRead" />
+  </el-drawer>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { Bell, ArrowRight } from '@element-plus/icons-vue'
+import { useMessageStore } from '@/stores/messageStore'
+import { markAsReadApi } from '@/api/message'
+import { getUnreadNotificationsApi, markNotificationAsReadApi } from '@/api/notification'
+import type { SystemNotification } from '@/api/notification'
+import MessageList from '../messageBox/MessageList.vue'
+import NotificationDialog from '../messageBox/NotificationDialog.vue'
+import Empty from '../common/Empty.vue'
+
+const props = defineProps<{
+  modelValue: boolean
+}>()
+
+const emit = defineEmits(['update:modelValue'])
+const router = useRouter()
+const messageStore = useMessageStore()
+
+const visible = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
+
+const activeTab = ref('chat')
+const notifications = ref<SystemNotification[]>([])
+const notificationCount = ref(0)
+const showNotificationDetail = ref(false)
+const selectedNotification = ref<SystemNotification | null>(null)
+
+const unreadMessages = computed(() => {
+  const messages = messageStore.unreadCount?.messages || []
+  return messages.map((msg: any) => ({
+    id: msg.id,
+    fromUserId: msg.fromUserId,
+    fromUserNickname: msg.fromUserNickname,
+    fromUserAvatar: msg.fromUserAvatar || undefined,
+    content: msg.content,
+    messageType: msg.messageType ?? 0,
+    sendTime: msg.sendTime,
+    unreadCount: msg.unreadCount || 1,
+    isOnline: msg.isOnline || false
+  }))
+})
+
+const formatTime = (time: string) => {
+  const d = new Date(time)
+  const now = new Date()
+  const isToday = d.toDateString() === now.toDateString()
+  if (isToday) return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  const yesterday = new Date(now.getTime() - 86400000).toDateString()
+  if (d.toDateString() === yesterday) return '昨天 ' + d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
+
+const loadNotifications = async () => {
+  const res = await getUnreadNotificationsApi()
+  if (res && res.notifications) {
+    notifications.value = res.notifications
+    notificationCount.value = res.total || 0
+  }
+}
+
+const openNotification = (n: SystemNotification) => {
+  selectedNotification.value = n
+  showNotificationDetail.value = true
+}
+
+const handleNotificationRead = async () => {
+  if (selectedNotification.value) {
+    try {
+      await markNotificationAsReadApi(selectedNotification.value.id)
+      notifications.value = notifications.value.filter(n => n.id !== selectedNotification.value!.id)
+      notificationCount.value = Math.max(0, notificationCount.value - 1)
+    } catch { /* ignore */ }
+  }
+  selectedNotification.value = null
+}
+
+const handleClose = () => {
+  visible.value = false
+}
+
+const handleMessageClick = async (friendId: number) => {
+  visible.value = false
+  try {
+    await markAsReadApi(friendId)
+    messageStore.loadUnreadCount()
+  } catch (error) {
+    console.error(error)
+  }
+  router.push(`/?friendId=${friendId}`)
+}
+
+watch(() => props.modelValue, (val) => {
+  if (val) {
+    messageStore.loadUnreadCount()
+    loadNotifications()
+  }
+})
+</script>
+
+<style scoped>
+.message-box-tabs {
+  height: 100%;
+}
+
+.message-box-tabs :deep(.el-tabs__content) {
+  height: calc(100% - 40px);
+  overflow: hidden;
+}
+
+.message-box-tabs :deep(.el-tab-pane) {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.notification-list {
+  padding: 8px 0;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+}
+
+.notification-item:hover {
+  background: #fff9f0;
+  border-color: #ffe7ba;
+  transform: translateX(2px);
+}
+
+.notif-icon {
+  font-size: 20px;
+  color: #e6a23c;
+  flex-shrink: 0;
+}
+
+.notif-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.notif-meta {
+  font-size: 12px;
+  color: #c0c4cc;
+}
+
+.notif-arrow {
+  color: #c0c4cc;
+  flex-shrink: 0;
+}
+</style>

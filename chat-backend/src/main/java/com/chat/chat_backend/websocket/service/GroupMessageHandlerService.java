@@ -1,19 +1,21 @@
 package com.chat.chat_backend.websocket.service;
 
 import cn.hutool.json.JSONUtil;
-import com.chat.chat_backend.mapper.GroupMapper;
-import com.chat.chat_backend.mapper.GroupMemberMapper;
-import com.chat.chat_backend.mapper.GroupMessageMapper;
-import com.chat.chat_backend.mapper.UserMapper;
-import com.chat.chat_backend.module.entity.GroupMember;
-import com.chat.chat_backend.module.entity.GroupMessage;
-import com.chat.chat_backend.module.entity.User;
+import com.chat.chat_backend.modules.group.mapper.GroupMapper;
+import com.chat.chat_backend.modules.group.mapper.GroupMemberMapper;
+import com.chat.chat_backend.modules.group.mapper.GroupMessageMapper;
+import com.chat.chat_backend.modules.user.mapper.UserMapper;
+import com.chat.chat_backend.modules.group.entity.GroupMember;
+import com.chat.chat_backend.modules.group.entity.GroupMessage;
+import com.chat.chat_backend.modules.group.service.impl.GroupServiceImpl;
+import com.chat.chat_backend.modules.user.entity.User;
 import com.chat.chat_backend.websocket.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -32,6 +34,12 @@ public class GroupMessageHandlerService {
         boolean isMember = members.stream().anyMatch(m -> m.getUserId().equals(fromUserId));
         if (!isMember) {
             log.error("用户 {} 不是群 {} 的成员", fromUserId, groupId);
+            return;
+        }
+
+        // 检查是否被禁言
+        if (GroupServiceImpl.isMuted(groupId, fromUserId)) {
+            log.warn("用户 {} 在群 {} 中被禁言", fromUserId, groupId);
             return;
         }
 
