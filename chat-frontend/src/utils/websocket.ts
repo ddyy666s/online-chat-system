@@ -43,7 +43,7 @@ class WebSocketService {
       const data = JSON.parse(event.data)
       console.log('WebSocket收到消息:', data)
       
-      if (data.type === 'message') {
+      if (data.type === 'message' || data.type === 'impression') {
         this.messageCallbacks.forEach(cb => cb(data))
       } else if (data.type === 'status') {
         this.statusCallbacks.forEach(cb => cb(data))

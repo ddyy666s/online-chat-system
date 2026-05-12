@@ -7,7 +7,7 @@
         <LocalVideo :stream="localStream" />
       </template>
       <template v-else>
-        <VoiceCallUI :target-user="targetUser" :is-connected="isConnected" :status-text="callStatusText" :duration="callDuration" />
+        <VoiceCallUI :target-user="targetUser" :is-connected="isConnected" :status-text="callStatusText" :duration="callDuration" :stream="remoteStream" />
       </template>
     </div>
     <template #footer>

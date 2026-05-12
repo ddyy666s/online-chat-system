@@ -7,6 +7,7 @@ import com.chat.chat_backend.common.exception.BusinessException;
 import com.chat.chat_backend.common.result.ResultCode;
 import com.chat.chat_backend.common.utils.RedisUtil;
 import com.chat.chat_backend.mapper.MessageMapper;
+import com.chat.chat_backend.mapper.SystemNotificationMapper;
 import com.chat.chat_backend.mapper.UserMapper;
 import com.chat.chat_backend.module.dto.response.MessageVO;
 import com.chat.chat_backend.module.dto.response.UnreadCountVO;
@@ -30,6 +31,7 @@ public class MessageServiceImpl implements MessageService {
 
     private final MessageMapper messageMapper;
     private final UserMapper userMapper;
+    private final SystemNotificationMapper systemNotificationMapper;
     private final RedisUtil redisUtil;
 
     @Override
@@ -129,7 +131,9 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public UnreadCountVO getUnreadCount(Long userId) {
-        Integer total = messageMapper.countUnreadTotal(userId);
+        Integer msgTotal = messageMapper.countUnreadTotal(userId);
+        Integer notifTotal = systemNotificationMapper.countUnreadByUserId(userId);
+        int total = msgTotal + notifTotal;
 
         // 使用新的 DTO 类
         List<UnreadGroupVO> groups = messageMapper.groupUnreadByFriend(userId);

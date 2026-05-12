@@ -55,7 +55,20 @@ const handleCommand = async (command: string) => {
   }
 }
 
-const onNewMessageOrNotification = () => { messageStore.loadUnreadCount() }
+let _notifSoundUrl: string | null = null
+const onNewMessageOrNotification = () => {
+  messageStore.loadUnreadCount()
+  if (_notifSoundUrl === null) {
+    try { _notifSoundUrl = new URL('../../assets/audio/notice.MP3', import.meta.url).href }
+    catch { _notifSoundUrl = '' }
+  }
+  if (!_notifSoundUrl) return
+  try {
+    const a = new Audio(_notifSoundUrl)
+    a.volume = 0.3
+    a.play().catch(() => {})
+  } catch { /* ignore */ }
+}
 
 onMounted(() => {
   messageStore.loadUnreadCount()

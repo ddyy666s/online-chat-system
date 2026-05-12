@@ -52,6 +52,28 @@ const incomingCallVisible = ref(false)
 const incomingCaller = ref<any>(null)
 const incomingCallType = ref<'voice' | 'video'>('voice')
 const pendingOffer = ref<any>(null)
+let _ringUrl: string | null = null
+function getRingUrl(): string {
+  if (_ringUrl === null) {
+    try { _ringUrl = new URL('../../assets/audio/ring.MP3', import.meta.url).href }
+    catch { _ringUrl = '' }
+  }
+  return _ringUrl
+}
+let _ringAudio: HTMLAudioElement | null = null
+function startRingtone() {
+  const url = getRingUrl()
+  if (!url) return
+  try {
+    _ringAudio = new Audio(url)
+    _ringAudio.loop = true
+    _ringAudio.volume = 0.5
+    _ringAudio.play().catch(() => {})
+  } catch { /* ignore */ }
+}
+function stopRingtone() {
+  if (_ringAudio) { _ringAudio.pause(); _ringAudio.loop = false; _ringAudio = null }
+}
 
 const maxDownloadLimit = 500
 const messageListRef = ref()
@@ -151,7 +173,10 @@ const startVideoCall = (toUserId: number) => {
 
 const endVoiceCall = () => { voiceCallVisible.value = false }
 const endVideoCall = () => { videoCallVisible.value = false }
-const endIncomingCall = () => { incomingCallVisible.value = false; incomingCaller.value = null; pendingOffer.value = null }
+const endIncomingCall = () => {
+  incomingCallVisible.value = false; incomingCaller.value = null; pendingOffer.value = null
+  stopRingtone()
+}
 
 const handleDownload = async (limit: number) => {
   try {
@@ -188,6 +213,7 @@ const onNewMessage = (data: any) => {
 const onCallSignal = (data: any) => {
   if (data.action === 'offer' && data.fromUserId !== currentUserId) {
     pendingOffer.value = data
+    startRingtone()
     incomingCaller.value = {
       id: data.fromUserId,
       userId: data.fromUserId,
