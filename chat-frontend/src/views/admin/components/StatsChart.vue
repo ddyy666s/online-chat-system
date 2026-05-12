@@ -16,8 +16,13 @@ const props = defineProps<{
   stats: StatisticsVO
 }>()
 
+const emit = defineEmits<{
+  (e: 'refresh'): void
+}>()
+
 const chartRef = ref<HTMLElement>()
 let chartInstance: echarts.ECharts | null = null
+let refreshTimer: number | null = null
 
 // 根据 stats 生成饼图数据
 const getChartData = () => {
@@ -95,10 +100,12 @@ const handleResize = () => {
 onMounted(() => {
   initChart()
   window.addEventListener('resize', handleResize)
+  refreshTimer = setInterval(() => emit('refresh'), 30000) as unknown as number
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
+  if (refreshTimer) clearInterval(refreshTimer)
   chartInstance?.dispose()
 })
 

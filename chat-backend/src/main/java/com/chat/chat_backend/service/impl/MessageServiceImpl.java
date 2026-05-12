@@ -161,6 +161,7 @@ public class MessageServiceImpl implements MessageService {
                     .fromUserId(msg.getFromUserId())
                     .fromUserNickname(msg.getFromUserNickname())
                     .fromUserAvatar(msg.getFromUserAvatar())
+                    .messageType(msg.getMessageType())
                     .content(content)
                     .sendTime(msg.getSendTime())
                     .build());

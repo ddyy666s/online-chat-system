@@ -6,6 +6,7 @@ import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.common.auth.CredentialsProvider;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.aliyun.oss.common.comm.SignVersion;
+import com.aliyun.oss.model.ObjectMetadata;
 import com.chat.chat_backend.config.AliyunOSSProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,10 +36,8 @@ public class OssUtil {
         String accessKeyId = aliyunOSSProperties.getAccessKeyId();
         String accessKeySecret = aliyunOSSProperties.getAccessKeySecret();
 
-        // 检查配置是否完整
         if (endpoint == null || endpoint.isEmpty() || accessKeyId == null || accessKeyId.isEmpty()) {
-            log.warn("OSS配置不完整，使用默认头像");
-            return "https://dengya.oss-cn-beijing.aliyuncs.com/avatar.png";
+            throw new RuntimeException("OSS configuration is incomplete");
         }
 
         // 使用配置中的 AK/SK
@@ -63,8 +62,10 @@ public class OssUtil {
                 .build();
 
         try {
-            ossClient.putObject(bucketName, objectName, file.getInputStream());
-            log.info("OSS上传成功: {}", objectName);
+            ObjectMetadata meta = new ObjectMetadata();
+            meta.setContentType(file.getContentType());
+            ossClient.putObject(bucketName, objectName, file.getInputStream(), meta);
+            log.info("OSS上传成功: {}, contentType={}", objectName, file.getContentType());
 
             return "https://" + bucketName + "." + endpoint.replace("https://", "") + "/" + objectName;
         } finally {

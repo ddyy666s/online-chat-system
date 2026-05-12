@@ -22,12 +22,18 @@
         </el-icon>
         <span>消息审计</span>
       </el-menu-item>
+      <el-menu-item index="notifications">
+        <el-icon>
+          <Bell />
+        </el-icon>
+        <span>系统通知</span>
+      </el-menu-item>
     </el-menu>
   </div>
 </template>
 
 <script setup lang="ts">
-import { DataLine, User, ChatDotRound } from '@element-plus/icons-vue'
+import { DataLine, User, ChatDotRound, Bell } from '@element-plus/icons-vue'
 
 defineProps<{
   activeMenu: string

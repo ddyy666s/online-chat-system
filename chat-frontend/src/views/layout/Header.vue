@@ -5,7 +5,6 @@
     </div>
 
     <div class="actions">
-      <!-- 消息盒子图标 -->
       <el-badge :value="messageStore.unreadCount?.total || 0" :hidden="!messageStore.unreadCount?.total">
         <el-button :icon="Bell" circle @click="showMessageBox = true" />
       </el-badge>
@@ -20,6 +19,7 @@
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+            <el-dropdown-item v-if="userStore.isAdmin()" command="admin">管理后台</el-dropdown-item>
             <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -31,41 +31,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
 import { Bell } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 import { useMessageStore } from '@/stores/messageStore'
+import { websocketService } from '@/utils/websocket'
 import MessageBox from '@/components/MessageBox.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const showMessageBox = ref(false)
-let intervalId: number | null = null
 
 const handleCommand = async (command: string) => {
   if (command === 'logout') {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示')
     userStore.logout()
     router.push('/login')
   } else if (command === 'profile') {
     router.push('/profile')
+  } else if (command === 'admin') {
+    router.push('/admin')
   }
 }
 
+const onNewMessageOrNotification = () => { messageStore.loadUnreadCount() }
+
 onMounted(() => {
   messageStore.loadUnreadCount()
-  intervalId = setInterval(() => {
-    messageStore.loadUnreadCount()
-  }, 3000)
-})
-
-onUnmounted(() => {
-  if (intervalId) {
-    clearInterval(intervalId)
-  }
+  websocketService.onMessage(onNewMessageOrNotification)
+  websocketService.onGroupMessage(onNewMessageOrNotification)
+  websocketService.onNotification(onNewMessageOrNotification)
 })
 </script>
 
@@ -80,7 +76,6 @@ onUnmounted(() => {
   background: #fff;
   flex-shrink: 0;
 }
-
 .logo {
   font-size: 18px;
   font-weight: 600;
@@ -89,30 +84,11 @@ onUnmounted(() => {
   background-clip: text;
   color: transparent;
 }
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
+.actions { display: flex; align-items: center; gap: 16px; }
 .user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 24px;
-  transition: background 0.2s;
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 6px 12px; border-radius: 24px; transition: background 0.2s;
 }
-
-.user-info:hover {
-  background: #f5f7fa;
-}
-
-.user-info span {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-}
+.user-info:hover { background: #f5f7fa; }
+.user-info span { font-size: 14px; font-weight: 500; color: #303133; }
 </style>

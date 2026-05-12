@@ -72,10 +72,17 @@ const handleImageUpload = async (event: Event) => {
 }
 
 // 录音
+const getSupportedMimeType = () => {
+  const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/mpeg']
+  return types.find(t => MediaRecorder.isTypeSupported(t)) || ''
+}
+
 const startRecord = async () => {
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    mediaRecorder = new MediaRecorder(mediaStream)
+    const mimeType = getSupportedMimeType()
+    const options: any = mimeType ? { mimeType } : {}
+    mediaRecorder = new MediaRecorder(mediaStream, options)
     audioChunks = []
     startTime = Date.now()
     recordDuration.value = 0
@@ -94,8 +101,10 @@ const startRecord = async () => {
         mediaStream = null
         return
       }
-      const blob = new Blob(audioChunks, { type: 'audio/webm' })
-      const file = new File([blob], `voice_${Date.now()}.webm`, { type: 'audio/webm' })
+      const mimeType = getSupportedMimeType() || 'audio/webm'
+      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm'
+      const blob = new Blob(audioChunks, { type: mimeType })
+      const file = new File([blob], `voice_${Date.now()}.${ext}`, { type: mimeType })
       try {
         const url = await uploadVoiceApi(file)
         emit('sendVoice', url, duration)
@@ -176,9 +185,13 @@ const handleEmojiUpload = async (event: Event) => {
   input.value = ''
 }
 const deleteEmoji = async (emojiId: number) => {
-  await deleteEmojiApi(emojiId)
-  userEmojis.value = userEmojis.value.filter(e => e.id !== emojiId)
-  ElMessage.success('删除成功')
+  try {
+    await deleteEmojiApi(emojiId)
+    userEmojis.value = await getUserEmojisApi()
+    ElMessage.success('删除成功')
+  } catch {
+    ElMessage.error('删除失败')
+  }
 }
 
 onUnmounted(() => {

@@ -9,11 +9,12 @@
         <!-- 数据统计页面 -->
         <template v-if="activeMenu === 'stats'">
           <StatsCards :stats="stats" />
-          <StatsChart :stats="stats" />
+          <StatsChart :stats="stats" @refresh="loadStats" />
         </template>
 
         <UserManage v-if="activeMenu === 'users'" />
         <MessageAudit v-if="activeMenu === 'messages'" />
+        <NotificationManage v-if="activeMenu === 'notifications'" />
       </div>
     </div>
   </div>
@@ -28,6 +29,7 @@ import StatsCards from './components/StatsCards.vue'
 import StatsChart from './components/StatsChart.vue'
 import UserManage from './components/UserManage.vue'
 import MessageAudit from './components/MessageAudit.vue'
+import NotificationManage from './components/NotificationManage.vue'
 
 const activeMenu = ref('stats')
 const stats = ref<StatisticsVO>({
@@ -41,7 +43,8 @@ const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     stats: '数据统计',
     users: '用户管理',
-    messages: '消息审计'
+    messages: '消息审计',
+    notifications: '系统通知'
   }
   return titles[activeMenu.value] || '管理后台'
 })

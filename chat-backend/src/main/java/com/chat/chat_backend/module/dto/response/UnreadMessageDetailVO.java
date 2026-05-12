@@ -9,6 +9,7 @@ public class UnreadMessageDetailVO {
     private Long fromUserId;
     private String fromUserNickname;
     private String fromUserAvatar;
+    private Integer messageType;
     private String content;
     private LocalDateTime sendTime;
 }

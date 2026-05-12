@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.chat.chat_backend.common.constant.MessageConstants;
 import com.chat.chat_backend.common.result.Result;
 import com.chat.chat_backend.common.utils.OssUtil;
+
+import java.io.InputStream;
+import java.net.URL;
 import com.chat.chat_backend.mapper.UserMapper;
 import com.chat.chat_backend.module.dto.response.MessageVO;
 import com.chat.chat_backend.module.dto.response.UnreadCountVO;
@@ -152,6 +155,32 @@ public class MessageController {
         } catch (Exception e) {
             log.error("上传语音失败", e);
             return Result.error("上传失败");
+        }
+    }
+
+    @GetMapping("/proxy-audio")
+    public void proxyAudio(@RequestParam String url, HttpServletResponse response) {
+        try {
+            URL ossUrl = new URL(url);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) ossUrl.openConnection();
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+            conn.connect();
+
+            String contentType = conn.getContentType();
+            if (contentType != null) response.setContentType(contentType);
+            else response.setContentType("audio/webm");
+
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.setHeader("Cache-Control", "public, max-age=86400");
+
+            try (InputStream is = conn.getInputStream()) {
+                is.transferTo(response.getOutputStream());
+                response.flushBuffer();
+            }
+            conn.disconnect();
+        } catch (Exception e) {
+            log.error("代理音频失败: {}", url, e);
+            response.setStatus(500);
         }
     }
 }

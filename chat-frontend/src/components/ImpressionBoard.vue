@@ -130,7 +130,7 @@ const confirmDelete = async () => {
   try {
     await deleteImpressionApi(pendingDeleteId.value)
     ElMessage.success('删除成功')
-    await loadByMeData()
+    await Promise.all([loadByMeData(), loadToMeData()])
   } catch (error) {
     console.error('删除失败', error)
     ElMessage.error('删除失败')

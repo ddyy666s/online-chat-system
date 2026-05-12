@@ -15,6 +15,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "aliyun-rtc-sdk": "^7.2.7",
     "axios": "^1.7.9",
     "dayjs": "^1.11.13",
     "echarts": "^6.0.0",

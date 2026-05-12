@@ -8,7 +8,7 @@
         <span class="name">{{ message.fromUserNickname }}</span>
         <span class="time">{{ formatRelativeTime(message.sendTime) }}</span>
       </div>
-      <div class="message-bubble">
+      <div class="message-bubble" :class="{ recalled: message.isRecalled }">
         <!-- 文字消息 -->
         <span v-if="message.messageType === 1 && !message.isRecalled">{{ message.content }}</span>
 
@@ -28,20 +28,49 @@
 
         <!-- 其他 -->
         <span v-else>{{ message.content }}</span>
+
+        <el-button v-if="isOwn && !message.isRecalled && canRecall" class="recall-btn" text size="small"
+          @click.stop="handleRecall">撤回</el-button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatRelativeTime } from '@/utils/date'
+import { recallMessageApi } from '@/api/message'
 import VoiceMessage from './VoiceMessage.vue'
 
-defineProps<{
+const props = defineProps<{
   message: any
   isOwn: boolean
   showInfo?: boolean
 }>()
+
+const RECALL_LIMIT = 2 * 60 * 1000
+
+const canRecall = computed(() => {
+  if (!props.message.sendTime) return false
+  const now = Date.now()
+  const sendTime = new Date(props.message.sendTime).getTime()
+  return now - sendTime <= RECALL_LIMIT
+})
+
+const handleRecall = async () => {
+  if (!canRecall.value) {
+    ElMessage.warning('消息发送超过2分钟，无法撤回')
+    return
+  }
+  try {
+    await recallMessageApi(props.message.id)
+    ElMessage.success('已撤回')
+    props.message.isRecalled = true
+  } catch {
+    ElMessage.error('撤回失败')
+  }
+}
 </script>
 
 <style scoped>
@@ -91,6 +120,23 @@ defineProps<{
 .message-image {
   max-width: 200px;
   border-radius: 8px;
+}
+
+.message-bubble {
+  position: relative;
+}
+
+.message-bubble:hover .recall-btn {
+  display: inline-flex;
+}
+
+.recall-btn {
+  position: absolute;
+  top: -24px;
+  right: 0;
+  display: none;
+  font-size: 12px;
+  color: #409eff;
 }
 
 .recalled {

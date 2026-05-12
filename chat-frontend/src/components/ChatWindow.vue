@@ -14,7 +14,7 @@
     <CallDialog v-model="videoCallVisible" :target-user="friend" call-type="video" :is-caller="true"
       @end-call="endVideoCall" />
     <CallDialog v-model="incomingCallVisible" :target-user="incomingCaller" :call-type="incomingCallType"
-      :is-caller="false" @end-call="endIncomingCall" />
+      :is-caller="false" :initial-offer="pendingOffer" @end-call="endIncomingCall" />
 
     <DownloadDialog v-model="showDownloadDialog" :friend-id="friend?.userId" :friend-name="friend?.nickname"
       :total-messages="totalMessageCount" :max-limit="maxDownloadLimit" @download="handleDownload" />
@@ -51,6 +51,7 @@ const videoCallVisible = ref(false)
 const incomingCallVisible = ref(false)
 const incomingCaller = ref<any>(null)
 const incomingCallType = ref<'voice' | 'video'>('voice')
+const pendingOffer = ref<any>(null)
 
 const maxDownloadLimit = 500
 const messageListRef = ref()
@@ -97,21 +98,43 @@ const loadMore = () => {
   }
 }
 
+const addLocalMessage = (content: string, messageType: number, duration?: number) => {
+  messages.value.push({
+    id: Date.now() + Math.random(),
+    fromUserId: currentUserId,
+    fromUserNickname: userStore.userInfo?.nickname || '我',
+    fromUserAvatar: userStore.userInfo?.avatar,
+    content,
+    messageType,
+    duration,
+    sendTime: new Date().toISOString(),
+    isRecalled: false
+  })
+  messageListRef.value?.scrollToBottom()
+}
+
 const sendMessage = (content: string) => {
   if (!props.friend?.userId) return
+  addLocalMessage(content, 1)
   websocketService.sendMessage(props.friend.userId, content, 1)
 }
 
 const sendImage = (url: string) => {
-  if (props.friend?.userId) websocketService.sendMessage(props.friend.userId, url, 2)
+  if (!props.friend?.userId) return
+  addLocalMessage(url, 2)
+  websocketService.sendMessage(props.friend.userId, url, 2)
 }
 
 const sendVoice = (url: string, duration: number) => {
-  if (props.friend?.userId) websocketService.sendMessage(props.friend.userId, url, 4, duration)
+  if (!props.friend?.userId) return
+  addLocalMessage(url, 4, duration)
+  websocketService.sendMessage(props.friend.userId, url, 4, duration)
 }
 
 const sendEmoji = (url: string) => {
-  if (props.friend?.userId) websocketService.sendMessage(props.friend.userId, url, 2)
+  if (!props.friend?.userId) return
+  addLocalMessage(url, 2)
+  websocketService.sendMessage(props.friend.userId, url, 2)
 }
 
 const startVoiceCall = (toUserId: number) => {
@@ -128,7 +151,7 @@ const startVideoCall = (toUserId: number) => {
 
 const endVoiceCall = () => { voiceCallVisible.value = false }
 const endVideoCall = () => { videoCallVisible.value = false }
-const endIncomingCall = () => { incomingCallVisible.value = false; incomingCaller.value = null }
+const endIncomingCall = () => { incomingCallVisible.value = false; incomingCaller.value = null; pendingOffer.value = null }
 
 const handleDownload = async (limit: number) => {
   try {
@@ -163,8 +186,13 @@ const onNewMessage = (data: any) => {
 }
 
 const onCallSignal = (data: any) => {
-  console.log('收到通话信令:', data)
+<<<<<<< HEAD
   if (data.action === 'offer' && data.fromUserId !== currentUserId) {
+    pendingOffer.value = data
+=======
+  console.log('收到通话信令:', data)
+  if (data.action === 'call-request' && data.fromUserId !== currentUserId) {
+>>>>>>> 6c92023f4f78951a0d3c61a8865456843a074ff7
     incomingCaller.value = {
       id: data.fromUserId,
       userId: data.fromUserId,

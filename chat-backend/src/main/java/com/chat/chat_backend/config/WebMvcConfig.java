@@ -20,6 +20,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/user/register",   // 注册不拦截
                         "/user/login",      // 登录不拦截
+                        "/actuator/**",     // 健康检查不拦截
                         "/ws/**"            // WebSocket不拦截
                 );
     }

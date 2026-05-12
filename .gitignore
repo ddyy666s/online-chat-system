@@ -37,4 +37,4 @@ Thumbs.db
 logs/
 *.log
 
-chat-backend/.env
+chat-backend/.env".env.example" 

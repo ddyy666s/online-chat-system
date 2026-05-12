@@ -1,14 +1,13 @@
 <template>
-  <div class="voice-message" @click="togglePlay">
+  <div class="voice-message" :class="{ playing: isPlaying }" @click="togglePlay">
     <el-icon class="voice-icon">
       <VideoPlay v-if="!isPlaying" />
       <VideoPause v-else />
     </el-icon>
-    <span>语音消息</span>
-    <span class="voice-duration">{{ formatDuration }}</span>
-    <div class="voice-wave" v-if="isPlaying">
+    <div class="voice-wave" :class="{ active: isPlaying }">
       <span v-for="i in 5" :key="i"></span>
     </div>
+    <span class="voice-duration">{{ formatDuration }}</span>
   </div>
 </template>
 
@@ -33,129 +32,86 @@ const formatDuration = computed(() => {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 })
 
-const togglePlay = () => {
-  if (!props.url) {
-    ElMessage.error('语音文件不存在')
-    return
-  }
-
-  if (isPlaying.value && audio) {
-    audio.pause()
-    audio = null
-    isPlaying.value = false
-    return
-  }
-
+const cleanup = () => {
   if (audio) {
     audio.pause()
+    audio.src = ''
+    audio.load()
     audio = null
   }
+  isPlaying.value = false
+}
 
-  audio = new Audio(props.url)
-  audio.play()
-  isPlaying.value = true
+const playUrl = (url: string, useProxy: boolean): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const el = new Audio()
+    el.preload = 'auto'
+    el.oncanplaythrough = () => {
+      el.play().then(resolve).catch(reject)
+    }
+    el.onerror = () => reject(new Error('音频加载失败'))
+    el.src = useProxy ? `/api/message/proxy-audio?url=${encodeURIComponent(url)}` : url
+    el.load()
+    audio = el
+  })
+}
 
-  audio.onended = () => {
-    isPlaying.value = false
-    audio = null
-  }
-
-  audio.onerror = () => {
-    ElMessage.error('播放失败')
-    isPlaying.value = false
-    audio = null
+const tryPlay = async (url: string, attempt = 0): Promise<void> => {
+  const useProxy = attempt > 0
+  try {
+    await playUrl(url, useProxy)
+  } catch {
+    if (!useProxy) {
+      return tryPlay(url, 1)
+    }
+    throw new Error('播放失败')
   }
 }
 
-onUnmounted(() => {
-  if (audio) {
-    audio.pause()
-    audio = null
+const togglePlay = async () => {
+  if (!props.url) { ElMessage.error('语音文件不存在'); return }
+  if (isPlaying.value) { cleanup(); return }
+  cleanup()
+  isPlaying.value = true
+  try {
+    await tryPlay(props.url)
+    if (audio) audio.onended = () => { cleanup() }
+  } catch {
+    ElMessage.error('语音加载失败，请重试')
+    cleanup()
   }
-})
+}
+
+onUnmounted(() => { cleanup() })
 </script>
 
 <style scoped>
 .voice-message {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  padding: 8px 12px;
+  padding: 6px 12px;
   background: #f5f5f5;
-  border-radius: 20px;
-  min-width: 120px;
+  border-radius: 16px;
+  min-width: 80px;
   transition: all 0.2s;
+  user-select: none;
 }
-
-.voice-message:hover {
-  background: #e9e9e9;
-  transform: scale(1.02);
-}
-
-.message-item.own .voice-message {
-  background: #95ec69;
-}
-
-.voice-icon {
-  font-size: 18px;
-  color: #409eff;
-}
-
-.voice-duration {
-  font-size: 12px;
-  color: #666;
-  margin-left: auto;
-}
-
-.voice-wave {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-left: 8px;
-}
-
-.voice-wave span {
-  width: 3px;
-  height: 12px;
-  background: #409eff;
-  border-radius: 1px;
-  animation: wave 0.8s ease-in-out infinite;
-}
-
-.message-item.own .voice-wave span {
-  background: #333;
-}
-
-.voice-wave span:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.voice-wave span:nth-child(2) {
-  animation-delay: 0.15s;
-}
-
-.voice-wave span:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-.voice-wave span:nth-child(4) {
-  animation-delay: 0.45s;
-}
-
-.voice-wave span:nth-child(5) {
-  animation-delay: 0.6s;
-}
-
-@keyframes wave {
-
-  0%,
-  100% {
-    height: 12px;
-  }
-
-  50% {
-    height: 20px;
-  }
-}
+.voice-message:hover { background: #e9e9e9; }
+.voice-message.playing { background: #d9ecff; }
+:deep(.message-item.own) .voice-message { background: #95ec69; }
+:deep(.message-item.own) .voice-message.playing { background: #7dda52; }
+.voice-icon { font-size: 16px; color: #409eff; flex-shrink: 0; }
+.voice-duration { font-size: 12px; color: #666; font-variant-numeric: tabular-nums; min-width: 32px; text-align: right; }
+.voice-wave { display: flex; align-items: center; gap: 2px; height: 20px; }
+.voice-wave span { width: 3px; height: 4px; background: #409eff; border-radius: 2px; transition: height 0.2s; }
+.voice-wave.active span { animation: wave 0.8s ease-in-out infinite; }
+:deep(.message-item.own) .voice-wave span { background: #333; }
+.voice-wave span:nth-child(1) { animation-delay: 0s; }
+.voice-wave span:nth-child(2) { animation-delay: 0.15s; }
+.voice-wave span:nth-child(3) { animation-delay: 0.3s; }
+.voice-wave span:nth-child(4) { animation-delay: 0.45s; }
+.voice-wave span:nth-child(5) { animation-delay: 0.6s; }
+@keyframes wave { 0%, 100% { height: 4px; } 50% { height: 16px; } }
 </style>

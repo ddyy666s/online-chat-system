@@ -4,10 +4,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.chat.chat_backend.common.result.Result;
 import com.chat.chat_backend.module.dto.response.MessageAuditVO;
 import com.chat.chat_backend.module.dto.response.StatisticsVO;
+import com.chat.chat_backend.module.dto.response.SystemNotificationVO;
 import com.chat.chat_backend.module.dto.response.UserManageVO;
 import com.chat.chat_backend.service.AdminService;
+import com.chat.chat_backend.service.SystemNotificationService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/admin")
@@ -15,6 +20,21 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final SystemNotificationService systemNotificationService;
+
+    /**
+     * 获取管理员已发送的通知列表
+     */
+    @GetMapping("/notifications")
+    public Result<List<SystemNotificationVO>> getNotifications(HttpServletRequest request) {
+        String role = (String) request.getAttribute("role");
+        if (!"admin".equals(role)) {
+            return Result.error("无权限");
+        }
+        Long adminId = (Long) request.getAttribute("userId");
+        List<SystemNotificationVO> list = systemNotificationService.getNotificationsByAdmin(adminId);
+        return Result.success(list);
+    }
 
     /**
      * 获取用户列表

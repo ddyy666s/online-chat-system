@@ -12,8 +12,8 @@ class WebSocketService {
   private statusCallbacks: MessageCallback[] = []
   private groupMessageCallbacks: MessageCallback[] = []
   private callSignalCallbacks: MessageCallback[] = []
+  private notificationCallbacks: MessageCallback[] = []
   
-  // 添加：检查连接状态
   isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN
   }
@@ -28,7 +28,8 @@ class WebSocketService {
     }
     
     const cleanToken = token ? token.replace(/"/g, '') : ''
-    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'}?token=${cleanToken}`
+    const wsBaseUrl = import.meta.env.VITE_WS_URL || `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws`
+    const wsUrl = `${wsBaseUrl}?token=${cleanToken}`
     console.log('WebSocket连接中:', wsUrl)
     this.ws = new WebSocket(wsUrl)
     
@@ -50,6 +51,8 @@ class WebSocketService {
         this.groupMessageCallbacks.forEach(cb => cb(data))
       } else if (data.type === 'call') {
         this.callSignalCallbacks.forEach(cb => cb(data))
+      } else if (data.type === 'notification') {
+        this.notificationCallbacks.forEach(cb => cb(data))
       }
     }
     
@@ -145,6 +148,10 @@ class WebSocketService {
   
   onCallSignal(callback: MessageCallback) {
     this.callSignalCallbacks.push(callback)
+  }
+  
+  onNotification(callback: MessageCallback) {
+    this.notificationCallbacks.push(callback)
   }
   
   disconnect() {

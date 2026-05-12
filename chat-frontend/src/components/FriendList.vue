@@ -20,7 +20,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { useFriendStore } from '@/stores/friendStore'
-import { deleteFriendApi } from '@/api/friend'
+import { deleteFriendApi, updateFriendRemarkApi, moveFriendGroupApi } from '@/api/friend'
 import FriendGroup from './friend/FriendGroup.vue'
 import AddFriendDialog from './friend/AddFriendDialog.vue'
 
@@ -53,9 +53,13 @@ const handleCommand = async (command: string, friend: any) => {
       inputPlaceholder: '请输入备注名称'
     })
     if (value !== undefined) {
-      // TODO: 调用修改备注API
-      ElMessage.success('修改成功')
-      friendStore.loadFriendList()
+      try {
+        await updateFriendRemarkApi(friend.userId, value)
+        ElMessage.success('修改成功')
+        friendStore.loadFriendList()
+      } catch {
+        ElMessage.error('修改失败')
+      }
     }
   } else if (command === 'move') {
     const { value } = await ElMessageBox.prompt('请输入分组名称', '移动分组', {
@@ -65,9 +69,13 @@ const handleCommand = async (command: string, friend: any) => {
       inputPlaceholder: '请输入分组名称'
     })
     if (value && value !== friend.groupName) {
-      // TODO: 调用移动分组API
-      ElMessage.success('移动成功')
-      friendStore.loadFriendList()
+      try {
+        await moveFriendGroupApi(friend.userId, value)
+        ElMessage.success('移动成功')
+        friendStore.loadFriendList()
+      } catch {
+        ElMessage.error('移动失败')
+      }
     }
   } else if (command === 'delete') {
     await ElMessageBox.confirm(`确定要删除好友 ${friend.nickname} 吗？`, '提示', {
