@@ -29,14 +29,17 @@
 </template>
 
 <script setup lang="ts">
+/** 群聊聊天窗口头部组件 @component */
 import { Setting } from '@element-plus/icons-vue'
 
+/** 组件属性：群信息、是否可以编辑公告、是否为群主 */
 defineProps<{
   group: any
   canEditNotice: boolean
   isOwner: boolean
 }>()
 
+/** 组件事件：菜单命令 */
 defineEmits<{
   (e: 'command', command: string): void
 }>()

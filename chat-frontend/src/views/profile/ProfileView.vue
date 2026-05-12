@@ -7,7 +7,6 @@
         <div></div>
       </div>
 
-      <!-- 头像区域 -->
       <div class="avatar-section">
         <div class="avatar-wrapper" @click="triggerFileInput">
           <el-avatar :size="100" :src="form.avatar || ''" class="profile-avatar">
@@ -24,7 +23,6 @@
           @change="handleAvatarChange" />
       </div>
 
-      <!-- 表单 -->
       <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
         <el-form-item label="用户名">
           <el-input v-model="form.username" disabled />
@@ -48,6 +46,7 @@
 </template>
 
 <script setup lang="ts">
+/** 个人资料页面组件，支持头像上传和昵称/签名修改 @component */
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -57,10 +56,14 @@ import { updateProfileApi, updateAvatarApi, type UserInfo } from '@/api/user'
 
 const router = useRouter()
 const userStore = useUserStore()
+/** 表单引用 */
 const formRef = ref()
+/** 保存按钮加载状态 */
 const saving = ref(false)
+/** 文件选择输入引用 */
 const fileInput = ref<HTMLInputElement>()
 
+/** 表单数据 */
 const form = reactive<UserInfo>({
   id: 0,
   username: '',
@@ -70,6 +73,7 @@ const form = reactive<UserInfo>({
   role: 'user'
 })
 
+/** 表单校验规则 */
 const rules = {
   nickname: [
     { required: true, message: '请输入昵称', trigger: 'blur' },
@@ -77,45 +81,42 @@ const rules = {
   ]
 }
 
+/** 返回聊天页面 @returns void */
 const goBack = () => {
   router.push('/')
 }
 
+/** 触发文件选择 @returns void */
 const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
+/** 处理头像上传 @param event 文件选择事件 @returns Promise<void> */
 const handleAvatarChange = async (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
 
-  // 验证文件类型
   if (!file.type.startsWith('image/')) {
     ElMessage.error('请选择图片文件')
     return
   }
 
-  // 验证文件大小（限制 2MB）
   if (file.size > 2 * 1024 * 1024) {
     ElMessage.error('图片大小不能超过 2MB')
     return
   }
 
-  // 显示上传中状态
   const loadingMsg = ElMessage.info('正在上传...')
 
   try {
     const avatarUrl = await updateAvatarApi(file)
     console.log('上传成功，新头像URL:', avatarUrl)
 
-    // 关闭 loading 提示
     loadingMsg.close()
 
-    // 1. 更新当前页面的头像显示
     form.avatar = avatarUrl
 
-    // 2. 更新 store 中的用户信息（关键！这会同步更新 Header 中的头像）
     if (userStore.userInfo) {
       const updatedUserInfo = {
         ...userStore.userInfo,
@@ -125,17 +126,13 @@ const handleAvatarChange = async (event: Event) => {
     }
 
     ElMessage.success('头像更新成功')
-
-    // 3. 可选：重新加载好友列表（刷新好友头像）
-    // const friendStore = (await import('@/stores/friendStore')).useFriendStore()
-    // friendStore.loadFriendList()
-
   } catch (error) {
     console.error(error)
     ElMessage.error('头像上传失败')
   }
 }
 
+/** 保存个人信息 @returns Promise<void> */
 const handleSave = async () => {
   const valid = await formRef.value?.validate()
   if (!valid) return
@@ -146,7 +143,6 @@ const handleSave = async () => {
       nickname: form.nickname,
       signature: form.signature
     })
-    // 更新 store 中的用户信息
     userStore.setUserInfo(res)
     ElMessage.success('保存成功')
     router.push('/')
@@ -158,6 +154,7 @@ const handleSave = async () => {
   }
 }
 
+/** 组件挂载时加载用户信息 */
 onMounted(() => {
   const userInfo = userStore.userInfo
   if (userInfo) {

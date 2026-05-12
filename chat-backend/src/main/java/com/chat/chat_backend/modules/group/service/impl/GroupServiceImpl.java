@@ -24,26 +24,34 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/** 群聊服务实现，处理群组CRUD、成员管理、角色分配、禁言、公告等业务逻辑 @author chat-backend @since 2026-05-12 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class GroupServiceImpl implements GroupService {
 
+    /** 内存禁言缓存（key为"groupId:userId"，值为禁言到期时间） */
     private static final Map<String, LocalDateTime> muteMap = new ConcurrentHashMap<>();
 
+    /** 判断成员是否处于禁言状态 @param groupId 群聊ID @param userId 用户ID @return true表示禁言中 */
     public static boolean isMuted(Long groupId, Long userId) {
         LocalDateTime until = muteMap.get(key(groupId, userId));
         return until != null && until.isAfter(LocalDateTime.now());
     }
 
+    /** 构建禁言缓存key @param groupId 群聊ID @param userId 用户ID @return key字符串 */
     private static String key(Long groupId, Long userId) {
         return groupId + ":" + userId;
     }
 
+    /** 群聊数据访问层 */
     private final GroupMapper groupMapper;
+    /** 群成员数据访问层 */
     private final GroupMemberMapper groupMemberMapper;
+    /** 用户数据访问层 */
     private final UserMapper userMapper;
 
+    /** 创建群聊，创建者默认为群主 @param userId 创建者用户ID @param request 创建群聊请求 @return 群聊信息 */
     @Override
     @Transactional
     public GroupVO createGroup(Long userId, CreateGroupRequest request) {
@@ -81,6 +89,7 @@ public class GroupServiceImpl implements GroupService {
         return getGroupDetail(userId, group.getId());
     }
 
+    /** 获取用户加入的群聊列表 @param userId 用户ID @return 群聊列表 */
     @Override
     public List<GroupVO> getUserGroups(Long userId) {
         List<Group> groups = groupMapper.findGroupsByUserId(userId);
@@ -109,6 +118,7 @@ public class GroupServiceImpl implements GroupService {
                 .collect(Collectors.toList());
     }
 
+    /** 获取群聊详情（校验用户是否为群成员） @param userId 用户ID @param groupId 群聊ID @return 群聊详情 */
     @Override
     public GroupVO getGroupDetail(Long userId, Long groupId) {
         Group group = groupMapper.selectById(groupId);
@@ -135,6 +145,7 @@ public class GroupServiceImpl implements GroupService {
                 .build();
     }
 
+    /** 邀请用户加入群聊 @param userId 邀请者用户ID @param request 邀请请求 */
     @Override
     @Transactional
     public void inviteMember(Long userId, InviteMemberRequest request) {
@@ -173,6 +184,7 @@ public class GroupServiceImpl implements GroupService {
         groupMapper.updateById(group);
     }
 
+    /** 退出群聊（群主不能退群，需先转让或解散） @param userId 用户ID @param groupId 群聊ID */
     @Override
     @Transactional
     public void quitGroup(Long userId, Long groupId) {
@@ -197,6 +209,7 @@ public class GroupServiceImpl implements GroupService {
         groupMapper.updateById(group);
     }
 
+    /** 解散群聊（仅群主可操作） @param userId 用户ID @param groupId 群聊ID */
     @Override
     @Transactional
     public void disbandGroup(Long userId, Long groupId) {
@@ -219,11 +232,13 @@ public class GroupServiceImpl implements GroupService {
         groupMapper.deleteById(groupId);
     }
 
+    /** 清除群聊未读消息数 @param userId 用户ID @param groupId 群聊ID */
     @Override
     public void clearUnreadCount(Long userId, Long groupId) {
         groupMemberMapper.clearUnreadCount(groupId, userId);
     }
 
+    /** 更新群公告（群主或管理员可操作） @param userId 用户ID @param groupId 群聊ID @param notice 公告内容 */
     @Override
     @Transactional
     public void updateNotice(Long userId, Long groupId, String notice) {
@@ -246,6 +261,7 @@ public class GroupServiceImpl implements GroupService {
         groupMapper.updateById(group);
     }
 
+    /** 设置管理员（仅群主可操作） @param userId 用户ID @param groupId 群聊ID @param memberId 成员ID */
     @Override
     @Transactional
     public void setAdmin(Long userId, Long groupId, Long memberId) {
@@ -261,6 +277,7 @@ public class GroupServiceImpl implements GroupService {
         groupMemberMapper.updateById(member);
     }
 
+    /** 取消管理员（仅群主可操作） @param userId 用户ID @param groupId 群聊ID @param memberId 管理员ID */
     @Override
     @Transactional
     public void removeAdmin(Long userId, Long groupId, Long memberId) {
@@ -276,6 +293,7 @@ public class GroupServiceImpl implements GroupService {
         groupMemberMapper.updateById(member);
     }
 
+    /** 移除群成员（群主可移除所有人，管理员不能移除其他管理员和群主） @param userId 操作者用户ID @param groupId 群聊ID @param memberId 被移除成员ID */
     @Override
     @Transactional
     public void removeMember(Long userId, Long groupId, Long memberId) {
@@ -301,6 +319,7 @@ public class GroupServiceImpl implements GroupService {
         groupMapper.updateById(group);
     }
 
+    /** 禁言成员 @param userId 操作者用户ID @param groupId 群聊ID @param memberId 被禁言成员ID @param minutes 禁言时长（分钟） */
     @Override
     @Transactional
     public void muteMember(Long userId, Long groupId, Long memberId, Integer minutes) {
@@ -314,6 +333,7 @@ public class GroupServiceImpl implements GroupService {
         muteMap.put(key(groupId, memberId), LocalDateTime.now().plusMinutes(minutes));
     }
 
+    /** 取消禁言 @param userId 操作者用户ID @param groupId 群聊ID @param memberId 被禁言成员ID */
     @Override
     @Transactional
     public void unmuteMember(Long userId, Long groupId, Long memberId) {
@@ -327,6 +347,7 @@ public class GroupServiceImpl implements GroupService {
         muteMap.remove(key(groupId, memberId));
     }
 
+    /** 批量禁言成员 @param userId 操作者用户ID @param groupId 群聊ID @param memberIds 被禁言成员ID列表 @param minutes 禁言时长（分钟） */
     @Override
     @Transactional
     public void batchMute(Long userId, Long groupId, List<Long> memberIds, Integer minutes) {
@@ -342,6 +363,7 @@ public class GroupServiceImpl implements GroupService {
         }
     }
 
+    /** 检查用户是否为群主或管理员 @param userId 用户ID @param groupId 群聊ID @return 群成员信息 */
     private GroupMember checkAdminOrOwner(Long userId, Long groupId) {
         GroupMember operator = findMember(groupId, userId);
         if (operator == null) throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "你不是群成员");
@@ -350,6 +372,7 @@ public class GroupServiceImpl implements GroupService {
         return operator;
     }
 
+    /** 查询群成员信息 @param groupId 群聊ID @param userId 用户ID @return 群成员信息 */
     private GroupMember findMember(Long groupId, Long userId) {
         LambdaQueryWrapper<GroupMember> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(GroupMember::getGroupId, groupId).eq(GroupMember::getUserId, userId);

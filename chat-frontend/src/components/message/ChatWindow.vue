@@ -23,6 +23,7 @@
 </template>
 
 <script setup lang="ts">
+/** 单聊聊天窗口组件，管理消息/通话/下载等功能 @component */
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getChatHistoryApi, downloadChatHistoryApi, markAsReadApi } from '@/api/message'
@@ -35,25 +36,41 @@ import MessageInput from '../chat/MessageInput.vue'
 import CallDialog from '../call/CallDialog.vue'
 import DownloadDialog from '../common/DownloadDialog.vue'
 
+/** 组件属性：好友对象 */
 const props = defineProps<{ friend: any }>()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
+/** 当前登录用户 ID */
 const currentUserId = userStore.userInfo?.id
 
+/** 消息列表 */
 const messages = ref<any[]>([])
+/** 加载状态 */
 const loading = ref(false)
+/** 分页页码 */
 const page = ref(1)
+/** 是否还有更多 */
 const hasMore = ref(true)
+/** 总消息数 */
 const totalMessageCount = ref(0)
+/** 下载对话框显示状态 */
 const showDownloadDialog = ref(false)
 
+/** 语音通话对话框可见 */
 const voiceCallVisible = ref(false)
+/** 视频通话对话框可见 */
 const videoCallVisible = ref(false)
+/** 来电对话框可见 */
 const incomingCallVisible = ref(false)
+/** 来电者信息 */
 const incomingCaller = ref<any>(null)
+/** 来电类型 */
 const incomingCallType = ref<'voice' | 'video'>('voice')
+/** 待处理的 Offer */
 const pendingOffer = ref<any>(null)
+/** 铃声 URL（缓存） */
 let _ringUrl: string | null = null
+/** 获取铃声 URL @returns 铃声地址 */
 function getRingUrl(): string {
   if (_ringUrl === null) {
     try { _ringUrl = new URL('../../assets/audio/ring.MP3', import.meta.url).href }
@@ -61,7 +78,9 @@ function getRingUrl(): string {
   }
   return _ringUrl
 }
+/** 铃声音频对象 */
 let _ringAudio: HTMLAudioElement | null = null
+/** 播放来电铃声 @returns void */
 function startRingtone() {
   const url = getRingUrl()
   if (!url || _ringAudio) return
@@ -76,13 +95,17 @@ function startRingtone() {
     }, { once: true })
   } catch { /* ignore */ }
 }
+/** 停止来电铃声 @returns void */
 function stopRingtone() {
   if (_ringAudio) { _ringAudio.pause(); _ringAudio.loop = false; _ringAudio.currentTime = 0; _ringAudio = null }
 }
 
+/** 最大下载条数 */
 const maxDownloadLimit = 500
+/** 消息列表组件引用 */
 const messageListRef = ref()
 
+/** 加载历史消息 @param reset 是否重置 @returns Promise<void> */
 const loadHistory = async (reset = true) => {
   if (!props.friend?.userId) return
   if (reset) {
@@ -119,12 +142,14 @@ const loadHistory = async (reset = true) => {
   }
 }
 
+/** 加载更多消息 @returns void */
 const loadMore = () => {
   if (!loading.value && hasMore.value) {
     loadHistory(false)
   }
 }
 
+/** 添加本地消息（发送后立即显示） @param content 内容 @param messageType 消息类型 @param duration 语音时长 @returns void */
 const addLocalMessage = (content: string, messageType: number, duration?: number) => {
   messages.value.push({
     id: Date.now() + Math.random(),
@@ -140,36 +165,42 @@ const addLocalMessage = (content: string, messageType: number, duration?: number
   messageListRef.value?.scrollToBottom()
 }
 
+/** 发送文本消息 @param content 文本内容 @returns void */
 const sendMessage = (content: string) => {
   if (!props.friend?.userId) return
   addLocalMessage(content, 1)
   websocketService.sendMessage(props.friend.userId, content, 1)
 }
 
+/** 发送图片 @param url 图片地址 @returns void */
 const sendImage = (url: string) => {
   if (!props.friend?.userId) return
   addLocalMessage(url, 2)
   websocketService.sendMessage(props.friend.userId, url, 2)
 }
 
+/** 发送语音 @param url 语音地址 @param duration 时长 @returns void */
 const sendVoice = (url: string, duration: number) => {
   if (!props.friend?.userId) return
   addLocalMessage(url, 4, duration)
   websocketService.sendMessage(props.friend.userId, url, 4, duration)
 }
 
+/** 发送表情 @param url 表情地址 @returns void */
 const sendEmoji = (url: string) => {
   if (!props.friend?.userId) return
   addLocalMessage(url, 2)
   websocketService.sendMessage(props.friend.userId, url, 2)
 }
 
+/** 发起语音通话 @param toUserId 目标用户 ID @returns void */
 const startVoiceCall = (toUserId: number) => {
   if (!toUserId) return ElMessage.warning('请先选择聊天对象')
   if (toUserId === currentUserId) return ElMessage.error('不能给自己打电话')
   voiceCallVisible.value = true
 }
 
+/** 发起视频通话 @param toUserId 目标用户 ID @returns void */
 const startVideoCall = (toUserId: number) => {
   if (!toUserId) return ElMessage.warning('请先选择聊天对象')
   if (toUserId === currentUserId) return ElMessage.error('不能给自己打电话')
@@ -183,6 +214,7 @@ const endIncomingCall = () => {
   stopRingtone()
 }
 
+/** 下载聊天记录 @param limit 下载条数 @returns Promise<void> */
 const handleDownload = async (limit: number) => {
   try {
     await downloadChatHistoryApi(props.friend.userId, props.friend.nickname, limit)
@@ -190,6 +222,7 @@ const handleDownload = async (limit: number) => {
   } catch { ElMessage.error('下载失败') }
 }
 
+/** 标记消息为已读 @returns Promise<void> */
 const markAsRead = async () => {
   if (!props.friend?.userId) return
   try {
@@ -198,6 +231,7 @@ const markAsRead = async () => {
   } catch (error) { console.error(error) }
 }
 
+/** 收到新消息回调 @param data 消息数据 @returns void */
 const onNewMessage = (data: any) => {
   if (props.friend?.userId === data.fromUserId) {
     messages.value.push({
@@ -215,6 +249,7 @@ const onNewMessage = (data: any) => {
   }
 }
 
+/** 通话信令回调 @param data 信令数据 @returns void */
 const onCallSignal = (data: any) => {
   if (data.action === 'offer' && data.fromUserId !== currentUserId) {
     pendingOffer.value = data
@@ -229,6 +264,7 @@ const onCallSignal = (data: any) => {
   }
 }
 
+/** 监听好友切换，重新加载消息和标记已读 */
 watch(() => props.friend, (newFriend) => {
   if (newFriend?.userId) {
     loadHistory(true)

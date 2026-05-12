@@ -14,7 +14,7 @@
       @tab-change="handleTabChange" />
 
     <AddImpressionDialog v-model="showAddDialog" :friend-list="friendList" :loading="loadingFriends"
-      @submit="submitImpression" />
+      :preselect-user-id="props.targetUserId" @submit="submitImpression" />
 
     <ConfirmDialog v-model="showDeleteDialog" title="提示" :message="deleteConfirmMessage" type="danger"
       confirm-text="确定删除" cancel-text="取消" @confirm="confirmDelete" />
@@ -22,7 +22,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+/** 好友印象/评价面板组件 @component */
+import { ref, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import {
@@ -37,24 +38,49 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import ImpressionList from './ImpressionList.vue'
 import AddImpressionDialog from './AddImpressionDialog.vue'
 
+/** 外部传入的预选目标用户 ID（来自好友头像卡片"写印象"） */
+const props = defineProps<{
+  targetUserId?: number | null
+}>()
+
+const emit = defineEmits<{
+  (e: 'clearTarget'): void
+}>()
+
 const friendStore = useFriendStore()
 
-// 数据状态
+/** 我收到的评价数据 */
 const impressionsToMe = ref<ImpressionVO[]>([])
+/** 我给出的评价数据 */
 const impressionsByMe = ref<ImpressionVO[]>([])
+/** 加载状态 */
 const loadingToMe = ref(false)
 const loadingByMe = ref(false)
+/** 好友列表 */
 const friendList = ref<any[]>([])
+/** 好友列表加载状态 */
 const loadingFriends = ref(false)
 
-// UI 状态
+/** 添加评价对话框显示状态 */
 const showAddDialog = ref(false)
+
+/** 监听外部传入的 targetUserId，自动打开添加评价弹窗 */
+watch(() => props.targetUserId, (val) => {
+  if (val) {
+    showAddDialog.value = true
+    emit('clearTarget')
+  }
+})
+/** 删除确认对话框显示状态 */
 const showDeleteDialog = ref(false)
+/** 删除确认消息 */
 const deleteConfirmMessage = ref('确定要删除这条评价吗？')
+/** 待删除的评价 ID */
 const pendingDeleteId = ref<number | null>(null)
+/** 当前 Tab */
 const currentTab = ref('to-me')
 
-// 加载数据
+/** 加载「我收到的评价」数据 @returns Promise<void> */
 const loadToMeData = async () => {
   loadingToMe.value = true
   try {
@@ -68,6 +94,7 @@ const loadToMeData = async () => {
   }
 }
 
+/** 加载「我给出的评价」数据 @returns Promise<void> */
 const loadByMeData = async () => {
   loadingByMe.value = true
   try {
@@ -81,7 +108,7 @@ const loadByMeData = async () => {
   }
 }
 
-// 加载好友列表
+/** 加载好友列表 @returns Promise<void> */
 const loadFriendList = async () => {
   loadingFriends.value = true
   try {
@@ -99,12 +126,11 @@ const loadFriendList = async () => {
   }
 }
 
-// 提交评价
+/** 提交评价 @param toUserId 目标用户 ID @param content 评价内容 @returns Promise<void> */
 const submitImpression = async (toUserId: number, content: string) => {
   try {
     await addImpressionApi(toUserId, content)
     ElMessage.success('评价成功')
-    // 刷新当前 Tab 的数据
     if (currentTab.value === 'to-me') {
       await loadToMeData()
     } else {
@@ -117,13 +143,14 @@ const submitImpression = async (toUserId: number, content: string) => {
   }
 }
 
-// 删除评价
+/** 删除评价 @param id 评价 ID @returns void */
 const handleDelete = (id: number) => {
   pendingDeleteId.value = id
   deleteConfirmMessage.value = '确定要删除这条评价吗？删除后无法恢复。'
   showDeleteDialog.value = true
 }
 
+/** 确认删除 @returns Promise<void> */
 const confirmDelete = async () => {
   if (!pendingDeleteId.value) return
 
@@ -139,6 +166,7 @@ const confirmDelete = async () => {
   }
 }
 
+/** Tab 切换回调 @param tab Tab 名称 @returns void */
 const handleTabChange = (tab: string) => {
   currentTab.value = tab
 }

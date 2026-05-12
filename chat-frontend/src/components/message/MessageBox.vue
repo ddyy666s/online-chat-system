@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+/** 消息盒子抽屉组件，聚合未读聊天消息和系统通知 @component */
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bell, ArrowRight } from '@element-plus/icons-vue'
@@ -38,25 +39,34 @@ import MessageList from '../messageBox/MessageList.vue'
 import NotificationDialog from '../messageBox/NotificationDialog.vue'
 import Empty from '../common/Empty.vue'
 
+/** 组件属性：显示状态 */
 const props = defineProps<{
   modelValue: boolean
 }>()
 
+/** 组件事件：更新显示状态 */
 const emit = defineEmits(['update:modelValue'])
 const router = useRouter()
 const messageStore = useMessageStore()
 
+/** 抽屉可见性（双向绑定） */
 const visible = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
 })
 
+/** 当前 Tab */
 const activeTab = ref('chat')
+/** 系统通知列表 */
 const notifications = ref<SystemNotification[]>([])
+/** 未读通知数量 */
 const notificationCount = ref(0)
+/** 通知详情对话框显示状态 */
 const showNotificationDetail = ref(false)
+/** 当前选中的通知 */
 const selectedNotification = ref<SystemNotification | null>(null)
 
+/** 未读消息列表（从 store 转换） */
 const unreadMessages = computed(() => {
   const messages = messageStore.unreadCount?.messages || []
   return messages.map((msg: any) => ({
@@ -72,6 +82,7 @@ const unreadMessages = computed(() => {
   }))
 })
 
+/** 格式化时间 @param time ISO 时间字符串 @returns 格式化时间文本 */
 const formatTime = (time: string) => {
   const d = new Date(time)
   const now = new Date()
@@ -82,6 +93,7 @@ const formatTime = (time: string) => {
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
+/** 加载未读通知 @returns Promise<void> */
 const loadNotifications = async () => {
   const res = await getUnreadNotificationsApi()
   if (res && res.notifications) {
@@ -90,11 +102,13 @@ const loadNotifications = async () => {
   }
 }
 
+/** 打开通知详情 @param n 通知对象 @returns void */
 const openNotification = (n: SystemNotification) => {
   selectedNotification.value = n
   showNotificationDetail.value = true
 }
 
+/** 处理通知已读 @returns Promise<void> */
 const handleNotificationRead = async () => {
   if (selectedNotification.value) {
     try {
@@ -106,10 +120,12 @@ const handleNotificationRead = async () => {
   selectedNotification.value = null
 }
 
+/** 关闭抽屉 @returns void */
 const handleClose = () => {
   visible.value = false
 }
 
+/** 点击未读消息，跳转至对应聊天 @param friendId 好友 ID @returns Promise<void> */
 const handleMessageClick = async (friendId: number) => {
   visible.value = false
   try {
@@ -121,6 +137,7 @@ const handleMessageClick = async (friendId: number) => {
   router.push(`/?friendId=${friendId}`)
 }
 
+/** 打开抽屉时加载数据 */
 watch(() => props.modelValue, (val) => {
   if (val) {
     messageStore.loadUnreadCount()

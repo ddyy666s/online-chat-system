@@ -22,36 +22,55 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+/** 添加好友评价对话框 @component */
+import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 
+/** 组件属性：显示状态、好友列表、加载状态、预选好友ID */
 const props = defineProps<{
   modelValue: boolean
   friendList: any[]
   loading?: boolean
+  preselectUserId?: number | null
 }>()
 
+/** 组件事件：更新显示状态、提交评价 */
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
   submit: [toUserId: number, content: string]
 }>()
 
+/** 对话框可见性（双向绑定），打开时自动预选好友 */
 const visible = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
+  set: (val) => {
+    emit('update:modelValue', val)
+    if (!val) form.value = { toUserId: null, content: '' }
+  }
 })
 
+/** 打开时预选好友 */
+watch(visible, (val) => {
+  if (val && props.preselectUserId && props.friendList.some(f => f.userId === props.preselectUserId)) {
+    form.value.toUserId = props.preselectUserId
+  }
+})
+
+/** 提交按钮加载状态 */
 const submitting = ref(false)
+/** 表单数据 */
 const form = ref({
   toUserId: null as number | null,
   content: ''
 })
 
+/** 关闭对话框，重置表单 @returns void */
 const handleClose = () => {
   form.value = { toUserId: null, content: '' }
   visible.value = false
 }
 
+/** 提交评价 @returns Promise<void> */
 const handleSubmit = async () => {
   if (!form.value.toUserId) {
     ElMessage.warning('请选择要评价的好友')

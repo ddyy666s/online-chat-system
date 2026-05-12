@@ -6,14 +6,18 @@
 </template>
 
 <script setup lang="ts">
+/** 本地摄像头视频展示组件 @component */
 import { ref, watch } from 'vue'
 
+/** 组件属性：本地媒体流 */
 const props = defineProps<{
   stream: MediaStream | null
 }>()
 
+/** 视频元素引用 */
 const videoRef = ref<HTMLVideoElement>()
 
+/** 监听媒体流变化，自动绑定到 video 元素 */
 watch(() => props.stream, (newStream) => {
   if (videoRef.value && newStream) {
     videoRef.value.srcObject = newStream

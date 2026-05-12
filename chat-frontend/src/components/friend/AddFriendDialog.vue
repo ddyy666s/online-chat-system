@@ -15,38 +15,48 @@
 </template>
 
 <script setup lang="ts">
+/** 添加好友对话框组件，支持搜索用户和发送好友申请 @component */
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { searchUsersApi, sendFriendRequestApi } from '@/api/friend'
 import Empty from '@/components/common/Empty.vue'
 import SearchResultItem from './SearchResultItem.vue'
 
+/** 组件属性：对话框显示状态 */
 const props = defineProps<{
   modelValue: boolean
 }>()
 
+/** 组件事件：更新显示状态、添加成功 */
 const emit = defineEmits(['update:modelValue', 'success'])
 
+/** 对话框可见性 */
 const visible = ref(false)
+/** 搜索关键词 */
 const keyword = ref('')
+/** 搜索结果列表 */
 const results = ref<any[]>([])
+/** 搜索加载状态 */
 const loading = ref(false)
+/** 是否已执行过搜索 */
 const searched = ref(false)
 
+/** 监听外部对话框显示状态 */
 watch(() => props.modelValue, (val) => {
   visible.value = val
   if (!val) {
-    // 关闭时重置状态
     keyword.value = ''
     results.value = []
     searched.value = false
   }
 })
 
+/** 内部可见性同步到外部 */
 watch(visible, (val) => {
   emit('update:modelValue', val)
 })
 
+/** 执行搜索 @returns Promise<void> */
 const handleSearch = async () => {
   if (!keyword.value.trim()) {
     ElMessage.warning('请输入搜索内容')
@@ -64,6 +74,7 @@ const handleSearch = async () => {
   }
 }
 
+/** 发送好友申请 @param userId 目标用户 ID @returns Promise<void> */
 const handleAdd = async (userId: number) => {
   try {
     await sendFriendRequestApi(userId)
@@ -75,6 +86,7 @@ const handleAdd = async (userId: number) => {
   }
 }
 
+/** 关闭对话框 @returns void */
 const handleClose = () => {
   visible.value = false
 }

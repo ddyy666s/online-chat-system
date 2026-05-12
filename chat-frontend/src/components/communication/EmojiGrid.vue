@@ -12,14 +12,17 @@
 </template>
 
 <script setup lang="ts">
+/** 表情网格展示组件 @component */
 import Empty from '@/components/common/Empty.vue'
 
+/** 组件属性：表情列表、是否显示删除按钮、空状态文本 */
 defineProps<{
   emojis: any[]
   showDelete?: boolean
   emptyText?: string
 }>()
 
+/** 组件事件：选择表情、删除表情 */
 defineEmits<{
   (e: 'select', emoji: any): void
   (e: 'delete', id: number): void

@@ -20,8 +20,10 @@
 </template>
 
 <script setup lang="ts">
+/** 数据统计卡片组件 @component */
 import type { StatisticsVO } from '@/api/admin'
 
+/** 组件属性：统计数据 */
 defineProps<{
   stats: StatisticsVO
 }>()

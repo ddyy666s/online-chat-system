@@ -6,8 +6,25 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
+/**
+ * 群组数据访问接口，继承Mybatis-Plus BaseMapper
+ * @author chat-backend
+ * @since 2026-05-12
+ */
 @Mapper
 public interface GroupMapper extends BaseMapper<Group> {
+
+    /**
+     * 查询用户加入的所有群组
+     * @param userId 用户ID
+     * @return 群组实体列表
+     */
     List<Group> findGroupsByUserId(@Param("userId") Long userId);
+
+    /**
+     * 清除用户在指定群组中的未读消息计数
+     * @param groupId 群组ID
+     * @param userId 用户ID
+     */
     void clearUnreadCount(@Param("groupId") Long groupId, @Param("userId") Long userId);
 }

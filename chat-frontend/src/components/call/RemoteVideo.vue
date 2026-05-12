@@ -11,8 +11,10 @@
 </template>
 
 <script setup lang="ts">
+/** 远程视频展示组件，显示对方摄像头画面 @component */
 import { ref, watch } from 'vue'
 
+/** 组件属性：目标用户信息、连接状态、状态文本、远程媒体流 */
 const props = defineProps<{
   targetUser: any
   isConnected: boolean
@@ -20,8 +22,10 @@ const props = defineProps<{
   stream: MediaStream | null
 }>()
 
+/** 视频元素引用 */
 const videoRef = ref<HTMLVideoElement>()
 
+/** 监听远程流变化，自动绑定到 video 元素 */
 watch(() => props.stream, (newStream) => {
   if (videoRef.value && newStream) {
     videoRef.value.srcObject = newStream

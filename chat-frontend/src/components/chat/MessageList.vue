@@ -19,27 +19,34 @@
 </template>
 
 <script setup lang="ts">
+/** 聊天消息列表组件，支持滚动加载和历史消息展示 @component */
 import { ref, watch, nextTick } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
 import MessageBubble from './MessageBubble.vue'
 
+/** 组件属性：消息列表、当前用户 ID、加载状态 */
 const props = defineProps<{
   messages: any[]
   currentUserId: number | undefined
   loading: boolean
 }>()
 
+/** 组件事件：加载更多消息 */
 const emit = defineEmits(['loadMore'])
 
+/** 列表容器引用 */
 const listRef = ref<HTMLElement>()
+/** 底部锚点引用，用于滚动到底部 */
 const scrollBottomRef = ref<HTMLElement>()
 
+/** 滚动到列表底部 @returns void */
 const scrollToBottom = () => {
   nextTick(() => {
     scrollBottomRef.value?.scrollIntoView({ behavior: 'auto' })
   })
 }
 
+/** 滚动事件处理，检测是否触底以加载更多 @returns void */
 const handleScroll = () => {
   if (!listRef.value) return
   const { scrollTop, scrollHeight, clientHeight } = listRef.value
@@ -48,7 +55,7 @@ const handleScroll = () => {
   }
 }
 
-// 监听消息变化，自动滚动到底部
+/** 监听消息数量变化，自动滚动到底部 */
 watch(
   () => props.messages.length,
   () => {

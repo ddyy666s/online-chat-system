@@ -22,9 +22,11 @@
 </template>
 
 <script setup lang="ts">
+/** 聊天记录下载对话框组件 @component */
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 
+/** 组件属性：显示状态、好友信息、总消息数、最大下载限制 */
 const props = defineProps<{
   modelValue: boolean
   friendId: number
@@ -33,18 +35,25 @@ const props = defineProps<{
   maxLimit?: number
 }>()
 
+/** 组件事件：更新显示状态、执行下载 */
 const emit = defineEmits(['update:modelValue', 'download'])
 
+/** 对话框可见性 */
 const visible = ref(false)
+/** 下载按钮加载状态 */
 const loading = ref(false)
+/** 表单引用 */
 const formRef = ref()
 
+/** 最大下载条数 */
 const maxLimit = props.maxLimit || 500
 
+/** 表单数据 */
 const form = ref({
   limit: Math.min(100, props.totalMessages || 100)
 })
 
+/** 表单校验规则 */
 const rules = {
   limit: [
     { required: true, message: '请输入下载条数' },
@@ -52,11 +61,13 @@ const rules = {
   ]
 }
 
+/** 关闭对话框 @returns void */
 const handleClose = () => {
   visible.value = false
   emit('update:modelValue', false)
 }
 
+/** 执行下载 @returns Promise<void> */
 const handleDownload = async () => {
   const valid = await formRef.value?.validate()
   if (!valid) return
@@ -72,6 +83,7 @@ const handleDownload = async () => {
   }
 }
 
+/** 监听外部显示状态变化 */
 watch(() => props.modelValue, (val) => {
   visible.value = val
   if (val) {

@@ -6,7 +6,15 @@ import java.util.List;
 
 @Data
 @Builder
+/**
+ * 好友分组视图对象
+ *
+ * @author chat-backend
+ * @since 2026-05-12
+ */
 public class FriendGroupVO {
+    /** 分组名称 */
     private String groupName;
+    /** 该分组下的好友列表 */
     private List<FriendVO> friends;
 }

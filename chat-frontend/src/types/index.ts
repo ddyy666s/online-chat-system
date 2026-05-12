@@ -1,4 +1,4 @@
-// 类型定义统一导出
+/** 类型定义统一导出入口 @module types */
 export * from './user'
 export * from './friend'
 export * from './message'

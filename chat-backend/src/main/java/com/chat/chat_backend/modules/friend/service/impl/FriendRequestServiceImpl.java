@@ -20,15 +20,20 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/** 好友请求服务实现，处理发送请求、查询待处理请求、接受/拒绝请求等业务逻辑 @author chat-backend @since 2026-05-12 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FriendRequestServiceImpl implements FriendRequestService {
 
+    /** 好友数据访问层 */
     private final FriendMapper friendMapper;
+    /** 好友请求数据访问层 */
     private final FriendRequestMapper friendRequestMapper;
+    /** 用户数据访问层 */
     private final UserMapper userMapper;
 
+    /** 发送好友请求（校验目标用户存在性、是否已是好友、是否有待处理的请求） @param currentUserId 当前用户ID @param request 好友请求 */
     @Override
     @Transactional
     public void sendFriendRequest(Long currentUserId, SendFriendRequest request) {
@@ -58,6 +63,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
         friendRequestMapper.insert(friendRequest);
     }
 
+    /** 获取待处理的好友请求列表 @param currentUserId 当前用户ID @return 待处理的好友请求列表 */
     @Override
     public List<FriendRequestVO> getFriendRequests(Long currentUserId) {
         return friendRequestMapper.findPendingRequests(currentUserId).stream()
@@ -76,6 +82,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
                 .collect(Collectors.toList());
     }
 
+    /** 处理好友请求（接受/拒绝），校验请求所有权和有效期 @param currentUserId 当前用户ID @param requestId 请求ID @param request 处理结果 */
     @Override
     @Transactional
     public void handleFriendRequest(Long currentUserId, Long requestId, HandleFriendRequest request) {

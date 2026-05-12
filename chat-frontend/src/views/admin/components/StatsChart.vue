@@ -8,23 +8,29 @@
 </template>
 
 <script setup lang="ts">
+/** 数据统计图表组件（ECharts 饼图），30 秒自动刷新 @component */
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as echarts from 'echarts'
 import type { StatisticsVO } from '@/api/admin'
 
+/** 组件属性：统计数据 */
 const props = defineProps<{
   stats: StatisticsVO
 }>()
 
+/** 组件事件：触发刷新 */
 const emit = defineEmits<{
   (e: 'refresh'): void
 }>()
 
+/** 图表容器引用 */
 const chartRef = ref<HTMLElement>()
+/** ECharts 实例 */
 let chartInstance: echarts.ECharts | null = null
+/** 自动刷新定时器 ID */
 let refreshTimer: number | null = null
 
-// 根据 stats 生成饼图数据
+/** 生成饼图数据 @returns 饼图数据数组 */
 const getChartData = () => {
   return [
     { name: '总用户数', value: props.stats.totalUsers || 0 },
@@ -34,6 +40,7 @@ const getChartData = () => {
   ]
 }
 
+/** 初始化图表 @returns void */
 const initChart = () => {
   if (!chartRef.value) return
 
@@ -80,6 +87,7 @@ const initChart = () => {
   chartInstance.setOption(option)
 }
 
+/** 更新图表数据 @returns void */
 const updateChart = () => {
   if (chartInstance) {
     chartInstance.setOption({
@@ -93,6 +101,7 @@ const updateChart = () => {
   }
 }
 
+/** 窗口大小变化时自适应 */
 const handleResize = () => {
   chartInstance?.resize()
 }
@@ -109,7 +118,7 @@ onBeforeUnmount(() => {
   chartInstance?.dispose()
 })
 
-// 监听 stats 变化，更新图表
+/** 监听 stats 变化，更新图表 */
 watch(() => props.stats, () => {
   updateChart()
 }, { deep: true })

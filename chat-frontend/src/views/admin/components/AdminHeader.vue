@@ -7,15 +7,18 @@
 </template>
 
 <script setup lang="ts">
+/** 管理后台头部组件 @component */
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 
+/** 组件属性：页面标题 */
 defineProps<{
   title: string
 }>()
 
 const router = useRouter()
 
+/** 返回聊天页面 @returns void */
 const goBack = () => {
   router.push('/')
 }

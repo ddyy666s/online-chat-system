@@ -16,14 +16,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/** 表情服务实现，处理系统表情查询、自定义表情上传/删除等业务逻辑 @author chat-backend @since 2026-05-12 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmojiServiceImpl implements EmojiService {
 
+    /** 表情数据访问层 */
     private final EmojiMapper emojiMapper;
+    /** OSS对象存储工具类 */
     private final OssUtil ossUtil;
 
+    /** 获取系统表情列表 @return 系统表情列表 */
     @Override
     public List<EmojiVO> getSystemEmojis() {
         return emojiMapper.findSystemEmojis().stream()
@@ -31,6 +35,7 @@ public class EmojiServiceImpl implements EmojiService {
                 .collect(Collectors.toList());
     }
 
+    /** 获取用户自定义表情列表 @param userId 用户ID @return 用户表情列表 */
     @Override
     public List<EmojiVO> getUserEmojis(Long userId) {
         return emojiMapper.findUserEmojis(userId).stream()
@@ -38,6 +43,7 @@ public class EmojiServiceImpl implements EmojiService {
                 .collect(Collectors.toList());
     }
 
+    /** 上传自定义表情到OSS @param userId 用户ID @param name 表情名称 @param file 图片文件 @param category 表情分类 @return 上传后的表情信息 */
     @Override
     @Transactional
     public EmojiVO uploadEmoji(Long userId, String name, MultipartFile file, String category) {
@@ -61,6 +67,7 @@ public class EmojiServiceImpl implements EmojiService {
         }
     }
 
+    /** 删除自定义表情（仅表情拥有者可操作） @param userId 用户ID @param emojiId 表情ID */
     @Override
     @Transactional
     public void deleteEmoji(Long userId, Long emojiId) {
@@ -75,6 +82,7 @@ public class EmojiServiceImpl implements EmojiService {
         log.info("用户 {} 删除了表情: {}", userId, emoji.getName());
     }
 
+    /** 表情实体转VO @param emoji 表情实体 @return 表情VO */
     private EmojiVO toVO(Emoji emoji) {
         return EmojiVO.builder()
                 .id(emoji.getId())

@@ -39,15 +39,21 @@
 </template>
 
 <script setup lang="ts">
+/** 消息审计页面组件，支持按条件搜索和分页查看聊天记录 @component */
 import { ref } from 'vue'
 import { getAdminMessagesApi } from '@/api/admin'
 import { formatDate } from '@/utils/date'
 
+/** 消息列表 */
 const messages = ref<any[]>([])
+/** 当前页码 */
 const currentPage = ref(1)
+/** 每页条数 */
 const pageSize = ref(20)
+/** 总记录数 */
 const total = ref(0)
 
+/** 搜索过滤条件 */
 const filter = ref({
   fromUserId: '',
   toUserId: '',
@@ -55,6 +61,7 @@ const filter = ref({
   endTime: ''
 })
 
+/** 加载消息列表 @returns Promise<void> */
 const loadMessages = async () => {
   const params: any = {
     page: currentPage.value,
@@ -70,11 +77,13 @@ const loadMessages = async () => {
   total.value = res.total
 }
 
+/** 搜索 @returns void */
 const handleSearch = () => {
   currentPage.value = 1
   loadMessages()
 }
 
+/** 重置搜索条件 @returns void */
 const handleReset = () => {
   filter.value = { fromUserId: '', toUserId: '', startTime: '', endTime: '' }
   currentPage.value = 1

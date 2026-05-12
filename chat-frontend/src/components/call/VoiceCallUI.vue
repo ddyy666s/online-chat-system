@@ -11,9 +11,11 @@
 </template>
 
 <script setup lang="ts">
+/** 语音通话界面组件，展示对方头像、状态和通话时长 @component */
 import { ref, watch, type Ref } from 'vue'
 import { formatDuration } from '@/utils/date'
 
+/** 组件属性：目标用户、连接状态、状态文本、通话时长、远程音频流 */
 const props = defineProps<{
   targetUser: any
   isConnected: boolean
@@ -22,8 +24,10 @@ const props = defineProps<{
   stream?: MediaStream | null
 }>()
 
+/** 音频元素引用 */
 const audioRef = ref<HTMLAudioElement>()
 
+/** 监听远程音频流，自动绑定到 audio 元素 */
 watch(() => props.stream, (stream) => {
   const el = audioRef.value
   if (!el) return

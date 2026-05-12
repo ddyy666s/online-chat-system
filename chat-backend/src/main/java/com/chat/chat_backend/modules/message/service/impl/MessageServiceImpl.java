@@ -24,16 +24,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/** 消息服务实现，处理聊天记录查询、消息下载、标记已读、未读数统计、撤回消息等业务逻辑 @author chat-backend @since 2026-05-12 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
 
+    /** 消息数据访问层 */
     private final MessageMapper messageMapper;
+    /** 用户数据访问层 */
     private final UserMapper userMapper;
+    /** 系统通知数据访问层 */
     private final SystemNotificationMapper systemNotificationMapper;
+    /** Redis缓存工具类 */
     private final RedisUtil redisUtil;
 
+    /** 分页查询聊天记录（含语音消息时长解析） @param userId 用户ID @param friendId 好友ID @param page 页码 @param size 每页条数 @return 分页消息列表 */
     @Override
     public Page<MessageVO> getChatHistory(Long userId, Long friendId, Integer page, Integer size) {
         int offset = (page - 1) * size;
@@ -89,6 +95,7 @@ public class MessageServiceImpl implements MessageService {
         return pageResult;
     }
 
+    /** 下载聊天记录（限制下载数量，去除语音时长标记） @param userId 用户ID @param friendId 好友ID @param limit 下载条数 @return 消息列表 */
     @Override
     public List<MessageVO> downloadChatHistory(Long userId, Long friendId, Integer limit) {
         if (limit == null || limit <= 0) {
@@ -122,6 +129,7 @@ public class MessageServiceImpl implements MessageService {
                 .collect(Collectors.toList());
     }
 
+    /** 标记好友消息为已读（同时清除Redis未读数） @param userId 用户ID @param friendId 好友ID */
     @Override
     public void markAsRead(Long userId, Long friendId) {
         messageMapper.markAsRead(userId, friendId);
@@ -129,6 +137,7 @@ public class MessageServiceImpl implements MessageService {
         redisUtil.hashDelete(unreadKey, String.valueOf(friendId));
     }
 
+    /** 获取未读消息总数（含私聊和系统通知） @param userId 用户ID @return 未读消息统计 */
     @Override
     public UnreadCountVO getUnreadCount(Long userId) {
         Integer msgTotal = messageMapper.countUnreadTotal(userId);
@@ -178,6 +187,7 @@ public class MessageServiceImpl implements MessageService {
                 .build();
     }
 
+    /** 撤回消息（仅发送者可操作，超时后不可撤回） @param userId 用户ID @param messageId 消息ID */
     @Override
     public void recallMessage(Long userId, Long messageId) {
         int updated = messageMapper.recallMessage(messageId, userId);

@@ -20,9 +20,11 @@
 </template>
 
 <script setup lang="ts">
+/** 无限滚动加载组件 @component */
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
 
+/** 组件属性：加载状态、是否还有更多、错误信息、触发距离、立即检查 */
 const props = withDefaults(defineProps<{
   loading?: boolean
   hasMore?: boolean
@@ -39,15 +41,18 @@ const props = withDefaults(defineProps<{
   immediateCheck: true
 })
 
+/** 组件事件：加载更多、重试 */
 const emit = defineEmits<{
   (e: 'load'): void
   (e: 'retry'): void
 }>()
 
+/** 滚动容器引用 */
 const containerRef = ref<HTMLElement>()
+/** 列表项数量 */
 const listLength = ref(0)
 
-// 检查是否需要加载更多
+/** 检查是否需要加载更多 @returns void */
 const checkScroll = () => {
   if (!containerRef.value) return
   if (props.loading) return
@@ -59,8 +64,9 @@ const checkScroll = () => {
   }
 }
 
-// 滚动事件处理（节流）
+/** 滚动事件定时器 ID（用于节流） */
 let timer: number | null = null
+/** 带节流的滚动事件处理 @returns void */
 const handleScroll = () => {
   if (timer) return
   timer = window.setTimeout(() => {
@@ -69,12 +75,12 @@ const handleScroll = () => {
   }, 100)
 }
 
-// 重试
+/** 重试加载 @returns void */
 const retry = () => {
   emit('retry')
 }
 
-// 观察列表内容变化，监听子元素数量
+/** 更新列表项数量 @returns void */
 const updateListLength = () => {
   if (containerRef.value) {
     const contentEl = containerRef.value.querySelector('.infinite-scroll-content')
@@ -84,7 +90,7 @@ const updateListLength = () => {
   }
 }
 
-// 监听列表数据变化（通过插槽内容变化）
+/** 监听加载状态变化，加载完成后重新检查和更新 */
 watch(() => props.loading, (newVal, oldVal) => {
   if (!newVal && oldVal) {
     nextTick(() => {
@@ -94,6 +100,7 @@ watch(() => props.loading, (newVal, oldVal) => {
   }
 })
 
+/** 组件挂载后根据配置立即检查 */
 onMounted(() => {
   if (props.immediateCheck) {
     nextTick(() => {
@@ -102,6 +109,7 @@ onMounted(() => {
   }
 })
 
+/** 组件卸载时清理定时器 */
 onUnmounted(() => {
   if (timer) {
     clearTimeout(timer)

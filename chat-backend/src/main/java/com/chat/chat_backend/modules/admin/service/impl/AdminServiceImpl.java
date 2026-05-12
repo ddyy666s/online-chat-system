@@ -24,14 +24,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/** 管理员服务实现，处理用户管理、消息审计、平台统计等业务逻辑 @author chat-backend @since 2026-05-12 */
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
+    /** 用户数据访问层 */
     private final UserMapper userMapper;
+    /** 消息数据访问层 */
     private final MessageMapper messageMapper;
+    /** Redis缓存工具类 */
     private final RedisUtil redisUtil;
 
+    /** 分页查询用户列表（支持关键词搜索） @param page 页码 @param size 每页条数 @param keyword 搜索关键词 @return 用户管理分页列表 */
     @Override
     public Page<UserManageVO> getUserList(Integer page, Integer size, String keyword) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -54,6 +59,7 @@ public class AdminServiceImpl implements AdminService {
         return result;
     }
 
+    /** 启用/禁用用户账号（管理员账号不可禁用） @param userId 用户ID @param status 状态（1启用/0禁用） */
     @Override
     public void updateUserStatus(Long userId, Integer status) {
         User user = userMapper.selectById(userId);
@@ -65,6 +71,7 @@ public class AdminServiceImpl implements AdminService {
         userMapper.updateById(user);
     }
 
+    /** 分页查询消息审计列表（支持发送者、接收者、日期范围过滤） @param page 页码 @param size 每页条数 @param fromUserId 发送者ID @param toUserId 接收者ID @param startTime 开始日期 @param endTime 结束日期 @return 消息审计分页列表 */
     @Override
     public Page<MessageAuditVO> getMessageList(Integer page, Integer size,
                                                Long fromUserId, Long toUserId,
@@ -104,6 +111,7 @@ public class AdminServiceImpl implements AdminService {
         return result;
     }
 
+    /** 获取平台统计信息（总用户数、日活用户数、日消息数、在线人数） @return 平台统计数据 */
     @Override
     public StatisticsVO getStatistics() {
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();

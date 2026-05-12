@@ -39,26 +39,37 @@
 </template>
 
 <script setup lang="ts">
+/** 用户管理页面组件，支持搜索、分页和禁用/启用用户 @component */
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getAdminUsersApi, updateUserStatusApi, type UserManageVO } from '@/api/admin'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
+/** 用户列表 */
 const users = ref<UserManageVO[]>([])
+/** 当前页码 */
 const currentPage = ref(1)
+/** 每页条数 */
 const pageSize = ref(10)
+/** 总记录数 */
 const total = ref(0)
+/** 搜索关键词 */
 const keyword = ref('')
+/** 状态切换确认弹窗可见 */
 const showToggleDialog = ref(false)
+/** 确认弹窗消息 */
 const toggleMsg = ref('')
+/** 待切换状态的目标用户 */
 const toggleTarget = ref<{ id: number; newStatus: number } | null>(null)
 
+/** 加载用户列表 @returns Promise<void> */
 const loadUsers = async () => {
   const res = await getAdminUsersApi(currentPage.value, pageSize.value, keyword.value || undefined)
   users.value = res.records
   total.value = res.total
 }
 
+/** 打开状态切换确认弹窗 @param row 用户对象 @returns void */
 const toggleStatus = async (row: UserManageVO) => {
   const newStatus = row.status === 1 ? 0 : 1
   toggleMsg.value = newStatus === 0 ? '确定要禁用该用户吗？' : '确定要启用该用户吗？'
@@ -66,6 +77,7 @@ const toggleStatus = async (row: UserManageVO) => {
   showToggleDialog.value = true
 }
 
+/** 确认切换用户状态 @returns Promise<void> */
 const confirmToggle = async () => {
   if (!toggleTarget.value) return
   await updateUserStatusApi(toggleTarget.value.id, toggleTarget.value.newStatus)
@@ -73,8 +85,9 @@ const confirmToggle = async () => {
   loadUsers()
 }
 
-// 搜索防抖
+/** 搜索防抖定时器 */
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+/** 关键词变化时防抖搜索（300ms） */
 watch(keyword, () => {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {

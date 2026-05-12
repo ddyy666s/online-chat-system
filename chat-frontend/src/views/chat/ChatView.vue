@@ -11,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+/** 聊天主视图组件，根据路由参数切换好友聊天或群聊 @component */
 import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import ChatWindow from '@/components/message/ChatWindow.vue'
@@ -21,10 +22,12 @@ import { getGroupDetailApi } from '@/api/group'
 const route = useRoute()
 const friendStore = useFriendStore()
 
+/** 当前聊天好友 */
 const currentChatUser = ref<any>(null)
+/** 当前群聊 */
 const currentGroup = ref<any>(null)
 
-// 根据 friendId 加载好友
+/** 根据 friendId 加载好友信息 @param friendId 好友 ID @returns Promise<void> */
 const loadFriendById = async (friendId: number) => {
   if (friendStore.friendList.length === 0) {
     await friendStore.loadFriendList()
@@ -38,7 +41,7 @@ const loadFriendById = async (friendId: number) => {
   }
 }
 
-// 根据 groupId 加载群聊
+/** 根据 groupId 加载群聊信息 @param groupId 群 ID @returns Promise<void> */
 const loadGroupById = async (groupId: number) => {
   try {
     const group = await getGroupDetailApi(groupId)
@@ -49,7 +52,7 @@ const loadGroupById = async (groupId: number) => {
   }
 }
 
-// 监听路由参数
+/** 监听路由参数 friendId 变化 */
 watch(
   () => route.query.friendId,
   (friendId) => {
@@ -60,6 +63,7 @@ watch(
   { immediate: true }
 )
 
+/** 监听路由参数 groupId 变化 */
 watch(
   () => route.query.groupId,
   (groupId) => {
@@ -70,6 +74,7 @@ watch(
   { immediate: true }
 )
 
+/** 刷新群聊列表 @returns void */
 const refreshGroupList = () => {
   // 刷新群聊列表的逻辑
 }

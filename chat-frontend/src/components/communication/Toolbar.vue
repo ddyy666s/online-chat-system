@@ -33,12 +33,15 @@
 </template>
 
 <script setup lang="ts">
+/** 工具栏组件，展示图片/语音/通话/表情功能入口 @component */
 import { Picture, Microphone, Phone, VideoCamera } from '@element-plus/icons-vue'
 
+/** 组件属性：是否展开 */
 defineProps<{
   isExpanded: boolean
 }>()
 
+/** 组件事件：各功能按钮的点击回调 */
 defineEmits<{
   (e: 'openImageUpload'): void
   (e: 'startRecord'): void

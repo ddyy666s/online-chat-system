@@ -18,9 +18,12 @@
 </template>
 
 <script setup lang="ts">
+/** 聊天窗口头部组件，展示好友信息和操作按钮 @component */
 import { Download } from '@element-plus/icons-vue'
 
+/** 组件属性：好友信息 */
 defineProps<{ friend: any }>()
+/** 组件事件：下载聊天记录 */
 defineEmits<{ (e: 'download'): void }>()
 </script>
 

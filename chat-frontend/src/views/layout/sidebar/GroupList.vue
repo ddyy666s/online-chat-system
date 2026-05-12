@@ -30,19 +30,23 @@
 </template>
 
 <script setup lang="ts">
+/** 群聊列表组件 @component */
 import { Plus } from '@element-plus/icons-vue'
 import type { GroupVO } from '@/api/group'
 
+/** 组件属性：群聊列表、当前群聊 ID */
 defineProps<{
   groups: GroupVO[]
   currentGroupId: number | null
 }>()
 
+/** 组件事件：选择群聊、创建群聊 */
 defineEmits<{
   select: [group: GroupVO]
   create: []
 }>()
 
+/** 格式化时间 @param time ISO 时间字符串 @returns 格式化的相对时间 */
 const formatTime = (time: string) => {
   const date = new Date(time)
   const now = new Date()

@@ -10,13 +10,27 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 系统通知控制器
+ *
+ * @author chat-backend
+ * @since 2026-05-12
+ */
 @RestController
 @RequestMapping("/system-notification")
 @RequiredArgsConstructor
 public class SystemNotificationController {
 
+    /** 系统通知服务 */
     private final SystemNotificationService systemNotificationService;
 
+    /**
+     * 发送系统通知（仅管理员）
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param body    通知内容（包含 title 和 content）
+     * @return 操作结果
+     */
     @PostMapping("/send")
     public Result<Void> sendNotification(HttpServletRequest request, @RequestBody Map<String, String> body) {
         Long adminId = (Long) request.getAttribute("userId");
@@ -33,6 +47,12 @@ public class SystemNotificationController {
         return Result.success("通知已发送", null);
     }
 
+    /**
+     * 获取未读系统通知
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @return 未读通知列表及总数
+     */
     @GetMapping("/unread")
     public Result<Map<String, Object>> getUnreadNotifications(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -41,6 +61,13 @@ public class SystemNotificationController {
         return Result.success(Map.of("total", count, "notifications", notifications));
     }
 
+    /**
+     * 标记系统通知为已读
+     *
+     * @param request        HTTP 请求对象（包含用户信息）
+     * @param notificationId 通知 ID
+     * @return 操作结果
+     */
     @PutMapping("/read/{notificationId}")
     public Result<Void> markAsRead(HttpServletRequest request, @PathVariable Long notificationId) {
         Long userId = (Long) request.getAttribute("userId");

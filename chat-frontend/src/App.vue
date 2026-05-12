@@ -3,6 +3,7 @@
 </template>
 
 <script setup lang="ts">
+/** 根组件 @module App */
 import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/userStore'
 import { websocketService } from '@/utils/websocket'
@@ -10,7 +11,7 @@ import { websocketService } from '@/utils/websocket'
 const userStore = useUserStore()
 
 onMounted(() => {
-  // 如果已登录，建立WebSocket连接
+  /** 如果已登录，建立WebSocket连接 */
   if (userStore.isLoggedIn()) {
     websocketService.connect()
   }

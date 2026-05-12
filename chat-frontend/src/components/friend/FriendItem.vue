@@ -1,9 +1,11 @@
 <template>
   <div class="friend-item" :class="{ active: isActive }" @click="$emit('click')">
     <div class="avatar">
-      <el-avatar :size="40" :src="friend.avatar || ''">
-        {{ friend.nickname?.charAt(0) || 'U' }}
-      </el-avatar>
+      <MiniProfile :user-id="friend.userId" @write-impression="emit('writeImpression', $event)">
+        <el-avatar :size="40" :src="friend.avatar || ''">
+          {{ friend.nickname?.charAt(0) || 'U' }}
+        </el-avatar>
+      </MiniProfile>
       <span class="online-dot" :class="{ online: friend.isOnline }" />
     </div>
 
@@ -30,18 +32,24 @@
 </template>
 
 <script setup lang="ts">
+/** 好友列表项组件，展示头像/名称/在线状态/未读消息和操作菜单 @component */
 import { MoreFilled } from '@element-plus/icons-vue'
+import MiniProfile from '@/components/user/MiniProfile.vue'
 
+/** 组件属性：好友信息、是否激活 */
 const props = defineProps<{
   friend: any
   isActive: boolean
 }>()
 
+/** 组件事件：点击、操作命令、写印象 */
 const emit = defineEmits<{
   (e: 'click'): void
   (e: 'command', command: string, friend: any): void
+  (e: 'writeImpression', userId: number): void
 }>()
 
+/** 处理下拉菜单命令 @param command 命令标识 @returns void */
 const handleCommand = (command: string) => {
   emit('command', command, props.friend)
 }

@@ -17,19 +17,42 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * 群聊消息处理与投递服务
+ * 验证群成员身份和禁言状态，持久化消息，更新未读计数，推送给在线群成员
+ * @author chat-backend
+ * @since 2026-05-12
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class GroupMessageHandlerService {
 
+    /** 群组数据映射器 */
     private final GroupMapper groupMapper;
+
+    /** 群成员数据映射器 */
     private final GroupMemberMapper groupMemberMapper;
+
+    /** 群消息数据映射器 */
     private final GroupMessageMapper groupMessageMapper;
+
+    /** 用户数据映射器，用于获取发送者昵称 */
     private final UserMapper userMapper;
+
+    /** 会话管理器，用于向在线群成员推送消息 */
     private final WebSocketSessionManager sessionManager;
 
+    /**
+     * 验证群成员身份和禁言状态，持久化消息，更新未读计数，推送给所有在线群成员
+     * @param fromUserId 发送方用户ID
+     * @param groupId 目标群组ID
+     * @param content 消息内容
+     * @param messageType 消息类型（1=文本，2=图片等）
+     * @param duration 语音消息时长（可选）
+     */
     public void sendAndNotify(Long fromUserId, Long groupId, String content, Integer messageType, Integer duration) {
-        // 验证群成员
+        // 验证发送者是否群成员
         List<GroupMember> members = groupMemberMapper.findByGroupId(groupId);
         boolean isMember = members.stream().anyMatch(m -> m.getUserId().equals(fromUserId));
         if (!isMember) {
@@ -37,13 +60,13 @@ public class GroupMessageHandlerService {
             return;
         }
 
-        // 检查是否被禁言
+        // 检查发送者是否被禁言
         if (GroupServiceImpl.isMuted(groupId, fromUserId)) {
             log.warn("用户 {} 在群 {} 中被禁言", fromUserId, groupId);
             return;
         }
 
-        // 保存群消息
+        // 持久化群消息
         GroupMessage msg = new GroupMessage();
         msg.setGroupId(groupId);
         msg.setFromUserId(fromUserId);
@@ -52,14 +75,14 @@ public class GroupMessageHandlerService {
         msg.setSendTime(LocalDateTime.now());
         groupMessageMapper.insert(msg);
 
-        // 增加未读计数
+        // 增加群内其他成员的未读计数
         groupMemberMapper.incrementUnreadCount(groupId, fromUserId);
 
-        // 获取发送者信息
+        // 获取发送者显示名称
         User fromUser = userMapper.selectById(fromUserId);
         String fromUserNickname = fromUser != null ? fromUser.getNickname() : "未知用户";
 
-        // 构建响应
+        // 构建响应消息
         var response = JSONUtil.createObj()
                 .set("type", "group_message")
                 .set("messageId", msg.getId())
@@ -73,7 +96,7 @@ public class GroupMessageHandlerService {
 
         String responseStr = response.toString();
 
-        // 推送给群内其他在线成员
+        // 推送给除发送者外的所有在线群成员
         for (GroupMember member : members) {
             if (!member.getUserId().equals(fromUserId) && sessionManager.isOnline(member.getUserId())) {
                 sessionManager.sendMessage(member.getUserId(), responseStr);

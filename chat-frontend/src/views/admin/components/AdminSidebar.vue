@@ -33,16 +33,20 @@
 </template>
 
 <script setup lang="ts">
+/** 管理后台侧边栏导航组件 @component */
 import { DataLine, User, ChatDotRound, Bell } from '@element-plus/icons-vue'
 
+/** 组件属性：当前激活菜单 */
 defineProps<{
   activeMenu: string
 }>()
 
+/** 组件事件：菜单选择 */
 const emit = defineEmits<{
   select: [menu: string]
 }>()
 
+/** 菜单选择处理 @param index 菜单标识 @returns void */
 const handleSelect = (index: string) => {
   emit('select', index)
 }

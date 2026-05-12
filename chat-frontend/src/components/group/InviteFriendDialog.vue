@@ -13,21 +13,28 @@
 </template>
 
 <script setup lang="ts">
+/** 邀请好友加入群聊对话框 @component */
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import Empty from '@/components/common/Empty.vue'
 
+/** 组件属性：显示状态、好友列表 */
 const props = defineProps<{
   modelValue: boolean
   friends: any[]
 }>()
 
+/** 组件事件：更新显示状态、邀请好友 */
 const emit = defineEmits(['update:modelValue', 'invite'])
 
+/** 对话框可见性 */
 const visible = ref(false)
+/** 选中的好友 ID */
 const selectedId = ref<number | null>(null)
+/** 邀请按钮加载状态 */
 const loading = ref(false)
 
+/** 同步外部 modelValue */
 watch(() => props.modelValue, (val) => {
   visible.value = val
   if (!val) {
@@ -35,10 +42,12 @@ watch(() => props.modelValue, (val) => {
   }
 })
 
+/** 内部可见性同步到外部 */
 watch(visible, (val) => {
   emit('update:modelValue', val)
 })
 
+/** 执行邀请 @returns Promise<void> */
 const handleInvite = async () => {
   if (!selectedId.value) {
     ElMessage.warning('请选择好友')

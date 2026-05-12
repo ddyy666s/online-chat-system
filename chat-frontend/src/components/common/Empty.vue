@@ -21,6 +21,7 @@
 </template>
 
 <script setup lang="ts">
+/** 空状态占位组件 @component */
 withDefaults(defineProps<{
   title?: string
   description?: string

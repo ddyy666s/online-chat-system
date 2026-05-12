@@ -19,12 +19,15 @@
 </template>
 
 <script setup lang="ts">
+/** 好友申请列表组件 @component */
 import type { FriendRequestVO } from '@/api/friend'
 
+/** 组件属性：申请列表 */
 defineProps<{
   requests: FriendRequestVO[]
 }>()
 
+/** 组件事件：同意/拒绝申请 */
 defineEmits<{
   agree: [id: number]
   reject: [id: number]

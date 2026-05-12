@@ -6,28 +6,25 @@
       :is-admin="userStore.isAdmin()" @update:active-tab="activeTab = $event" @go-to-admin="goToAdmin" />
 
     <div class="sidebar-content">
-      <!-- 好友列表 -->
       <FriendList v-show="activeTab === 'friends'" :current-chat-user-id="currentChatUserId"
-        @select-chat="handleSelectChat" />
+        @select-chat="handleSelectChat" @write-impression="handleWriteImpression" />
 
-      <!-- 群聊列表 -->
       <GroupList v-show="activeTab === 'groups'" :groups="groupList" :current-group-id="currentGroupId"
         @select="selectGroup" @create="showCreateGroupDialog = true" />
 
-      <!-- 申请列表 -->
       <RequestList v-show="activeTab === 'requests'" :requests="friendStore.friendRequests"
         @agree="handleRequest($event, 1)" @reject="handleRequest($event, 2)" />
 
-      <!-- 印象列表 -->
-      <ImpressionBoard v-show="activeTab === 'impressions'" />
+      <ImpressionBoard v-show="activeTab === 'impressions'" :target-user-id="impressionTargetUserId"
+        @clear-target="impressionTargetUserId = null" />
     </div>
 
-    <!-- 创建群聊弹窗 -->
     <CreateGroupDialog v-model="showCreateGroupDialog" :friend-list="friendListForGroup" @submit="handleCreateGroup" />
   </div>
 </template>
 
 <script setup lang="ts">
+/** 侧边栏组件，整合好友/群聊/申请/印象选项卡 @component */
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -45,23 +42,33 @@ import GroupList from './sidebar/GroupList.vue'
 import RequestList from './sidebar/RequestList.vue'
 import CreateGroupDialog from './sidebar/CreateGroupDialog.vue'
 
+/** 组件事件：选择好友聊天、选择群聊 */
 const emit = defineEmits(['selectChat', 'selectGroup'])
 
 const router = useRouter()
 const userStore = useUserStore()
 const friendStore = useFriendStore()
 
+/** 当前激活的 Tab */
 const activeTab = ref('friends')
+/** 当前聊天好友 ID */
 const currentChatUserId = ref<number | null>(null)
+/** 当前群聊 ID */
 const currentGroupId = ref<number | null>(null)
+/** 群聊列表 */
 const groupList = ref<GroupVO[]>([])
+/** 创建群聊对话框显示状态 */
 const showCreateGroupDialog = ref(false)
+/** 用于创建群聊的好友列表 */
 const friendListForGroup = ref<FriendVO[]>([])
+const impressionTargetUserId = ref<number | null>(null)
 
+/** 跳转到管理后台 @returns void */
 const goToAdmin = () => {
   router.push('/admin')
 }
 
+/** 加载群聊列表 @returns Promise<void> */
 const loadGroupList = async () => {
   try {
     const res = await getGroupListApi()
@@ -71,11 +78,13 @@ const loadGroupList = async () => {
   }
 }
 
+/** 选择群聊 @param group 群聊对象 @returns void */
 const selectGroup = (group: GroupVO) => {
   currentGroupId.value = group.id
   emit('selectGroup', group)
 }
 
+/** 创建群聊 @param data 群聊信息 @returns Promise<void> */
 const handleCreateGroup = async (data: { name: string; notice?: string; memberIds: number[] }) => {
   try {
     const newGroup = await createGroupApi(data)
@@ -89,6 +98,7 @@ const handleCreateGroup = async (data: { name: string; notice?: string; memberId
   }
 }
 
+/** 加载好友列表（用于创建群聊时的邀请） @returns Promise<void> */
 const loadFriendListForGroup = async () => {
   const res = await getFriendListApi()
   const friends: FriendVO[] = []
@@ -98,6 +108,7 @@ const loadFriendListForGroup = async () => {
   friendListForGroup.value = friends
 }
 
+/** 处理好友申请 @param requestId 申请 ID @param status 处理状态(1:同意 2:拒绝) @returns Promise<void> */
 const handleRequest = async (requestId: number, status: number) => {
   try {
     await handleFriendRequestApi(requestId, status)
@@ -108,6 +119,12 @@ const handleRequest = async (requestId: number, status: number) => {
     console.error(error)
     ElMessage.error('操作失败')
   }
+}
+
+/** 选择聊天好友 @param friend 好友对象 @returns void */
+const handleWriteImpression = (userId: number) => {
+  impressionTargetUserId.value = userId
+  activeTab.value = 'impressions'
 }
 
 const handleSelectChat = (friend: any) => {
@@ -125,6 +142,7 @@ const handleSelectChat = (friend: any) => {
   }
 }
 
+/** 收到群消息时更新未读计数 @param data 消息数据 @returns void */
 const onGroupMessage = (data: any) => {
   const group = groupList.value.find(g => g.id === data.groupId)
   if (group && currentGroupId.value !== data.groupId) {

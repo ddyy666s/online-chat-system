@@ -9,9 +9,11 @@
 </template>
 
 <script setup lang="ts">
+/** 录音提示浮动组件 @component */
 import { Microphone } from '@element-plus/icons-vue'
 import { formatDuration } from '@/utils/date'
 
+/** 组件属性：是否正在录音、录音时长 */
 defineProps<{
   isRecording: boolean
   recordDuration: number

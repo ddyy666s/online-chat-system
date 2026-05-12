@@ -23,11 +23,13 @@
 </template>
 
 <script setup lang="ts">
+/** 好友申请项组件，支持同意/拒绝操作 @component */
 import { computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { handleFriendRequestApi } from '@/api/friend'
 import defaultAvatar from '@/assets/images/default-avatar.png'
 
+/** 组件属性：好友申请对象 */
 const props = defineProps<{
   request: {
     id: number
@@ -40,8 +42,10 @@ const props = defineProps<{
   }
 }>()
 
+/** 组件事件：刷新列表 */
 const emit = defineEmits(['refresh'])
 
+/** 格式化时间显示 @param time ISO 时间字符串 @returns 格式化后的时间文本 */
 const formatTime = (time: string) => {
   const date = new Date(time)
   const now = new Date()
@@ -58,6 +62,7 @@ const formatTime = (time: string) => {
   return date.toLocaleDateString()
 }
 
+/** 同意好友申请 @returns Promise<void> */
 const handleAccept = async () => {
   try {
     await handleFriendRequestApi(props.request.id, 1)
@@ -69,6 +74,7 @@ const handleAccept = async () => {
   }
 }
 
+/** 拒绝好友申请 @returns Promise<void> */
 const handleReject = async () => {
   try {
     await handleFriendRequestApi(props.request.id, 2)

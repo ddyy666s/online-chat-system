@@ -20,16 +20,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/** 用户评价服务实现，处理添加评价、查询评价、删除评价等业务逻辑 @author chat-backend @since 2026-05-12 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImpressionServiceImpl implements ImpressionService {
 
+    /** 评价数据访问层 */
     private final ImpressionMapper impressionMapper;
+    /** 用户数据访问层 */
     private final UserMapper userMapper;
+    /** 消息数据访问层 */
     private final MessageMapper messageMapper;
+    /** WebSocket会话管理器（用于实时推送通知） */
     private final WebSocketSessionManager sessionManager;
 
+    /** 添加用户评价（含字数校验，自动生成系统通知消息，在线实时推送） @param userId 评价者用户ID @param request 评价请求 */
     @Override
     @Transactional
     public void addImpression(Long userId, AddImpressionRequest request) {
@@ -79,6 +85,7 @@ public class ImpressionServiceImpl implements ImpressionService {
         }
     }
 
+    /** 获取收到的评价列表 @param userId 用户ID @return 评价列表 */
     @Override
     public List<ImpressionVO> getImpressionsToMe(Long userId) {
         List<Impression> impressions = impressionMapper.findImpressionsToUser(userId);
@@ -96,6 +103,7 @@ public class ImpressionServiceImpl implements ImpressionService {
         }).collect(Collectors.toList());
     }
 
+    /** 获取发出的评价列表 @param userId 用户ID @return 评价列表 */
     @Override
     public List<ImpressionVO> getImpressionsByMe(Long userId) {
         List<Impression> impressions = impressionMapper.findImpressionsByUser(userId);
@@ -113,6 +121,7 @@ public class ImpressionServiceImpl implements ImpressionService {
         }).collect(Collectors.toList());
     }
 
+    /** 删除评价（软删除，仅评价作者可操作） @param userId 用户ID @param impressionId 评价ID */
     @Override
     public void deleteImpression(Long userId, Long impressionId) {
         Impression impression = impressionMapper.selectById(impressionId);

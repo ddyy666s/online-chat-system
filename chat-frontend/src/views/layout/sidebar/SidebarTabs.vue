@@ -14,20 +14,24 @@
 </template>
 
 <script setup lang="ts">
+/** 侧边栏选项卡导航组件 @component */
 import { computed } from 'vue'
 import { User, ChatDotRound, Message, Star, Setting } from '@element-plus/icons-vue'
 
+/** 组件属性：当前激活 Tab、角标数量、是否为管理员 */
 const props = defineProps<{
   activeTab: string
   badgeCount: number
   isAdmin: boolean
 }>()
 
+/** 组件事件：切换 Tab、跳转管理后台 */
 const emit = defineEmits<{
   'update:activeTab': [tab: string]
   'goToAdmin': []
 }>()
 
+/** 所有 Tab 定义 */
 const allTabs = [
   { key: 'friends', label: '好友', icon: User, badge: false, requireAdmin: false },
   { key: 'groups', label: '群聊', icon: ChatDotRound, badge: false, requireAdmin: false },
@@ -36,7 +40,7 @@ const allTabs = [
   { key: 'admin', label: '管理', icon: Setting, badge: false, requireAdmin: true }
 ]
 
-// 根据管理员权限过滤显示的 tabs
+/** 根据管理员权限过滤可见 Tab @returns 可见 Tab 列表 */
 const visibleTabs = computed(() => {
   return allTabs.filter(tab => {
     if (tab.requireAdmin && !props.isAdmin) return false
@@ -44,12 +48,11 @@ const visibleTabs = computed(() => {
   })
 })
 
+/** Tab 点击处理 @param tab 点击的 Tab 对象 @returns void */
 const handleTabClick = (tab: any) => {
   if (tab.key === 'admin') {
-    // 管理按钮：跳转到管理页面
     emit('goToAdmin')
   } else {
-    // 其他按钮：切换 tab
     emit('update:activeTab', tab.key)
   }
 }

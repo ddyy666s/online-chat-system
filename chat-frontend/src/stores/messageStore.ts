@@ -1,10 +1,14 @@
+/** 消息状态管理 @module messageStore */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getUnreadCountApi, type UnreadCountVO } from '@/api/message'
 
+/** 消息相关状态 store */
 export const useMessageStore = defineStore('message', () => {
+  /** 未读消息计数 */
   const unreadCount = ref<UnreadCountVO | null>(null)
 
+  /** 加载未读计数 */
   const loadUnreadCount = async () => {
     try {
       const res = await getUnreadCountApi()
@@ -14,6 +18,7 @@ export const useMessageStore = defineStore('message', () => {
     }
   }
 
+  /** 清除指定好友的未读计数 @param friendId 好友用户ID */
   const clearUnreadForFriend = (friendId: number) => {
     if (unreadCount.value) {
       unreadCount.value.messages = unreadCount.value.messages.filter(

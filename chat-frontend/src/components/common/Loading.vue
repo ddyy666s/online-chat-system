@@ -12,8 +12,10 @@
 </template>
 
 <script setup lang="ts">
+/** 全屏加载遮罩组件 @component */
 import { Loading } from '@element-plus/icons-vue'
 
+/** 组件属性：是否显示、加载文本 */
 defineProps<{
   visible?: boolean
   text?: string

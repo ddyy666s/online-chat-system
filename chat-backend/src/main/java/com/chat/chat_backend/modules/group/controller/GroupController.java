@@ -18,17 +18,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 群聊控制器
+ *
+ * @author chat-backend
+ * @since 2026-05-12
+ */
 @RestController
 @RequestMapping("/group")
 @RequiredArgsConstructor
 public class GroupController {
 
+    /** 群聊服务 */
     private final GroupService groupService;
-    private final GroupMemberMapper groupMemberMapper;  // 添加
-    private final UserMapper userMapper;  // 添加
+    /** 群成员 Mapper */
+    private final GroupMemberMapper groupMemberMapper;
+    /** 用户 Mapper */
+    private final UserMapper userMapper;
 
     /**
      * 创建群聊
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param req     创建群聊请求
+     * @return 群聊信息
      */
     @PostMapping
     public Result<GroupVO> createGroup(HttpServletRequest request, @RequestBody CreateGroupRequest req) {
@@ -39,6 +52,9 @@ public class GroupController {
 
     /**
      * 获取用户的群聊列表
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @return 群聊列表
      */
     @GetMapping("/list")
     public Result<List<GroupVO>> getUserGroups(HttpServletRequest request) {
@@ -49,6 +65,10 @@ public class GroupController {
 
     /**
      * 获取群详情
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param groupId 群聊 ID
+     * @return 群聊详情
      */
     @GetMapping("/{groupId}")
     public Result<GroupVO> getGroupDetail(HttpServletRequest request, @PathVariable Long groupId) {
@@ -59,6 +79,10 @@ public class GroupController {
 
     /**
      * 邀请成员
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param req     邀请成员请求
+     * @return 操作结果
      */
     @PostMapping("/invite")
     public Result<Void> inviteMember(HttpServletRequest request, @RequestBody InviteMemberRequest req) {
@@ -69,6 +93,10 @@ public class GroupController {
 
     /**
      * 退出群聊
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param groupId 群聊 ID
+     * @return 操作结果
      */
     @DeleteMapping("/{groupId}/quit")
     public Result<Void> quitGroup(HttpServletRequest request, @PathVariable Long groupId) {
@@ -79,6 +107,10 @@ public class GroupController {
 
     /**
      * 解散群聊
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param groupId 群聊 ID
+     * @return 操作结果
      */
     @DeleteMapping("/{groupId}/disband")
     public Result<Void> disbandGroup(HttpServletRequest request, @PathVariable Long groupId) {
@@ -89,6 +121,9 @@ public class GroupController {
 
     /**
      * 获取群成员列表
+     *
+     * @param groupId 群聊 ID
+     * @return 群成员列表
      */
     @GetMapping("/{groupId}/members")
     public Result<List<GroupMemberVO>> getGroupMembers(@PathVariable Long groupId) {
@@ -108,6 +143,10 @@ public class GroupController {
     }
     /**
      * 清除群未读消息计数
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param groupId 群聊 ID
+     * @return 操作结果
      */
     @PutMapping("/{groupId}/read")
     public Result<Void> clearUnreadCount(HttpServletRequest request, @PathVariable Long groupId) {
@@ -118,6 +157,11 @@ public class GroupController {
 
     /**
      * 更新群公告（仅群主和管理员）
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param groupId 群聊 ID
+     * @param body    请求体（包含 notice 字段）
+     * @return 操作结果
      */
     @PutMapping("/{groupId}/notice")
     public Result<Void> updateNotice(HttpServletRequest request,
@@ -131,6 +175,11 @@ public class GroupController {
 
     /**
      * 设置管理员（仅群主）
+     *
+     * @param request  HTTP 请求对象（包含用户信息）
+     * @param groupId  群聊 ID
+     * @param memberId 成员 ID
+     * @return 操作结果
      */
     @PutMapping("/{groupId}/member/{memberId}/set-admin")
     public Result<Void> setAdmin(HttpServletRequest request,
@@ -143,6 +192,11 @@ public class GroupController {
 
     /**
      * 取消管理员（仅群主）
+     *
+     * @param request  HTTP 请求对象（包含用户信息）
+     * @param groupId  群聊 ID
+     * @param memberId 成员 ID
+     * @return 操作结果
      */
     @PutMapping("/{groupId}/member/{memberId}/remove-admin")
     public Result<Void> removeAdmin(HttpServletRequest request,
@@ -155,6 +209,11 @@ public class GroupController {
 
     /**
      * 移除群成员（群主/管理员）
+     *
+     * @param request  HTTP 请求对象（包含用户信息）
+     * @param groupId  群聊 ID
+     * @param memberId 成员 ID
+     * @return 操作结果
      */
     @DeleteMapping("/{groupId}/member/{memberId}")
     public Result<Void> removeMember(HttpServletRequest request,
@@ -167,6 +226,12 @@ public class GroupController {
 
     /**
      * 禁言成员（群主/管理员）
+     *
+     * @param request  HTTP 请求对象（包含用户信息）
+     * @param groupId  群聊 ID
+     * @param memberId 成员 ID
+     * @param body     请求体（包含 minutes 字段）
+     * @return 操作结果
      */
     @PutMapping("/{groupId}/member/{memberId}/mute")
     public Result<Void> muteMember(HttpServletRequest request,
@@ -181,6 +246,11 @@ public class GroupController {
 
     /**
      * 取消禁言（群主/管理员）
+     *
+     * @param request  HTTP 请求对象（包含用户信息）
+     * @param groupId  群聊 ID
+     * @param memberId 成员 ID
+     * @return 操作结果
      */
     @PutMapping("/{groupId}/member/{memberId}/unmute")
     public Result<Void> unmuteMember(HttpServletRequest request,
@@ -193,6 +263,11 @@ public class GroupController {
 
     /**
      * 批量禁言（群主/管理员）
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param groupId 群聊 ID
+     * @param body    请求体（包含 memberIds 和 minutes 字段）
+     * @return 操作结果
      */
     @PutMapping("/{groupId}/members/batch-mute")
     public Result<Void> batchMute(HttpServletRequest request,

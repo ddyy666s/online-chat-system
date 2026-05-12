@@ -29,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+/** 视频通话对话框组件（基于阿里云 RTC） @component */
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { VideoCamera } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -38,6 +39,7 @@ import { useAliRTC } from '@/composables/useAliRTC'
 import RemoteVideo from './RemoteVideo.vue'
 import LocalVideo from './LocalVideo.vue'
 
+/** 组件属性：对话框显示状态、目标用户、是否为呼叫方、频道 ID */
 const props = defineProps<{
   modelValue: boolean
   targetUser: any
@@ -45,30 +47,40 @@ const props = defineProps<{
   channelId?: string
 }>()
 
+/** 组件事件：更新对话框状态、结束通话 */
 const emit = defineEmits(['update:modelValue', 'endCall'])
 
+/** 用户状态 store */
 const userStore = useUserStore()
+/** 对话框可见性 */
 const visible = ref(false)
+/** 当前频道 ID */
 let currentChannelId = ''
+/** 使用阿里云 RTC composable 获取连接状态、流、时长及操作方法 */
 const { isConnected, localStream, remoteStream, callDuration, startCall, hangup } = useAliRTC()
 
+/** 是否显示接听按钮：未连接且非呼叫方 */
 const showAccept = computed(() => !isConnected.value && !props.isCaller)
 
+/** 对话框标题 */
 const dialogTitle = computed(() => {
   return `视频通话 - ${props.targetUser?.nickname || '未知'}`
 })
 
+/** 状态文本 */
 const statusText = computed(() => {
   if (isConnected.value) return '通话中'
   return props.isCaller ? '正在呼叫...' : '来电'
 })
 
+/** 格式化通话时长 @param seconds 秒数 @returns 格式化后的时间字符串 mm:ss */
 const formatDurationLocal = (seconds: number) => {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
+/** 接听通话 @returns Promise<void> */
 const handleAccept = async () => {
   const channelId = props.channelId || currentChannelId || `video_${Date.now()}`
   const userId = String(userStore.userInfo?.id || 0)
@@ -84,6 +96,7 @@ const handleAccept = async () => {
   }
 }
 
+/** 挂断通话 @returns Promise<void> */
 const handleHangup = async () => {
   await hangup()
   if (props.isCaller) {
@@ -98,10 +111,12 @@ const handleHangup = async () => {
   emit('endCall')
 }
 
+/** 关闭对话框 @returns Promise<void> */
 const handleClose = () => {
   handleHangup()
 }
 
+/** 监听对话框显示，呼叫方自动发起通话 */
 watch(() => props.modelValue, async (val) => {
   visible.value = val
   if (val && props.isCaller) {
@@ -124,6 +139,7 @@ watch(() => props.modelValue, async (val) => {
   }
 })
 
+/** 组件卸载时挂断 */
 onUnmounted(() => {
   hangup()
 })

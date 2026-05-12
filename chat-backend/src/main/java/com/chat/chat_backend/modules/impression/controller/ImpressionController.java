@@ -9,15 +9,26 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
+/**
+ * 用户印象/评价控制器
+ *
+ * @author chat-backend
+ * @since 2026-05-12
+ */
 @RestController
 @RequestMapping("/impression")
 @RequiredArgsConstructor
 public class ImpressionController {
 
+    /** 印象/评价服务 */
     private final ImpressionService impressionService;
 
     /**
      * 添加评价
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param req     添加评价请求
+     * @return 操作结果
      */
     @PostMapping
     public Result<Void> addImpression(HttpServletRequest request, @RequestBody AddImpressionRequest req) {
@@ -28,6 +39,9 @@ public class ImpressionController {
 
     /**
      * 获取对我的评价
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @return 评价列表
      */
     @GetMapping("/to-me")
     public Result<List<ImpressionVO>> getImpressionsToMe(HttpServletRequest request) {
@@ -38,6 +52,9 @@ public class ImpressionController {
 
     /**
      * 获取我给出的评价
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @return 评价列表
      */
     @GetMapping("/by-me")
     public Result<List<ImpressionVO>> getImpressionsByMe(HttpServletRequest request) {
@@ -48,6 +65,10 @@ public class ImpressionController {
 
     /**
      * 删除评价
+     *
+     * @param request       HTTP 请求对象（包含用户信息）
+     * @param impressionId 评价 ID
+     * @return 操作结果
      */
     @DeleteMapping("/{impressionId}")
     public Result<Void> deleteImpression(HttpServletRequest request, @PathVariable Long impressionId) {

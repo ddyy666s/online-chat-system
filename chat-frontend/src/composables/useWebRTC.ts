@@ -1,6 +1,8 @@
+/** WebRTC 点对点音视频通话 composable @module useWebRTC */
 import { ref } from 'vue'
 import { websocketService } from '@/utils/websocket'
 
+/** 获取 ICE 服务器配置 @returns STUN/TURN 服务器列表 */
 const getIceServers = (): RTCIceServer[] => {
   const servers: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }]
   const turnUrl = import.meta.env.VITE_TURN_URL
@@ -12,15 +14,23 @@ const getIceServers = (): RTCIceServer[] => {
   return servers
 }
 
+/** WebRTC 通话管理 hook @param callType 通话类型 @returns 通话状态与方法 */
 export const useWebRTC = (callType: 'voice' | 'video') => {
+  /** 是否已连接 */
   const isConnected = ref(false)
+  /** 通话时长（秒） */
   const callDuration = ref(0)
+  /** RTCPeerConnection 实例 */
   let pc: RTCPeerConnection | null = null
+  /** 本地媒体流 */
   let localStream: MediaStream | null = null
+  /** 计时器句柄 */
   let timer: number | null = null
 
+  /** ICE 配置 */
   const configuration = { iceServers: getIceServers() }
 
+  /** 启动本地媒体流 */
   const startLocalStream = async () => {
     stopLocalStream()
     localStream = await navigator.mediaDevices.getUserMedia({
@@ -30,6 +40,7 @@ export const useWebRTC = (callType: 'voice' | 'video') => {
     return localStream
   }
 
+  /** 停止本地媒体流 */
   const stopLocalStream = () => {
     if (localStream) {
       localStream.getTracks().forEach(t => t.stop())
@@ -37,6 +48,7 @@ export const useWebRTC = (callType: 'voice' | 'video') => {
     }
   }
 
+  /** 创建 RTCPeerConnection @param onRemoteStream 远端流回调 @param targetUserId 目标用户ID @returns RTCPeerConnection */
   const createPC = (onRemoteStream: (s: MediaStream) => void, targetUserId: number) => {
     pc = new RTCPeerConnection(configuration)
     if (localStream) {
@@ -62,6 +74,7 @@ export const useWebRTC = (callType: 'voice' | 'video') => {
     return pc
   }
 
+  /** 创建 Offer（发起方） @param onRemoteStream 远端流回调 @param targetUserId 目标用户ID */
   const createOffer = async (onRemoteStream: (s: MediaStream) => void, targetUserId: number) => {
     await startLocalStream()
     const p = createPC(onRemoteStream, targetUserId)
@@ -70,6 +83,7 @@ export const useWebRTC = (callType: 'voice' | 'video') => {
     websocketService.sendCallSignal({ action: 'offer', toUserId: targetUserId, callType, sdp: offer.sdp })
   }
 
+  /** 处理 Offer（接收方） @param sdp 收到的SDP @param onRemoteStream 远端流回调 @param targetUserId 目标用户ID */
   const handleOffer = async (sdp: string, onRemoteStream: (s: MediaStream) => void, targetUserId: number) => {
     await startLocalStream()
     const p = createPC(onRemoteStream, targetUserId)
@@ -79,17 +93,20 @@ export const useWebRTC = (callType: 'voice' | 'video') => {
     websocketService.sendCallSignal({ action: 'answer', toUserId: targetUserId, callType, sdp: answer.sdp })
   }
 
+  /** 处理 Answer @param sdp 收到的SDP */
   const handleAnswer = async (sdp: string) => {
     if (!pc) throw new Error('No peer connection')
     await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp }))
   }
 
+  /** 添加 ICE Candidate @param candidate 候选信息 @param sdpMid SDP mid @param sdpMLineIndex SDP 行索引 */
   const addIceCandidate = async (candidate: string, sdpMid: string, sdpMLineIndex: number) => {
     if (!pc) return
     try { await pc.addIceCandidate(new RTCIceCandidate({ candidate, sdpMid, sdpMLineIndex })) }
     catch { /* ignore */ }
   }
 
+  /** 挂断通话 */
   const hangup = () => {
     if (pc) { pc.onconnectionstatechange = null; pc.close(); pc = null }
     stopLocalStream()

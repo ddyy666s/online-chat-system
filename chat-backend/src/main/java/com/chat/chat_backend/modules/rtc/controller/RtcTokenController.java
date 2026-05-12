@@ -9,15 +9,30 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * RTC 令牌控制器
+ *
+ * @author chat-backend
+ * @since 2026-05-12
+ */
 @Slf4j
 @RestController
 @RequestMapping("/rtc")
 @RequiredArgsConstructor
 public class RtcTokenController {
 
+    /** RTC 令牌服务 */
     private final RtcTokenService rtcTokenService;
+    /** RTC 配置 */
     private final RtcConfig rtcConfig;
 
+    /**
+     * 获取 RTC 令牌
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param body    请求体（包含 channelId）
+     * @return 令牌信息（包含 token、appId、channelId、userId）
+     */
     @PostMapping("/token")
     public Result<JSONObject> getToken(HttpServletRequest request, @RequestBody JSONObject body) {
         String channelId = body.getStr("channelId");

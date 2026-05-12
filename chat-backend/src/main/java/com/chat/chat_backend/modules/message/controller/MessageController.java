@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.chat.chat_backend.common.constant.MessageConstants;
 import com.chat.chat_backend.common.result.Result;
 import com.chat.chat_backend.common.utils.OssUtil;
-
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import com.chat.chat_backend.modules.user.mapper.UserMapper;
 import com.chat.chat_backend.modules.message.dto.response.MessageVO;
@@ -22,18 +22,33 @@ import java.net.URLEncoder;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 消息控制器
+ *
+ * @author chat-backend
+ * @since 2026-05-12
+ */
 @Slf4j
 @RestController
 @RequestMapping("/message")
 @RequiredArgsConstructor
 public class MessageController {
 
+    /** 消息服务 */
     private final MessageService messageService;
+    /** 用户 Mapper */
     private final UserMapper userMapper;
+    /** OSS 工具类 */
     private final OssUtil ossUtil;
 
     /**
      * 获取聊天记录
+     *
+     * @param request  HTTP 请求对象（包含用户信息）
+     * @param friendId 好友 ID
+     * @param page     页码
+     * @param size     每页大小
+     * @return 聊天记录分页结果
      */
     @GetMapping("/history/{friendId}")
     public Result<Page<MessageVO>> getChatHistory(HttpServletRequest request,
@@ -47,6 +62,12 @@ public class MessageController {
 
     /**
      * 下载聊天记录
+     *
+     * @param request  HTTP 请求对象（包含用户信息）
+     * @param response HTTP 响应对象
+     * @param friendId 好友 ID
+     * @param limit    下载条数上限
+     * @throws Exception 下载异常
      */
     @GetMapping("/download/{friendId}")
     public void downloadChatHistory(HttpServletRequest request,
@@ -98,6 +119,10 @@ public class MessageController {
 
     /**
      * 标记消息已读
+     *
+     * @param request  HTTP 请求对象（包含用户信息）
+     * @param friendId 好友 ID
+     * @return 操作结果
      */
     @PutMapping("/read/{friendId}")
     public Result<Void> markAsRead(HttpServletRequest request, @PathVariable Long friendId) {
@@ -108,6 +133,9 @@ public class MessageController {
 
     /**
      * 获取未读消息统计
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @return 未读消息统计
      */
     @GetMapping("/unread/count")
     public Result<UnreadCountVO> getUnreadCount(HttpServletRequest request) {
@@ -118,6 +146,10 @@ public class MessageController {
 
     /**
      * 撤回消息
+     *
+     * @param request   HTTP 请求对象（包含用户信息）
+     * @param messageId 消息 ID
+     * @return 操作结果
      */
     @PutMapping("/recall/{messageId}")
     public Result<Void> recallMessage(HttpServletRequest request, @PathVariable Long messageId) {
@@ -128,6 +160,10 @@ public class MessageController {
 
     /**
      * 上传图片
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param file    图片文件
+     * @return 图片访问 URL
      */
     @PostMapping("/upload/image")
     public Result<String> uploadImage(HttpServletRequest request, @RequestParam("file") MultipartFile file) {
@@ -144,6 +180,10 @@ public class MessageController {
 
     /**
      * 上传语音
+     *
+     * @param request HTTP 请求对象（包含用户信息）
+     * @param file    语音文件
+     * @return 语音访问 URL
      */
     @PostMapping("/upload/voice")
     public Result<String> uploadVoice(HttpServletRequest request, @RequestParam("file") MultipartFile file) {
@@ -158,10 +198,16 @@ public class MessageController {
         }
     }
 
+    /**
+     * 代理音频文件（解决跨域）
+     *
+     * @param url      音频文件 URL
+     * @param response HTTP 响应对象
+     */
     @GetMapping("/proxy-audio")
     public void proxyAudio(@RequestParam String url, HttpServletResponse response) {
         try {
-            URL ossUrl = new URL(url);
+            URL ossUrl = URI.create(url).toURL();
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) ossUrl.openConnection();
             conn.setRequestProperty("User-Agent", "Mozilla/5.0");
             conn.connect();

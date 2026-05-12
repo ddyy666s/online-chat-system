@@ -1,4 +1,4 @@
-// composables/index.ts
+/** composables 统一导出入口 @module composables */
 export { useAuth } from './useAuth'
 export { useWebSocket } from './useWebSocket'
 export { useMessage } from './useMessage'

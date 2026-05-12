@@ -12,18 +12,23 @@
 </template>
 
 <script setup lang="ts">
+/** 群聊消息输入组件，支持禁言状态 @component */
 import { ref } from 'vue'
 
+/** 组件属性：是否被禁言 */
 defineProps<{
   muted?: boolean
 }>()
 
+/** 组件事件：发送消息 */
 const emit = defineEmits<{
   (e: 'send', content: string): void
 }>()
 
+/** 输入框内容 */
 const content = ref('')
 
+/** 发送消息 @returns void */
 const handleSend = () => {
   if (!content.value.trim()) return
   emit('send', content.value)

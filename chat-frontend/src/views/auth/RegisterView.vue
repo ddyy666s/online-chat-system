@@ -38,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+/** 注册页面组件 @component */
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -45,9 +46,12 @@ import { User, Lock } from '@element-plus/icons-vue'
 import { registerApi } from '@/api/user'
 
 const router = useRouter()
+/** 表单引用 */
 const formRef = ref()
+/** 注册按钮加载状态 */
 const loading = ref(false)
 
+/** 注册表单数据 */
 const form = reactive({
   username: '',
   nickname: '',
@@ -55,6 +59,7 @@ const form = reactive({
   confirmPassword: ''
 })
 
+/** 确认密码自定义验证 @param _rule 校验规则 @param value 输入值 @param callback 回调 @returns void */
 const validateConfirm = (_rule: any, value: string, callback: any) => {
   if (value !== form.password) {
     callback(new Error('两次输入的密码不一致'))
@@ -63,6 +68,7 @@ const validateConfirm = (_rule: any, value: string, callback: any) => {
   }
 }
 
+/** 表单校验规则 */
 const rules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -82,6 +88,7 @@ const rules = {
   ]
 }
 
+/** 执行注册 @returns Promise<void> */
 const handleRegister = async () => {
   const valid = await formRef.value?.validate()
   if (!valid) return
@@ -102,6 +109,7 @@ const handleRegister = async () => {
   }
 }
 
+/** 跳转到登录页 @returns void */
 const goToLogin = () => {
   router.push('/login')
 }

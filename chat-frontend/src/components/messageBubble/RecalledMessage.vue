@@ -5,6 +5,7 @@
 </template>
 
 <script setup lang="ts">
+/** 撤回消息提示组件 @component */
 defineProps<{
   isOwn: boolean
 }>()

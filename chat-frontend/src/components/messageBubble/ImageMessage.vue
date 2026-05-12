@@ -5,6 +5,7 @@
 </template>
 
 <script setup lang="ts">
+/** 图片消息展示组件，支持图片预览 @component */
 defineProps<{
   src: string
 }>()

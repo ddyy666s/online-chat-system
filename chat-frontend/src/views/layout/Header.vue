@@ -33,6 +33,7 @@
 </template>
 
 <script setup lang="ts">
+/** 主布局头部组件，显示未读角标、用户菜单和消息盒子 @component */
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bell } from '@element-plus/icons-vue'
@@ -45,9 +46,12 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 const router = useRouter()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
+/** 消息盒子显示状态 */
 const showMessageBox = ref(false)
+/** 退出确认对话框显示状态 */
 const showLogoutConfirm = ref(false)
 
+/** 处理用户下拉菜单命令 @param command 命令标识 @returns Promise<void> */
 const handleCommand = async (command: string) => {
   if (command === 'logout') {
     showLogoutConfirm.value = true
@@ -58,12 +62,15 @@ const handleCommand = async (command: string) => {
   }
 }
 
+/** 确认退出登录 @returns void */
 const confirmLogout = () => {
   userStore.logout()
   router.push('/login')
 }
 
+/** 通知提示音 URL（缓存） */
 let _notifSoundUrl: string | null = null
+/** 有新消息或通知时触发 @returns void */
 const onNewMessageOrNotification = () => {
   messageStore.loadUnreadCount()
   if (_notifSoundUrl === null) {

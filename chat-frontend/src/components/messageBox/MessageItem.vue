@@ -32,10 +32,11 @@
 </template>
 
 <script setup lang="ts">
+/** 消息盒子中的消息项组件 @component */
 import { Star, ChatDotRound } from '@element-plus/icons-vue'
 import { formatRelativeTime } from '@/utils/date'
 
-// 定义消息类型
+/** 消息数据结构定义 */
 interface Message {
   id: number
   fromUserId: number
@@ -48,15 +49,17 @@ interface Message {
   isOnline?: boolean
 }
 
+/** 组件属性：消息对象 */
 const props = defineProps<{
   message: Message
 }>()
 
+/** 组件事件：点击消息 */
 defineEmits<{
   click: [userId: number]
 }>()
 
-// 格式化时间
+/** 格式化时间，今天显示时分，其他显示相对时间 @param time ISO 时间字符串 @returns 格式化文本 */
 const formatTime = (time: string) => {
   const date = new Date(time)
   const now = new Date()
@@ -97,7 +100,6 @@ const formatTime = (time: string) => {
   background: #fff5e6;
 }
 
-/* 头像区域 */
 .avatar-wrapper {
   position: relative;
   flex-shrink: 0;
@@ -114,7 +116,6 @@ const formatTime = (time: string) => {
   border: 2px solid #fff;
 }
 
-/* 消息内容 */
 .message-content {
   flex: 1;
   min-width: 0;
@@ -138,7 +139,6 @@ const formatTime = (time: string) => {
   color: #c0c4cc;
 }
 
-/* 消息预览 */
 .message-preview {
   display: flex;
   align-items: center;
@@ -167,7 +167,6 @@ const formatTime = (time: string) => {
   flex: 1;
 }
 
-/* 消息角标 */
 .message-badge {
   flex-shrink: 0;
   margin-left: 8px;

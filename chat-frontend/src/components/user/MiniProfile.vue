@@ -35,30 +35,46 @@
 </template>
 
 <script setup lang="ts">
+/** 迷你个人资料卡片组件，通过 Popover 悬浮展示 @component */
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { getUserProfileApi } from '@/api/user'
 import defaultAvatar from '@/assets/images/default-avatar.png'
 
+/** 组件属性：用户 ID */
 const props = defineProps<{
   userId: number
 }>()
 
+/** 组件事件：发起聊天、写印象 */
+const emit = defineEmits<{
+  (e: 'startChat', userId: number): void
+  (e: 'writeImpression', userId: number): void
+}>()
+
 const router = useRouter()
+/** 用户信息 */
 const userInfo = ref<any>(null)
+/** 共同好友数 */
 const commonFriends = ref(0)
 
+/** 获取用户信息 @returns Promise<void> */
 const fetchUserInfo = async () => {
-  // TODO: 调用获取用户信息接口
-  // const res = await getUserProfileApi(props.userId)
-  // userInfo.value = res
+  try {
+    const res = await getUserProfileApi(props.userId)
+    userInfo.value = res
+  } catch {
+    /* 静默失败 */
+  }
 }
 
+/** 发起聊天 @returns void */
 const startChat = () => {
-  router.push(`/?friendId=${props.userId}`)
+  emit('startChat', props.userId)
 }
 
+/** 写印象 @returns void */
 const showImpression = () => {
-  // TODO: 打开添加印象弹窗
+  emit('writeImpression', props.userId)
 }
 
 onMounted(() => {

@@ -19,10 +19,12 @@
 </template>
 
 <script setup lang="ts">
+/** 用户搜索结果显示组件，支持添加好友操作 @component */
 defineProps<{
   user: any
 }>()
 
+/** 组件事件：添加好友 @param userId 目标用户 ID */
 defineEmits<{
   (e: 'add', userId: number): void
 }>()

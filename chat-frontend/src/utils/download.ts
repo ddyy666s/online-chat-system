@@ -1,4 +1,6 @@
-// 下载聊天记录
+/** 文件下载工具模块 @module download */
+
+/** 下载聊天记录 @param friendId 好友用户ID @param friendName 好友名称（用于文件名） */
 export const downloadChatRecord = async (friendId: number, friendName: string) => {
   const token = localStorage.getItem('chat_token')
   try {
@@ -22,7 +24,7 @@ export const downloadChatRecord = async (friendId: number, friendName: string) =
   }
 }
 
-// 导出JSON
+/** 导出 JSON 文件 @param data 要导出的数据 @param filename 文件名 */
 export const downloadJson = (data: any, filename: string) => {
   const jsonStr = JSON.stringify(data, null, 2)
   const blob = new Blob([jsonStr], { type: 'application/json' })

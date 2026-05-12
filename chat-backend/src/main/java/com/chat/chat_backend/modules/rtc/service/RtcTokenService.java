@@ -11,13 +11,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
 
+/** RTC实时通信Token生成服务，基于HMAC-SHA1算法生成签名令牌 @author chat-backend @since 2026-05-12 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RtcTokenService {
 
+    /** RTC配置（appId、appKey） */
     private final RtcConfig rtcConfig;
 
+    /** 生成RTC Token @param channelId 频道ID @param userId 用户ID @return 签名字符串 */
     public String generateToken(String channelId, String userId) {
         String appId = rtcConfig.getAppId();
         String appKey = rtcConfig.getAppKey();

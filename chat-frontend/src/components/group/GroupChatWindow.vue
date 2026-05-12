@@ -3,7 +3,6 @@
     <GroupChatHeader :group="group" :can-edit-notice="canEditNotice" :is-owner="isOwner"
       @command="handleGroupCommand" />
 
-    <!-- 修复：确保传入 string | null 类型，过滤 undefined -->
     <GroupNoticeBar :notice="group?.notice ?? null" @click="openNotice" />
 
     <GroupMessageList ref="messageListRef" :messages="messages" :current-user-id="currentUserId" :loading="loading"
@@ -11,7 +10,6 @@
 
     <GroupMessageInput :muted="isMuted" @send="sendMessage" />
 
-    <!-- 修复：确保传入 string | null 类型 -->
     <GroupNoticeDialog v-model="showNoticeDialog" :notice="group?.notice ?? null" :can-edit="canEditNotice"
       @save="handleUpdateNotice" />
 
@@ -30,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+/** 群聊聊天窗口组件，管理群聊消息/成员/公告/管理等完整功能 @component */
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
@@ -57,43 +56,56 @@ import GroupManagementDialog from './GroupManagementDialog.vue'
 import InviteFriendDialog from './InviteFriendDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
+/** 组件属性：群聊信息 */
 const props = defineProps<{
   group: GroupVO | null
 }>()
 
+/** 组件事件：更新群列表、更新未读计数 */
 const emit = defineEmits(['update:list', 'updateUnreadCount'])
 
 const userStore = useUserStore()
+/** 当前登录用户 ID */
 const currentUserId = userStore.userInfo?.id
+/** 是否为群主 */
 const isOwner = computed(() => props.group?.ownerId === currentUserId)
 
+/** 当前用户是否可编辑公告（群主或管理员） */
 const canEditNotice = computed(() => {
   const member = memberList.value.find(m => m.userId === currentUserId)
   return isOwner.value || member?.role === 1
 })
 
+/** 当前用户是否被禁言 */
 const isMuted = computed(() => {
   const member = memberList.value.find(m => m.userId === currentUserId)
   return member?.muted === true
 })
 
+/** 消息列表 */
 const messages = ref<GroupMessageVO[]>([])
+/** 加载状态 */
 const loading = ref(false)
+/** 分页页码 */
 const page = ref(1)
+/** 是否还有更多历史消息 */
 const hasMore = ref(true)
+/** 消息列表组件引用 */
 const messageListRef = ref()
 
-// 弹窗状态
+/** 弹窗状态 */
 const showNoticeDialog = ref(false)
 const showMembers = ref(false)
 const showManage = ref(false)
 const showInvite = ref(false)
 const showQuitDialog = ref(false)
 const showDisbandDialog = ref(false)
+/** 成员列表 */
 const memberList = ref<GroupMemberVO[]>([])
+/** 好友列表（用于邀请） */
 const friendList = ref<FriendVO[]>([])
 
-// 加载历史消息
+/** 加载历史消息 @param reset 是否重置页码 @returns Promise<void> */
 const loadHistory = async (reset = true) => {
   if (!props.group?.id) return
   if (reset) {
@@ -121,13 +133,14 @@ const loadHistory = async (reset = true) => {
   }
 }
 
+/** 加载更多历史消息 @returns void */
 const loadMore = () => {
   if (!loading.value && hasMore.value) {
     loadHistory(false)
   }
 }
 
-// 清除未读计数
+/** 清除群聊未读计数 @returns Promise<void> */
 const clearUnreadCount = async () => {
   if (!props.group?.id) return
   try {
@@ -138,11 +151,10 @@ const clearUnreadCount = async () => {
   }
 }
 
-// 发送消息
+/** 发送群消息 @param content 消息内容 @returns void */
 const sendMessage = (content: string) => {
   if (!props.group?.id) return
   if (isMuted.value) { ElMessage.warning('你已被禁言'); return }
-  // 添加临时消息到列表
   const tempMsg: GroupMessageVO = {
     id: Date.now(),
     groupId: props.group.id,
@@ -158,7 +170,7 @@ const sendMessage = (content: string) => {
   websocketService.sendGroupMessage(props.group.id, content)
 }
 
-// 接收群消息
+/** 接收 WebSocket 群消息 @param data 消息数据 @returns void */
 const onGroupMessage = (data: any) => {
   if (props.group && data.groupId === props.group.id) {
     const newMsg: GroupMessageVO = {
@@ -176,7 +188,7 @@ const onGroupMessage = (data: any) => {
   }
 }
 
-// 加载群成员
+/** 加载群成员列表 @returns Promise<void> */
 const loadMembers = async () => {
   if (!props.group?.id) return
   try {
@@ -186,7 +198,7 @@ const loadMembers = async () => {
   }
 }
 
-// 加载好友列表
+/** 加载好友列表 @returns Promise<void> */
 const loadFriendList = async () => {
   try {
     const res = await getFriendListApi()
@@ -198,7 +210,7 @@ const loadFriendList = async () => {
   }
 }
 
-// 更新群公告
+/** 更新群公告 @param notice 公告内容 @returns Promise<void> */
 const handleUpdateNotice = async (notice: string) => {
   if (!props.group?.id) return
   try {
@@ -213,12 +225,12 @@ const handleUpdateNotice = async (notice: string) => {
   }
 }
 
-// 打开公告弹窗
+/** 打开公告弹窗 @returns void */
 const openNotice = () => {
   showNoticeDialog.value = true
 }
 
-// 群管理命令
+/** 处理群聊头部下拉菜单命令 @param command 命令标识 @returns Promise<void> */
 const handleGroupCommand = async (command: string) => {
   if (!props.group) return
 
@@ -240,19 +252,21 @@ const handleGroupCommand = async (command: string) => {
   }
 }
 
+/** 确认退出群聊 @returns Promise<void> */
 const confirmQuit = async () => {
   await quitGroupApi(props.group!.id)
   ElMessage.success('已退出群聊')
   emit('update:list')
 }
 
+/** 确认解散群聊 @returns Promise<void> */
 const confirmDisband = async () => {
   await disbandGroupApi(props.group!.id)
   ElMessage.success('群聊已解散')
   emit('update:list')
 }
 
-// 邀请好友
+/** 邀请好友 @param userId 好友用户 ID @returns Promise<void> */
 const handleInvite = async (userId: number) => {
   if (!props.group?.id) return
   try {
@@ -265,7 +279,7 @@ const handleInvite = async (userId: number) => {
   }
 }
 
-// 监听群切换
+/** 监听群聊切换，重新加载数据和清除未读 */
 watch(() => props.group, (newGroup) => {
   if (newGroup?.id) {
     loadHistory(true)
@@ -274,7 +288,7 @@ watch(() => props.group, (newGroup) => {
   }
 }, { immediate: true })
 
-// 注册 WebSocket 回调
+/** 注册 WebSocket 群消息回调 */
 onMounted(() => {
   websocketService.onGroupMessage(onGroupMessage)
 })

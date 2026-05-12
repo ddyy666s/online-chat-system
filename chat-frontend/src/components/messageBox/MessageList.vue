@@ -15,11 +15,12 @@
 </template>
 
 <script setup lang="ts">
+/** 未读消息列表组件，按日期分组展示 @component */
 import { computed } from 'vue'
 import Empty from '@/components/common/Empty.vue'
 import MessageItem from './MessageItem.vue'
 
-// 定义消息类型
+/** 消息数据结构定义 */
 export interface Message {
   id: number
   fromUserId: number
@@ -32,15 +33,17 @@ export interface Message {
   isOnline?: boolean
 }
 
+/** 组件属性：消息列表 */
 const props = defineProps<{
   messages: Message[]
 }>()
 
+/** 组件事件：点击消息 */
 const emit = defineEmits<{
   click: [userId: number]
 }>()
 
-// 按日期分组
+/** 按日期分组的消息列表 @returns 按日期分组后的消息数组 */
 const groupedMessages = computed(() => {
   const groups: { date: string; messages: Message[] }[] = []
   const today = new Date().toDateString()
@@ -69,6 +72,7 @@ const groupedMessages = computed(() => {
   return groups
 })
 
+/** 点击消息处理 @param userId 好友用户 ID @returns void */
 const handleClick = (userId: number) => {
   emit('click', userId)
 }
@@ -81,7 +85,6 @@ const handleClick = (userId: number) => {
   padding: 0 12px;
 }
 
-/* 日期分割线 */
 .date-divider {
   text-align: center;
   margin: 16px 0;

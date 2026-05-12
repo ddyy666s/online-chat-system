@@ -13,20 +13,15 @@
       </div>
 
       <div class="message-bubble" :class="{ recalled: message.isRecalled }">
-        <!-- 撤回消息 -->
         <RecalledMessage v-if="message.isRecalled" :is-own="isOwn" />
 
-        <!-- 文字消息 -->
         <TextMessage v-else-if="message.messageType === 1" :content="message.content" />
 
-        <!-- 图片消息 -->
         <ImageMessage v-else-if="message.messageType === 2" :src="message.content" />
 
-        <!-- 语音消息 -->
         <VoiceMessage v-else-if="message.messageType === 4" :url="message.content" :duration="message.duration"
           :message-id="message.id" />
 
-        <!-- 其他类型（评价消息等） -->
         <span v-else>{{ message.content }}</span>
       </div>
     </div>
@@ -34,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+/** 消息气泡组件（新版），按消息类型分发到不同子组件 @component */
 import { computed } from 'vue'
 import defaultAvatar from '@/assets/images/default-avatar.png'
 import TextMessage from '../messageBubble/TextMessage.vue'
@@ -41,6 +37,7 @@ import ImageMessage from '../messageBubble/ImageMessage.vue'
 import VoiceMessage from '../messageBubble/VoiceMessage.vue'
 import RecalledMessage from '../messageBubble/RecalledMessage.vue'
 
+/** 组件属性：消息对象、是否本人发送、是否显示信息 */
 const props = defineProps<{
   message: {
     id: number
@@ -57,10 +54,12 @@ const props = defineProps<{
   showInfo?: boolean
 }>()
 
+/** 头像 URL @returns 头像地址或默认头像 */
 const avatarUrl = computed(() => {
   return props.message.fromUserAvatar || defaultAvatar
 })
 
+/** 格式化时间 @param time ISO 时间字符串 @returns HH:mm 格式 */
 const formatTime = (time: string) => {
   const date = new Date(time)
   return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })

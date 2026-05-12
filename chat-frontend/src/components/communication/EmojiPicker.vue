@@ -21,28 +21,36 @@
 </template>
 
 <script setup lang="ts">
+/** 表情选择器抽屉组件 @component */
 import { ref, watch } from 'vue'
 import EmojiGrid from './EmojiGrid.vue'
 
+/** 组件属性：显示状态、系统/用户表情列表 */
 const props = defineProps<{
   modelValue: boolean
   systemEmojis: any[]
   userEmojis: any[]
 }>()
 
+/** 组件事件：更新显示状态、选择/上传/删除表情 */
 const emit = defineEmits(['update:modelValue', 'select', 'upload', 'delete'])
 
+/** 抽屉可见性 */
 const visible = ref(false)
+/** 当前选中的表情 Tab */
 const activeTab = ref('system')
 
+/** 同步外部 modelValue 到内部 visible */
 watch(() => props.modelValue, (val) => {
   visible.value = val
 })
 
+/** 内部 visible 变化同步到外部 */
 watch(visible, (val) => {
   emit('update:modelValue', val)
 })
 
+/** 关闭抽屉 @returns void */
 const handleClose = () => {
   visible.value = false
 }

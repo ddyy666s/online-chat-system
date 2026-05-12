@@ -21,16 +21,22 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/** 好友关系服务实现，处理搜索用户、好友列表、删除好友、移动分组、修改备注等业务逻辑 @author chat-backend @since 2026-05-12 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FriendRelationServiceImpl implements FriendRelationService {
 
+    /** 好友数据访问层 */
     private final FriendMapper friendMapper;
+    /** 用户数据访问层 */
     private final UserMapper userMapper;
+    /** Redis缓存工具类 */
     private final RedisUtil redisUtil;
+    /** Redis模板（用于哈希结构的未读数存储） */
     private final RedisTemplate<String, Object> redisTemplate;
 
+    /** 搜索用户（按用户名或昵称模糊匹配，排除当前用户） @param currentUserId 当前用户ID @param keyword 搜索关键词 @return 匹配的用户列表 */
     @Override
     public List<FriendVO> searchUsers(Long currentUserId, String keyword) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -57,6 +63,7 @@ public class FriendRelationServiceImpl implements FriendRelationService {
                 .collect(Collectors.toList());
     }
 
+    /** 获取好友列表（按分组返回，含在线状态和未读消息数） @param currentUserId 当前用户ID @return 分组好友列表 */
     @Override
     public List<FriendGroupVO> getFriendList(Long currentUserId) {
         if (currentUserId == null) return new ArrayList<>();
@@ -109,6 +116,7 @@ public class FriendRelationServiceImpl implements FriendRelationService {
                 .collect(Collectors.toList());
     }
 
+    /** 删除好友（双向删除好友关系） @param currentUserId 当前用户ID @param friendId 好友ID */
     @Override
     @Transactional
     public void deleteFriend(Long currentUserId, Long friendId) {
@@ -118,6 +126,7 @@ public class FriendRelationServiceImpl implements FriendRelationService {
                 .eq(Friend::getUserId, friendId).eq(Friend::getFriendId, currentUserId));
     }
 
+    /** 移动好友分组 @param currentUserId 当前用户ID @param friendId 好友ID @param request 新分组名称 */
     @Override
     public void moveFriendGroup(Long currentUserId, Long friendId, MoveFriendGroupRequest request) {
         Friend friend = friendMapper.selectOne(new LambdaQueryWrapper<Friend>()
@@ -127,6 +136,7 @@ public class FriendRelationServiceImpl implements FriendRelationService {
         friendMapper.updateById(friend);
     }
 
+    /** 修改好友备注 @param currentUserId 当前用户ID @param friendId 好友ID @param remark 新备注 */
     @Override
     public void updateFriendRemark(Long currentUserId, Long friendId, String remark) {
         Friend friend = friendMapper.selectOne(new LambdaQueryWrapper<Friend>()

@@ -44,12 +44,14 @@
 </template>
 
 <script setup lang="ts">
+/** 评价列表组件，支持分页和 Tab 切换 @component */
 import { ref, computed, watch } from 'vue'
 import type { ImpressionVO } from '@/api/impression'
 import Empty from '@/components/common/Empty.vue'
 import Loading from '@/components/common/Loading.vue'
 import ImpressionItem from './ImpressionItem.vue'
 
+/** 组件属性：评价数据 */
 const props = defineProps<{
   impressionsToMe: ImpressionVO[]
   impressionsByMe: ImpressionVO[]
@@ -57,18 +59,23 @@ const props = defineProps<{
   loadingByMe: boolean
 }>()
 
+/** 组件事件：删除/添加/Tab 切换 */
 const emit = defineEmits<{
   delete: [id: number]
   add: []
   tabChange: [tab: string]
 }>()
 
+/** 当前激活的 Tab */
 const activeTab = ref('to-me')
+/** 每页显示数量 */
 const pageSize = 10
 
+/** 当前分页 */
 const currentPageToMe = ref(1)
 const currentPageByMe = ref(1)
 
+/** 是否还有更多 */
 const hasMoreToMe = computed(() => {
   return currentPageToMe.value * pageSize < props.impressionsToMe.length
 })
@@ -77,6 +84,7 @@ const hasMoreByMe = computed(() => {
   return currentPageByMe.value * pageSize < props.impressionsByMe.length
 })
 
+/** 当前页显示的数据 */
 const paginatedToMe = computed(() => {
   const end = currentPageToMe.value * pageSize
   return props.impressionsToMe.slice(0, end)
@@ -87,9 +95,11 @@ const paginatedByMe = computed(() => {
   return props.impressionsByMe.slice(0, end)
 })
 
+/** 加载更多加载状态 */
 const loadingMoreToMe = ref(false)
 const loadingMoreByMe = ref(false)
 
+/** 加载更多「对我的评价」 */
 const loadMoreToMe = () => {
   if (loadingMoreToMe.value || !hasMoreToMe.value) return
   loadingMoreToMe.value = true
@@ -97,6 +107,7 @@ const loadMoreToMe = () => {
   loadingMoreToMe.value = false
 }
 
+/** 加载更多「我给出的评价」 */
 const loadMoreByMe = () => {
   if (loadingMoreByMe.value || !hasMoreByMe.value) return
   loadingMoreByMe.value = true
@@ -104,15 +115,17 @@ const loadMoreByMe = () => {
   loadingMoreByMe.value = false
 }
 
+/** Tab 切换 @param tab Tab 名称 */
 const handleTabChange = (tab: string) => {
   emit('tabChange', tab)
 }
 
+/** 删除评价 @param id 评价 ID */
 const handleDelete = (id: number) => {
   emit('delete', id)
 }
 
-// 监听数据变化，重置分页
+/** 数据变化时重置分页 */
 watch(() => props.impressionsToMe, () => {
   currentPageToMe.value = 1
 }, { deep: true })

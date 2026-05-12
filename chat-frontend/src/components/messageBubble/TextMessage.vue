@@ -3,6 +3,7 @@
 </template>
 
 <script setup lang="ts">
+/** 文字消息展示组件 @component */
 defineProps<{
   content: string
 }>()

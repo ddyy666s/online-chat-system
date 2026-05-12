@@ -1,10 +1,8 @@
 <template>
-  <!-- 查看公告 -->
-  <el-dialog v-model="showView" title="群公告" width="400px">
+  <ViewDialog v-model="showView" title="群公告" width="400px">
     <p>{{ notice || '暂无群公告' }}</p>
-  </el-dialog>
+  </ViewDialog>
 
-  <!-- 编辑公告 -->
   <el-dialog v-model="showEdit" title="编辑群公告" width="400px">
     <el-input v-model="editContent" type="textarea" :rows="4" placeholder="请输入群公告" maxlength="200" show-word-limit />
     <template #footer>
@@ -15,25 +13,33 @@
 </template>
 
 <script setup lang="ts">
+/** 群公告查看/编辑对话框 @component */
 import { ref, watch } from 'vue'
+import ViewDialog from '@/components/common/ViewDialog.vue'
 
-// 修复：notice 只接受 string | null
+/** 组件属性：显示状态、公告内容、是否可编辑 */
 const props = defineProps<{
   modelValue: boolean
   notice: string | null
   canEdit: boolean
 }>()
 
+/** 组件事件：更新显示状态、保存公告 */
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'save', content: string): Promise<void>
 }>()
 
+/** 查看模式对话框可见 */
 const showView = ref(false)
+/** 编辑模式对话框可见 */
 const showEdit = ref(false)
+/** 编辑框内容 */
 const editContent = ref('')
+/** 保存加载状态 */
 const loading = ref(false)
 
+/** 根据 modelValue 和 canEdit 切换查看/编辑模式 */
 watch(() => props.modelValue, (val) => {
   if (props.canEdit) {
     showEdit.value = val
@@ -43,13 +49,12 @@ watch(() => props.modelValue, (val) => {
   }
 })
 
-watch(showView, (val) => {
-  if (!val) emit('update:modelValue', false)
-})
+/** 编辑对话框关闭时同步外部状态 */
 watch(showEdit, (val) => {
   if (!val) emit('update:modelValue', false)
 })
 
+/** 保存公告 @returns Promise<void> */
 const handleSave = async () => {
   loading.value = true
   try {

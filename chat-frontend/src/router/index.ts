@@ -1,13 +1,16 @@
+/** Vue Router 路由实例与全局守卫 @module router */
 import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from './routes'
 import { useUserStore } from '@/stores/userStore'
 import { ElMessage } from 'element-plus'
 
+/** 路由实例 */
 const router = createRouter({
   history: createWebHistory(),
   routes
 })
 
+/** 全局前置守卫：鉴权与页面标题设置 */
 router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
   const requiresAuth = to.meta.requiresAuth !== false

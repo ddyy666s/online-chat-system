@@ -9,24 +9,19 @@
         <span class="time">{{ formatRelativeTime(message.sendTime) }}</span>
       </div>
       <div class="message-bubble" :class="{ recalled: message.isRecalled }">
-        <!-- 文字消息 -->
         <span v-if="message.messageType === 1 && !message.isRecalled">{{ message.content }}</span>
 
-        <!-- 图片消息 -->
         <div v-else-if="message.messageType === 2 && !message.isRecalled" class="image-message">
           <el-image :src="message.content" :preview-src-list="[message.content]" fit="cover" class="message-image" />
         </div>
 
-        <!-- 语音消息 -->
         <VoiceMessage v-else-if="message.messageType === 4 && !message.isRecalled" :url="message.content"
           :duration="message.duration" />
 
-        <!-- 撤回消息 -->
         <span v-else-if="message.isRecalled" class="recalled">
           {{ isOwn ? '你撤回了一条消息' : '对方撤回了一条消息' }}
         </span>
 
-        <!-- 其他 -->
         <span v-else>{{ message.content }}</span>
 
         <el-button v-if="isOwn && !message.isRecalled && canRecall" class="recall-btn" text size="small"
@@ -37,20 +32,24 @@
 </template>
 
 <script setup lang="ts">
+/** 聊天消息气泡组件，支持文字/图片/语音/撤回消息展示 @component */
 import { computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatRelativeTime } from '@/utils/date'
 import { recallMessageApi } from '@/api/message'
 import VoiceMessage from './VoiceMessage.vue'
 
+/** 组件属性：消息对象、是否为本人发送、是否显示信息 */
 const props = defineProps<{
   message: any
   isOwn: boolean
   showInfo?: boolean
 }>()
 
+/** 撤回时限：2 分钟（毫秒） */
 const RECALL_LIMIT = 2 * 60 * 1000
 
+/** 是否可撤回：发送时间在 2 分钟内 */
 const canRecall = computed(() => {
   if (!props.message.sendTime) return false
   const now = Date.now()
@@ -58,6 +57,7 @@ const canRecall = computed(() => {
   return now - sendTime <= RECALL_LIMIT
 })
 
+/** 撤回消息处理 @returns Promise<void> */
 const handleRecall = async () => {
   if (!canRecall.value) {
     ElMessage.warning('消息发送超过2分钟，无法撤回')

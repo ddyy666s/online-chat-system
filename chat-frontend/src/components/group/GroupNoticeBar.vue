@@ -9,13 +9,15 @@
 </template>
 
 <script setup lang="ts">
+/** 群公告栏组件，展示公告概览 @component */
 import { InfoFilled } from '@element-plus/icons-vue'
 
-// 修复：只接受 string | null，过滤掉 undefined
+/** 组件属性：公告内容 */
 defineProps<{
   notice: string | null
 }>()
 
+/** 组件事件：点击查看详情 */
 defineEmits<{
   (e: 'click'): void
 }>()

@@ -13,13 +13,16 @@
 </template>
 
 <script setup lang="ts">
+/** 消息输入组件，提供文本输入和通信工具栏 @component */
 import { ref } from 'vue'
 import CommunicationBar from '@/components/common/CommunicationBar.vue'
 
+/** 组件属性：当前聊天用户 ID */
 defineProps<{
   currentChatUserId?: number
 }>()
 
+/** 组件事件：发送文本/图片/语音/表情消息、发起通话 */
 const emit = defineEmits<{
   (e: 'send', content: string): void
   (e: 'sendImage', url: string): void
@@ -29,8 +32,10 @@ const emit = defineEmits<{
   (e: 'startVideoCall', toUserId: number): void
 }>()
 
+/** 输入框内容 */
 const content = ref('')
 
+/** 发送文本消息 @returns void */
 const handleSend = () => {
   if (!content.value.trim()) return
   emit('send', content.value)

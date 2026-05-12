@@ -29,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+/** 登录页面组件 @component */
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -38,19 +39,24 @@ import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
 const userStore = useUserStore()
+/** 表单引用 */
 const formRef = ref()
+/** 登录按钮加载状态 */
 const loading = ref(false)
 
+/** 登录表单数据 */
 const form = reactive({
   username: '',
   password: ''
 })
 
+/** 表单校验规则 */
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
+/** 执行登录 @returns Promise<void> */
 const handleLogin = async () => {
   const valid = await formRef.value?.validate()
   if (!valid) return
@@ -60,7 +66,6 @@ const handleLogin = async () => {
     const res = await loginApi(form)
     console.log('登录响应:', res)
 
-    // res 已经是 { token, user } 类型
     userStore.setToken(res.token)
     userStore.setUserInfo(res.user)
     ElMessage.success('登录成功')
@@ -74,6 +79,7 @@ const handleLogin = async () => {
   }
 }
 
+/** 跳转到注册页 @returns void */
 const goToRegister = () => {
   router.push('/register')
 }

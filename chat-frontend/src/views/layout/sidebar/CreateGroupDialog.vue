@@ -22,37 +22,45 @@
 </template>
 
 <script setup lang="ts">
+/** 创建群聊对话框组件 @component */
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FriendVO } from '@/api/friend'
 
+/** 组件属性：显示状态、好友列表 */
 const props = defineProps<{
   modelValue: boolean
   friendList: FriendVO[]
 }>()
 
+/** 组件事件：更新显示状态、提交创建 */
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
   submit: [data: { name: string; notice?: string; memberIds: number[] }]
 }>()
 
+/** 对话框可见性（双向绑定） */
 const visible = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
 })
 
+/** 创建按钮加载状态 */
 const loading = ref(false)
+/** 表单数据 */
 const form = ref({
   name: '',
   notice: '',
   memberIds: [] as number[]
 })
 
+/** 关闭对话框并重置表单 @returns void */
 const handleClose = () => {
   form.value = { name: '', notice: '', memberIds: [] }
   visible.value = false
 }
 
+/** 提交创建群聊 @returns Promise<void> */
 const handleSubmit = async () => {
   if (!form.value.name.trim()) {
     ElMessage.warning('请输入群名称')

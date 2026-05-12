@@ -1,5 +1,7 @@
+/** 路由配置表 @module routes */
 import type { RouteRecordRaw } from 'vue-router'
 
+/** 路由配置列表 */
 export const routes: RouteRecordRaw[] = [
   {
     path: '/login',

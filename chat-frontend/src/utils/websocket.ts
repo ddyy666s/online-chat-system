@@ -1,23 +1,36 @@
+/** WebSocket 服务单例 @module websocket */
 /// <reference types="vite/client" />
 
 import { useUserStore } from '@/stores/userStore'
 
+/** WebSocket 消息回调类型 */
 type MessageCallback = (data: any) => void
 
+/** WebSocket 服务类（单例模式） */
 class WebSocketService {
+  /** WebSocket 连接实例 */
   private ws: WebSocket | null = null
+  /** 重连定时器 */
   private reconnectTimer: number | null = null
+  /** 心跳定时器 */
   private heartbeatTimer: number | null = null
+  /** 消息回调列表 */
   private messageCallbacks: MessageCallback[] = []
+  /** 在线状态回调列表 */
   private statusCallbacks: MessageCallback[] = []
+  /** 群消息回调列表 */
   private groupMessageCallbacks: MessageCallback[] = []
+  /** 通话信令回调列表 */
   private callSignalCallbacks: MessageCallback[] = []
+  /** 系统通知回调列表 */
   private notificationCallbacks: MessageCallback[] = []
   
+  /** 是否已连接 @returns 连接状态 */
   isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN
   }
   
+  /** 建立 WebSocket 连接 */
   connect() {
     const userStore = useUserStore()
     const token = userStore.token
@@ -67,6 +80,7 @@ class WebSocketService {
     }
   }
   
+  /** 自动重连（3秒后） */
   private reconnect() {
     if (this.reconnectTimer) return
     this.reconnectTimer = setTimeout(() => {
@@ -75,6 +89,7 @@ class WebSocketService {
     }, 3000)
   }
   
+  /** 开始心跳（每30秒发送ping） */
   private startHeartbeat() {
     this.heartbeatTimer = setInterval(() => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -83,6 +98,7 @@ class WebSocketService {
     }, 30000)
   }
   
+  /** 停止心跳 */
   private stopHeartbeat() {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer)
@@ -90,7 +106,7 @@ class WebSocketService {
     }
   }
   
-  // 发送单聊消息
+  /** 发送单聊消息 @param toUserId 目标用户ID @param content 消息内容 @param messageType 消息类型 @param duration 语音时长（仅语音消息） */
   sendMessage(toUserId: number, content: string, messageType: number = 1, duration?: number) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const message: any = {
@@ -109,7 +125,7 @@ class WebSocketService {
     }
   }
   
-  // 发送群消息
+  /** 发送群消息 @param groupId 群ID @param content 消息内容 @param messageType 消息类型 */
   sendGroupMessage(groupId: number, content: string, messageType: number = 1) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({
@@ -123,7 +139,7 @@ class WebSocketService {
     }
   }
   
-  // 发送通话信令
+  /** 发送通话信令 @param data 信令数据 */
   sendCallSignal(data: any) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       console.log('发送通话信令:', data)
@@ -133,27 +149,32 @@ class WebSocketService {
     }
   }
   
-  // 注册回调
+  /** 注册消息回调 @param callback 回调函数 */
   onMessage(callback: MessageCallback) {
     this.messageCallbacks.push(callback)
   }
   
+  /** 注册在线状态回调 @param callback 回调函数 */
   onStatus(callback: MessageCallback) {
     this.statusCallbacks.push(callback)
   }
   
+  /** 注册群消息回调 @param callback 回调函数 */
   onGroupMessage(callback: MessageCallback) {
     this.groupMessageCallbacks.push(callback)
   }
   
+  /** 注册通话信令回调 @param callback 回调函数 */
   onCallSignal(callback: MessageCallback) {
     this.callSignalCallbacks.push(callback)
   }
   
+  /** 注册系统通知回调 @param callback 回调函数 */
   onNotification(callback: MessageCallback) {
     this.notificationCallbacks.push(callback)
   }
   
+  /** 断开连接 */
   disconnect() {
     this.stopHeartbeat()
     if (this.ws) {
@@ -163,6 +184,5 @@ class WebSocketService {
   }
 }
 
-
-
+/** WebSocket 服务单例导出 */
 export const websocketService = new WebSocketService()

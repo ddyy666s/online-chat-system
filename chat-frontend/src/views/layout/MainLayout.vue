@@ -11,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+/** 主布局组件，包含侧边栏、头部和内容区域 @component */
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Sidebar from './Sidebar.vue'
@@ -21,15 +22,19 @@ import { useFriendStore } from '@/stores/friendStore'
 const router = useRouter()
 const friendStore = useFriendStore()
 
+/** 选择好友聊天 @param friend 好友对象 @returns void */
 const handleSelectChat = (friend: any) => {
   router.push({ name: 'Main', query: { friendId: friend.userId || friend.id } })
 }
 
+/** 选择群聊 @param group 群聊对象 @returns void */
 const handleSelectGroup = (group: any) => {
   router.push({ name: 'Main', query: { groupId: group.id } })
 }
 
+/** 是否已完成音频解锁 */
 let audioUnlocked = false
+/** 解锁音频上下文（解决浏览器自动播放策略） @returns void */
 const unlockAudio = () => {
   if (audioUnlocked) return
   audioUnlocked = true
@@ -72,7 +77,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* 防止内容溢出 */
   overflow: hidden;
 }
 </style>
