@@ -30,6 +30,7 @@ import { getChatHistoryApi, downloadChatHistoryApi, markAsReadApi } from '@/api/
 import { websocketService } from '@/utils/websocket'
 import { useUserStore } from '@/stores/userStore'
 import { useMessageStore } from '@/stores/messageStore'
+import { useFriendStore } from '@/stores/friendStore'
 import ChatHeader from '../chat/ChatHeader.vue'
 import MessageList from '../chat/MessageList.vue'
 import MessageInput from '../chat/MessageInput.vue'
@@ -40,6 +41,7 @@ import DownloadDialog from '../common/DownloadDialog.vue'
 const props = defineProps<{ friend: any }>()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
+const friendStore = useFriendStore()
 /** 当前登录用户 ID */
 const currentUserId = userStore.userInfo?.id
 
@@ -229,6 +231,7 @@ const markAsRead = async () => {
   try {
     await markAsReadApi(props.friend.userId)
     messageStore.clearUnreadForFriend(props.friend.userId)
+    friendStore.clearUnreadForFriend(props.friend.userId)
   } catch (error) { console.error(error) }
 }
 

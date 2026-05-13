@@ -1,7 +1,7 @@
 <template>
   <div class="friend-item" :class="{ active: isActive }" @click="$emit('click')">
     <div class="avatar">
-      <MiniProfile :user-id="friend.userId" @write-impression="emit('writeImpression', $event)">
+      <MiniProfile :user-id="friend.userId" @start-chat="emit('click')" @write-impression="emit('writeImpression', $event)">
         <el-avatar :size="40" :src="friend.avatar || ''">
           {{ friend.nickname?.charAt(0) || 'U' }}
         </el-avatar>

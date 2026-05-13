@@ -13,13 +13,14 @@
 <script setup lang="ts">
 /** 聊天主视图组件，根据路由参数切换好友聊天或群聊 @component */
 import { ref, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import ChatWindow from '@/components/message/ChatWindow.vue'
 import GroupChatWindow from '@/components/group/GroupChatWindow.vue'
 import { useFriendStore } from '@/stores/friendStore'
 import { getGroupDetailApi } from '@/api/group'
 
 const route = useRoute()
+const router = useRouter()
 const friendStore = useFriendStore()
 
 /** 当前聊天好友 */
@@ -74,9 +75,11 @@ watch(
   { immediate: true }
 )
 
-/** 刷新群聊列表 @returns void */
+/** 退出/解散群聊后刷新 @returns void */
 const refreshGroupList = () => {
-  // 刷新群聊列表的逻辑
+  currentGroup.value = null
+  currentChatUser.value = null
+  router.push({ query: {} })
 }
 </script>
 

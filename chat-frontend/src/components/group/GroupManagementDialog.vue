@@ -1,17 +1,18 @@
 <template>
-  <BaseDialog v-model="visible" title="群管理" width="640px">
+  <BaseDialog v-model="visible" title="群管理" width="640px" show-close>
     <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
       <el-button v-if="canManage" size="small" @click="toggleSelectAll">全选/取消</el-button>
       <el-button v-if="selectedIds.length > 0" size="small" type="warning"
         @click="openBatchMute">批量禁言({{ selectedIds.length }})</el-button>
     </div>
-    <el-table :data="members" style="width: 100%" max-height="400" @selection-change="onSelectionChange">
+    <el-table :data="members" style="width: 100%" max-height="400" @selection-change="onSelectionChange"
+      class="group-manage-table">
       <el-table-column v-if="canManage" type="selection" width="40" />
-      <el-table-column label="成员" min-width="140">
+      <el-table-column label="成员" min-width="160">
         <template #default="{ row }">
           <div style="display:flex;align-items:center;gap:8px">
             <el-avatar :size="32" :src="row.avatar || ''">{{ row.nickname?.charAt(0) }}</el-avatar>
-            <span>{{ row.nickname }}</span>
+            <span style="font-weight:600;color:var(--text-primary)">{{ row.nickname }}</span>
             <el-tag v-if="row.muted" size="small" type="danger">禁言中</el-tag>
           </div>
         </template>
@@ -20,18 +21,18 @@
         <template #default="{ row }">
           <el-tag v-if="row.role === 2" type="warning" size="small">群主</el-tag>
           <el-tag v-else-if="row.role === 1" type="success" size="small">管理员</el-tag>
-          <span v-else>成员</span>
+          <span v-else style="color:var(--text-regular)">成员</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220">
+      <el-table-column label="操作" width="240">
         <template #default="{ row }">
           <el-button v-if="isOwner && row.role !== 2 && row.userId !== currentUserId"
-            size="small" type="primary" plain @click="toggleAdmin(row)">
+            size="small" type="primary" @click="toggleAdmin(row)">
             {{ row.role === 1 ? '取消管理' : '设为管理' }}
           </el-button>
-          <el-button v-if="canKick(row)" size="small" type="danger" plain
+          <el-button v-if="canKick(row)" size="small" type="danger"
             @click="handleKick(row)">移除</el-button>
-          <el-button v-if="canManageMute(row)" size="small" plain
+          <el-button v-if="canManageMute(row)" size="small"
             @click="toggleMute(row)">{{ row.muted ? '取消禁言' : '禁言' }}</el-button>
         </template>
       </el-table-column>
@@ -231,3 +232,12 @@ const onBatchMuteConfirm = async (minutes: string) => {
 }
 
 </script>
+
+<style scoped>
+.group-manage-table :deep(.el-table__body td) {
+  padding: 10px 0;
+}
+.group-manage-table :deep(.el-button) {
+  font-weight: 600;
+}
+</style>

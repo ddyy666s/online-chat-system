@@ -1,6 +1,6 @@
 <template>
   <div class="message-item" :class="{ own: isOwn }">
-    <el-avatar :size="32" :src="message.fromUserAvatar || ''">
+    <el-avatar :size="40" :src="message.fromUserAvatar || ''">
       {{ message.fromUserNickname?.charAt(0) || 'U' }}
     </el-avatar>
     <div class="message-content">
@@ -76,14 +76,14 @@ const handleRecall = async () => {
 <style scoped>
 .message-item {
   display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 0 8px;
-  animation: messageIn 0.25s ease;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 0 12px;
+  animation: messageIn 0.3s ease;
 }
 
 @keyframes messageIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -98,7 +98,7 @@ const handleRecall = async () => {
 .message-content {
   display: flex;
   flex-direction: column;
-  max-width: 65%;
+  max-width: 68%;
 }
 
 .message-info {
@@ -111,27 +111,27 @@ const handleRecall = async () => {
 
 .message-bubble {
   background: var(--bg-color-white);
-  padding: 10px 16px;
-  border-radius: 18px;
+  padding: 12px 20px;
+  border-radius: 22px;
   word-wrap: break-word;
-  line-height: 1.5;
-  font-size: 14px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  line-height: 1.6;
+  font-size: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   position: relative;
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 6px;
 }
 
 .message-item:not(.own) .message-bubble {
-  border-bottom-left-radius: 4px;
-  border-top-left-radius: 18px;
+  border-bottom-left-radius: 6px;
+  border-top-left-radius: 22px;
 }
 
 .message-item.own .message-bubble {
-  background: linear-gradient(135deg, var(--color-primary), #8b7cf7);
+  background: linear-gradient(135deg, #7c6df0, #a08aff);
   color: white;
-  border-bottom-right-radius: 4px;
-  border-bottom-left-radius: 18px;
-  border-top-right-radius: 4px;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 22px;
+  border-top-right-radius: 6px;
 }
 
 .image-message {
@@ -139,8 +139,8 @@ const handleRecall = async () => {
 }
 
 .message-image {
-  max-width: 220px;
-  border-radius: 12px;
+  max-width: 240px;
+  border-radius: 14px;
   border: 1px solid var(--border-color-lighter);
 }
 
@@ -150,7 +150,7 @@ const handleRecall = async () => {
 
 .recall-btn {
   position: absolute;
-  top: -26px;
+  top: -28px;
   right: 0;
   display: none;
   font-size: 11px;

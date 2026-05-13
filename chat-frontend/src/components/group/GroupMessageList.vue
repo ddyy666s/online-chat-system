@@ -5,7 +5,7 @@
     </div>
 
     <div v-for="msg in messages" :key="msg.id" class="message-item" :class="{ own: msg.fromUserId === currentUserId }">
-      <el-avatar :size="32" :src="msg.fromUserAvatar || ''">
+      <el-avatar :size="40" :src="msg.fromUserAvatar || ''">
         {{ msg.fromUserNickname?.charAt(0) || 'U' }}
       </el-avatar>
       <div class="message-content">
@@ -85,14 +85,14 @@ defineExpose({ scrollToBottom })
 
 .message-item {
   display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 0 8px;
-  animation: messageIn 0.25s ease;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 0 12px;
+  animation: messageIn 0.3s ease;
 }
 
 @keyframes messageIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -107,7 +107,7 @@ defineExpose({ scrollToBottom })
 .message-content {
   display: flex;
   flex-direction: column;
-  max-width: 65%;
+  max-width: 68%;
 }
 
 .message-info {
@@ -125,21 +125,21 @@ defineExpose({ scrollToBottom })
 
 .message-bubble {
   background: var(--bg-color-white);
-  padding: 10px 16px;
-  border-radius: 18px;
+  padding: 12px 20px;
+  border-radius: 22px;
   word-wrap: break-word;
-  line-height: 1.5;
-  font-size: 14px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  border-bottom-left-radius: 4px;
+  line-height: 1.6;
+  font-size: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-bottom-left-radius: 6px;
 }
 
 .message-item.own .message-bubble {
-  background: linear-gradient(135deg, var(--color-primary), #8b7cf7);
+  background: linear-gradient(135deg, #7c6df0, #a08aff);
   color: white;
-  border-bottom-right-radius: 4px;
-  border-bottom-left-radius: 18px;
-  border-top-right-radius: 4px;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 22px;
+  border-top-right-radius: 6px;
 }
 
 .loading {

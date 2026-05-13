@@ -77,38 +77,45 @@ const handleTabClick = (tab: any) => {
   position: relative;
   font-size: 14px;
   color: var(--text-secondary);
-  transition: all 0.25s;
+  transition: all 0.2s ease;
   border-radius: 16px;
   background: transparent;
-  border: 1.5px solid transparent;
+  border: 1px solid rgba(180, 200, 230, 0.25);
 }
 
 .tab-item:hover {
   color: var(--color-primary);
-  background: #f3f0ff;
-  border-color: #d0e5ff;
-  transform: translateY(-1px);
+  background: #f0edff;
+  border-color: rgba(108, 92, 231, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.08);
 }
 
 .tab-item:active {
-  transform: scale(0.95);
+  transform: scale(0.93);
+  box-shadow: 0 2px 6px rgba(108, 92, 231, 0.15);
 }
 
 .tab-item.active {
   color: var(--color-primary);
   background: var(--bg-color-white);
   font-weight: 600;
-  border-color: #b3d9ff;
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.12);
+  border-color: rgba(108, 92, 231, 0.3);
+  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.15);
+  transform: translateY(-1px);
 }
 
 .tab-item .el-icon {
   font-size: 20px;
-  transition: transform 0.25s;
+  transition: transform 0.2s ease;
 }
 
 .tab-item:hover .el-icon {
-  transform: scale(1.15);
+  transform: scale(1.2);
+}
+
+.tab-item.active .el-icon {
+  transform: scale(1.1);
 }
 
 .badge {

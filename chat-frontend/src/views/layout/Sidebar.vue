@@ -25,8 +25,8 @@
 
 <script setup lang="ts">
 /** 侧边栏组件，整合好友/群聊/申请/印象选项卡 @component */
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/userStore'
 import { useFriendStore } from '@/stores/friendStore'
@@ -46,6 +46,7 @@ import CreateGroupDialog from './sidebar/CreateGroupDialog.vue'
 const emit = defineEmits(['selectChat', 'selectGroup'])
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const friendStore = useFriendStore()
 
@@ -81,6 +82,7 @@ const loadGroupList = async () => {
 /** 选择群聊 @param group 群聊对象 @returns void */
 const selectGroup = (group: GroupVO) => {
   currentGroupId.value = group.id
+  group.unreadCount = 0
   emit('selectGroup', group)
 }
 
@@ -150,6 +152,12 @@ const onGroupMessage = (data: any) => {
   }
 }
 
+watch(() => route.query, () => {
+  loadGroupList()
+  friendStore.loadFriendList()
+  friendStore.loadFriendRequests()
+}, { deep: true })
+
 onMounted(() => {
   friendStore.loadFriendList()
   friendStore.loadFriendRequests()
@@ -176,6 +184,7 @@ onMounted(() => {
   border: 3px solid #b3d9ff;
   border-radius: 24px;
   box-shadow: var(--box-shadow-base);
+  overflow: hidden;
 }
 
 .sidebar-content {

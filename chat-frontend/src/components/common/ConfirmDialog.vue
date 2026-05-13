@@ -3,13 +3,14 @@
     class="beautiful-confirm" top="30vh" center>
     <div class="confirm-body">
       <div class="confirm-icon" :class="type">
-        <el-icon :size="48">
+        <el-icon :size="36">
           <WarningFilled v-if="type === 'warning'" />
           <CircleCloseFilled v-else-if="type === 'danger'" />
           <SuccessFilled v-else />
         </el-icon>
       </div>
-      <div class="confirm-message">{{ message }}</div>
+      <div class="confirm-message" v-html="message"></div>
+      <slot />
     </div>
     <template #footer>
       <div class="confirm-footer">
@@ -63,56 +64,6 @@ const handleCancel = () => { emit('cancel'); visible.value = false }
 </script>
 
 <style scoped>
-.confirm-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  padding: 32px 16px 8px;
-}
-
 .confirm-icon :deep(.el-icon) { display: flex; }
-.confirm-icon.warning svg { color: var(--color-warning); }
-.confirm-icon.danger svg { color: var(--color-danger); }
-.confirm-icon.info svg { color: var(--color-primary); }
-
-.confirm-message {
-  font-size: 16px;
-  color: var(--text-primary);
-  text-align: center;
-  line-height: 1.7;
-  max-width: 320px;
-  font-weight: 500;
-}
-
-.confirm-footer {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  padding: 0 0 8px;
-}
-
-.btn-cancel {
-  min-width: 110px;
-  border-radius: 12px !important;
-  font-weight: 600 !important;
-}
-
-.btn-confirm {
-  min-width: 110px;
-  border-radius: 12px !important;
-  font-weight: 600 !important;
-}
-
-.beautiful-confirm :deep(.el-dialog__header) {
-  display: none;
-}
-
-.beautiful-confirm :deep(.el-dialog__body) {
-  padding: 8px 24px 16px;
-}
-
-.beautiful-confirm :deep(.el-dialog) {
-  border-radius: 20px !important;
-}
+.confirm-message { max-width: 300px; }
 </style>

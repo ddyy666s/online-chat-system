@@ -60,18 +60,21 @@ onMounted(() => {
 
 <style scoped>
 .app-container {
-  height: 100vh;
-  width: 100%;
+  height: calc(100vh - 24px);
+  width: calc(100% - 24px);
+  margin: 12px;
   background: linear-gradient(135deg, #e8ecf4 0%, #f0f2f8 50%, #e4e8f2 100%);
-  padding: 14px;
+  padding: 18px;
   overflow: hidden;
+  border: 5px solid #b3d9ff;
+  border-radius: 28px;
+  box-shadow: 0 0 24px rgba(179, 217, 255, 0.45), 0 0 60px rgba(179, 217, 255, 0.15);
 }
 
 .main-layout {
   display: flex;
   height: 100%;
   width: 100%;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   gap: 14px;
 }
 

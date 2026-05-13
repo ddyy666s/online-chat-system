@@ -29,6 +29,7 @@
 <script setup lang="ts">
 /** 好友列表组件，管理好友展示/搜索/删除/备注/分组操作 @component */
 import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { useFriendStore } from '@/stores/friendStore'
@@ -51,6 +52,8 @@ const emit = defineEmits<{
 
 /** 好友状态 store */
 const friendStore = useFriendStore()
+const route = useRoute()
+const router = useRouter()
 /** 添加好友对话框显示状态 */
 const showAddDialog = ref(false)
 /** 删除确认对话框显示状态 */
@@ -122,6 +125,9 @@ const confirmDelete = async () => {
     await deleteFriendApi(deleteTargetId.value)
     ElMessage.success('删除成功')
     refresh()
+    if (route.query.friendId && Number(route.query.friendId) === deleteTargetId.value) {
+      router.push({ query: {} })
+    }
   } catch { ElMessage.error('删除失败') }
 }
 

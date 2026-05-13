@@ -48,7 +48,7 @@ html, body, #app {
 }
 
 .el-dialog__body {
-  padding: 20px 24px !important;
+  padding: 24px 28px !important;
 }
 
 .el-dialog__footer {
@@ -298,6 +298,102 @@ html, body, #app {
 
 .beautiful-dialog .el-dialog {
   border-radius: 20px !important;
+}
+
+/* 确认/提示弹框共用样式 */
+.beautiful-confirm .el-dialog__header {
+  display: none;
+}
+
+.beautiful-confirm {
+  border-radius: 24px !important;
+  width: 720px !important;
+}
+
+.beautiful-confirm .el-dialog__body {
+  padding: 8px 24px 12px;
+}
+
+.confirm-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 12px 0;
+}
+
+.confirm-icon .el-icon {
+  display: flex;
+}
+
+.confirm-icon.warning svg {
+  color: var(--color-warning);
+}
+
+.confirm-icon.danger svg {
+  color: var(--color-danger);
+}
+
+.confirm-icon.info svg {
+  color: var(--color-primary);
+}
+
+.confirm-message {
+  font-size: 16px;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.8;
+  max-width: 90%;
+  font-weight: 500;
+}
+
+.confirm-footer {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  padding: 4px 0 8px;
+}
+
+.btn-cancel {
+  min-width: 120px;
+  padding: 10px 24px !important;
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  letter-spacing: 0.5px;
+}
+
+.btn-confirm {
+  min-width: 120px;
+  padding: 10px 24px !important;
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  letter-spacing: 0.5px;
+}
+
+.el-dialog__headerbtn {
+  width: 36px;
+  height: 36px;
+  top: 16px;
+  right: 16px;
+  font-size: 18px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.el-dialog__headerbtn:hover {
+  background: #f0edff;
+  transform: scale(1.1);
+}
+
+.el-dialog__headerbtn .el-dialog__close {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.el-dialog__headerbtn:hover .el-dialog__close {
+  color: var(--color-primary);
 }
 
 .beautiful-drawer .el-drawer {

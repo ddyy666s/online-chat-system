@@ -46,6 +46,17 @@ export const useFriendStore = defineStore('friend', () => {
     return null
   }
   
+  /** 清除指定好友的未读计数 @param friendId 好友用户ID */
+  const clearUnreadForFriend = (friendId: number) => {
+    for (const group of friendList.value) {
+      const friend = group.friends.find(f => f.userId === friendId)
+      if (friend) {
+        friend.unreadCount = 0
+        break
+      }
+    }
+  }
+
   /** 更新好友在线状态 @param userId 用户ID @param isOnline 是否在线 */
   const updateFriendOnlineStatus = (userId: number, isOnline: boolean) => {
     console.log('updateFriendOnlineStatus 被调用:', userId, isOnline)
@@ -66,6 +77,7 @@ export const useFriendStore = defineStore('friend', () => {
     loadFriendRequests,
     getGroupNames,
     getFriendById,
+    clearUnreadForFriend,
     updateFriendOnlineStatus
   }
 })

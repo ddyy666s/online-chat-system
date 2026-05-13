@@ -1,9 +1,9 @@
 <template>
-  <ViewDialog v-model="showView" title="群公告" width="400px">
+  <ViewDialog v-model="showView" title="群公告" width="440px">
     <p>{{ notice || '暂无群公告' }}</p>
   </ViewDialog>
 
-  <BaseDialog v-model="showEdit" title="编辑群公告" width="420px">
+  <BaseDialog v-model="showEdit" title="编辑群公告" width="440px">
     <el-input v-model="editContent" type="textarea" :rows="4" placeholder="请输入群公告" maxlength="200" show-word-limit />
     <template #footer>
       <el-button @click="showEdit = false">取消</el-button>

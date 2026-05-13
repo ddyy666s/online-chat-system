@@ -20,10 +20,6 @@
           <span class="label">签名：</span>
           <span class="value">{{ userInfo?.signature || '这个人很懒，什么都没写' }}</span>
         </div>
-        <div class="row">
-          <span class="label">共同好友：</span>
-          <span class="value">{{ commonFriends }}人</span>
-        </div>
       </div>
 
       <div class="profile-actions">
@@ -52,8 +48,6 @@ const emit = defineEmits<{
 }>()
 /** 用户信息 */
 const userInfo = ref<any>(null)
-/** 共同好友数 */
-const commonFriends = ref(0)
 
 /** 获取用户信息 @returns Promise<void> */
 const fetchUserInfo = async () => {
@@ -61,7 +55,6 @@ const fetchUserInfo = async () => {
     const res = await getUserProfileApi(props.userId)
     userInfo.value = res
   } catch {
-    /* 静默失败 */
   }
 }
 

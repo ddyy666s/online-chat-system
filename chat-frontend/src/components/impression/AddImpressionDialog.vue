@@ -1,5 +1,5 @@
 <template>
-  <BaseDialog v-model="visible" title="添加评价" width="400px" @close="handleClose">
+  <BaseDialog v-model="visible" title="添加评价" width="440px" @close="handleClose">
     <el-form :model="form" label-width="80px">
       <el-form-item label="选择好友">
         <el-select v-model="form.toUserId" placeholder="请选择要评价的好友" filterable style="width: 100%" :loading="loading">

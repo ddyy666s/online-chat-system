@@ -1,5 +1,5 @@
 <template>
-  <ViewDialog v-model="visible" title="群成员" width="400px">
+  <ViewDialog v-model="visible" title="群成员" width="440px">
     <div v-for="member in members" :key="member.userId" class="member-item">
       <el-avatar :size="32" :src="member.avatar || ''">
         {{ member.nickname?.charAt(0) || 'U' }}

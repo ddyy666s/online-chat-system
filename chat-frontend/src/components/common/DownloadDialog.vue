@@ -1,5 +1,5 @@
 <template>
-  <BaseDialog v-model="visible" title="下载聊天记录" width="400px">
+  <BaseDialog v-model="visible" title="下载聊天记录" width="440px">
     <div class="download-dialog">
       <div class="info">
         <p>当前共有 <strong>{{ totalMessages }}</strong> 条聊天记录</p>

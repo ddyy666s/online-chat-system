@@ -1,7 +1,7 @@
 <template>
   <div class="message-bubble-wrapper" :class="{ own: isOwn }">
     <div class="avatar">
-      <el-avatar :size="36" :src="avatarUrl">
+      <el-avatar :size="40" :src="avatarUrl">
         {{ message.fromUserNickname?.charAt(0) || 'U' }}
       </el-avatar>
     </div>
@@ -69,8 +69,8 @@ const formatTime = (time: string) => {
 <style scoped>
 .message-bubble-wrapper {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 14px;
+  margin-bottom: 18px;
   align-items: flex-start;
 }
 
@@ -98,20 +98,23 @@ const formatTime = (time: string) => {
 
 .message-bubble {
   background: #fff;
-  padding: 10px 14px;
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 12px 20px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   word-break: break-word;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .message-bubble-wrapper.own .message-bubble {
-  background: #95ec69;
-  border-bottom-right-radius: 4px;
+  background: linear-gradient(135deg, #7c6df0, #a08aff);
+  color: white;
+  border-bottom-right-radius: 6px;
 }
 
 .message-bubble-wrapper:not(.own) .message-bubble {
   background: #fff;
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 6px;
 }
 
 .message-bubble.recalled {

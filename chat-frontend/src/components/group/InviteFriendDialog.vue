@@ -1,5 +1,5 @@
 <template>
-  <BaseDialog v-model="visible" title="邀请好友" width="420px">
+  <BaseDialog v-model="visible" title="邀请好友" width="440px">
     <el-select v-model="selectedId" placeholder="选择好友" filterable style="width: 100%">
       <el-option v-for="friend in friends" :key="friend.userId" :label="friend.remark || friend.nickname"
         :value="friend.userId" />
