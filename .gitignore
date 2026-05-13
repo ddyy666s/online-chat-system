@@ -26,7 +26,7 @@ Thumbs.db
 # 环境变量文件
 .env
 .env.*
-!.env.example
+docker.env
 
 # 编译产物
 **/*.class
@@ -37,4 +37,3 @@ Thumbs.db
 logs/
 *.log
 
-chat-backend/.env".env.example" 

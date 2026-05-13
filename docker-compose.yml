@@ -10,7 +10,8 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./MYSQL/chat_db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./MYSQL/chat_db.sql:/docker-entrypoint-initdb.d/01-chat-db.sql:ro
+      - ./MYSQL/system_notification.sql:/docker-entrypoint-initdb.d/02-system-notification.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -33,26 +34,20 @@ services:
     build:
       context: ./chat-backend
       target: prod
+      args:
+        SPRING_PROFILES_ACTIVE: prod
     container_name: chat-backend
     restart: always
     ports:
       - "8080:8080"
+    env_file:
+      - ./docker.env
     environment:
-      DB_HOST: ${DB_HOST:-mysql}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_USERNAME: ${DB_USERNAME:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-123456}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      REDIS_DB: ${REDIS_DB:-1}
-      JWT_SECRET: ${JWT_SECRET:-your-secret-key-please-change-it-in-production-2026}
-      SERVER_PORT: ${SERVER_PORT:-8080}
-      ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT:-}
-      ALIYUN_OSS_BUCKET_NAME: ${ALIYUN_OSS_BUCKET_NAME:-}
-      ALIYUN_OSS_REGION: ${ALIYUN_OSS_REGION:-}
-      ALIYUN_OSS_ACCESS_KEY_ID: ${ALIYUN_OSS_ACCESS_KEY_ID:-}
-      ALIYUN_OSS_ACCESS_KEY_SECRET: ${ALIYUN_OSS_ACCESS_KEY_SECRET:-}
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       mysql:
         condition: service_healthy
@@ -68,7 +63,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   mysql_data:

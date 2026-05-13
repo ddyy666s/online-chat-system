@@ -1,5 +1,6 @@
 <template>
   <div class="profile-container">
+    <AnimatedBackground />
     <div class="profile-card">
       <div class="profile-header">
         <el-button :icon="ArrowLeft" @click="goBack">返回</el-button>
@@ -53,6 +54,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, Camera } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 import { updateProfileApi, updateAvatarApi, type UserInfo } from '@/api/user'
+import AnimatedBackground from '@/components/common/AnimatedBackground.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -174,17 +176,9 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #fd79a8 100%);
-  background-size: 200% 200%;
-  animation: gradient 8s ease infinite;
   padding: 20px;
   position: relative;
-}
-
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  overflow: hidden;
 }
 
 .profile-card {
@@ -193,7 +187,9 @@ onMounted(() => {
   backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 36px;
-  box-shadow: 0 20px 60px rgba(108, 92, 231, 0.2);
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: cardIn 0.5s ease;
 }
 

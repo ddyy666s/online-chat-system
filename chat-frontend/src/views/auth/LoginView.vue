@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
+    <AnimatedBackground />
     <div class="login-card">
-      <div class="card-glow"></div>
       <h1 class="title">在线聊天系统</h1>
       <p class="subtitle">欢迎回来，开始畅聊吧~</p>
 
@@ -38,6 +38,7 @@ import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { loginApi } from '@/api/user'
 import { useUserStore } from '@/stores/userStore'
+import AnimatedBackground from '@/components/common/AnimatedBackground.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -93,39 +94,8 @@ const goToRegister = () => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #fd79a8 100%);
-  background-size: 200% 200%;
-  animation: gradient 8s ease infinite;
   position: relative;
   overflow: hidden;
-}
-
-.login-container::before {
-  content: '';
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  top: -200px;
-  right: -200px;
-}
-
-.login-container::after {
-  content: '';
-  position: absolute;
-  width: 400px;
-  height: 400px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  bottom: -100px;
-  left: -100px;
-}
-
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 .login-card {
@@ -135,19 +105,10 @@ const goToRegister = () => {
   padding: 48px 40px;
   border-radius: 24px;
   position: relative;
-  box-shadow: 0 20px 60px rgba(108, 92, 231, 0.2);
+  z-index: 1;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: cardIn 0.6s ease;
   overflow: hidden;
-}
-
-.card-glow {
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle at 30% 20%, rgba(108, 92, 231, 0.06), transparent 50%);
-  pointer-events: none;
 }
 
 @keyframes cardIn {
