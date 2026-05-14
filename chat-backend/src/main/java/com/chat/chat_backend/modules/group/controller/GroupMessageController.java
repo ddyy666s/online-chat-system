@@ -48,6 +48,7 @@ public class GroupMessageController {
         Long userId = (Long) request.getAttribute("userId");
         int offset = (page - 1) * size;
 
+        int total = groupMessageMapper.countHistory(groupId);
         List<GroupMessage> messages = groupMessageMapper.findHistory(groupId, offset, size);
 
         List<GroupMessageVO> voList = messages.stream()
@@ -68,7 +69,7 @@ public class GroupMessageController {
 
         Page<GroupMessageVO> pageResult = new Page<>(page, size);
         pageResult.setRecords(voList);
-        pageResult.setTotal(messages.size());
+        pageResult.setTotal(total);
 
         return Result.success(pageResult);
     }

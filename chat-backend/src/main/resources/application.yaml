@@ -47,3 +47,7 @@ aliyun:
     region: ${ALIYUN_OSS_REGION:}
     access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:}
     access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
+
+rtc:
+  app-id: ${RTC_APP_ID:}
+  app-key: ${RTC_APP_KEY:}

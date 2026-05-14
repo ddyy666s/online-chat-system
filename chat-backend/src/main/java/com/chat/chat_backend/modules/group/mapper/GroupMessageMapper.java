@@ -24,4 +24,11 @@ public interface GroupMessageMapper extends BaseMapper<GroupMessage> {
     List<GroupMessage> findHistory(@Param("groupId") Long groupId,
                                    @Param("offset") Integer offset,
                                    @Param("limit") Integer limit);
+
+    /**
+     * 统计群组消息总数
+     * @param groupId 群组ID
+     * @return 消息总数
+     */
+    Integer countHistory(@Param("groupId") Long groupId);
 }

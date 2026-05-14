@@ -1,6 +1,4 @@
 /** WebSocket 服务单例 @module websocket */
-/// <reference types="vite/client" />
-
 import { useUserStore } from '@/stores/userStore'
 
 /** WebSocket 消息回调类型 */

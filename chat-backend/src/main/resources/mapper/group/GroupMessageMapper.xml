@@ -10,4 +10,8 @@
             LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <select id="countHistory" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM group_message WHERE group_id = #{groupId}
+    </select>
+
 </mapper>

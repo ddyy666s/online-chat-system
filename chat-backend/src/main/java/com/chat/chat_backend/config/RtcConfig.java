@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "rtc")
 public class RtcConfig {
     /** RTC应用ID */
-    private String appId = "023b95b1-701e-45bf-802d-0c3cbf5d3874";
+    private String appId;
     /** RTC应用密钥 */
-    private String appKey = "";
+    private String appKey;
 }

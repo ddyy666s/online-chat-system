@@ -1,0 +1,109 @@
+卷 编程 的文件夹 PATH 列表
+卷序列号为 4040-F062
+D:.
+├─java
+│  └─com
+│      └─chat
+│          └─chat_backend
+│              ├─common
+│              │  ├─constant
+│              │  ├─exception
+│              │  ├─result
+│              │  └─utils
+│              ├─config
+│              ├─interceptor
+│              ├─modules
+│              │  ├─admin
+│              │  │  ├─controller
+│              │  │  ├─dto
+│              │  │  │  ├─request
+│              │  │  │  └─response
+│              │  │  ├─entity
+│              │  │  ├─mapper
+│              │  │  └─service
+│              │  │      └─impl
+│              │  ├─emoji
+│              │  │  ├─controller
+│              │  │  ├─dto
+│              │  │  │  ├─request
+│              │  │  │  └─response
+│              │  │  ├─entity
+│              │  │  ├─mapper
+│              │  │  └─service
+│              │  │      └─impl
+│              │  ├─friend
+│              │  │  ├─controller
+│              │  │  ├─dto
+│              │  │  │  ├─request
+│              │  │  │  └─response
+│              │  │  ├─entity
+│              │  │  ├─mapper
+│              │  │  └─service
+│              │  │      └─impl
+│              │  ├─group
+│              │  │  ├─controller
+│              │  │  ├─dto
+│              │  │  │  ├─request
+│              │  │  │  └─response
+│              │  │  ├─entity
+│              │  │  ├─mapper
+│              │  │  └─service
+│              │  │      └─impl
+│              │  ├─impression
+│              │  │  ├─controller
+│              │  │  ├─dto
+│              │  │  │  ├─request
+│              │  │  │  └─response
+│              │  │  ├─entity
+│              │  │  ├─mapper
+│              │  │  └─service
+│              │  │      └─impl
+│              │  ├─message
+│              │  │  ├─controller
+│              │  │  ├─dto
+│              │  │  │  ├─request
+│              │  │  │  └─response
+│              │  │  ├─entity
+│              │  │  ├─mapper
+│              │  │  └─service
+│              │  │      └─impl
+│              │  ├─notification
+│              │  │  ├─controller
+│              │  │  ├─dto
+│              │  │  │  ├─request
+│              │  │  │  └─response
+│              │  │  ├─entity
+│              │  │  ├─mapper
+│              │  │  └─service
+│              │  │      └─impl
+│              │  ├─rtc
+│              │  │  ├─controller
+│              │  │  ├─dto
+│              │  │  │  ├─request
+│              │  │  │  └─response
+│              │  │  ├─entity
+│              │  │  ├─mapper
+│              │  │  └─service
+│              │  │      └─impl
+│              │  └─user
+│              │      ├─controller
+│              │      ├─dto
+│              │      │  ├─request
+│              │      │  └─response
+│              │      ├─entity
+│              │      ├─mapper
+│              │      └─service
+│              │          └─impl
+│              └─websocket
+│                  ├─handler
+│                  └─service
+└─resources
+    ├─db
+    └─mapper
+        ├─emoji
+        ├─friend
+        ├─group
+        ├─impression
+        ├─message
+        ├─notification
+        └─user

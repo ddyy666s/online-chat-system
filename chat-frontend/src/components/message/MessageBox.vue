@@ -112,6 +112,7 @@ const openNotification = (n: SystemNotification) => {
 
 /** 处理通知已读 @returns Promise<void> */
 const handleNotificationRead = async () => {
+  showNotificationDetail.value = false
   if (selectedNotification.value) {
     try {
       await markNotificationAsReadApi(selectedNotification.value.id)

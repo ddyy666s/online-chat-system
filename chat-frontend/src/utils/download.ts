@@ -2,7 +2,7 @@
 
 /** 下载聊天记录 @param friendId 好友用户ID @param friendName 好友名称（用于文件名） */
 export const downloadChatRecord = async (friendId: number, friendName: string) => {
-  const token = localStorage.getItem('chat_token')
+  const token = localStorage.getItem('chat_token') || localStorage.getItem('chat_token')?.replace(/"/g, '')
   try {
     const response = await fetch(`/api/message/download/${friendId}`, {
       headers: {

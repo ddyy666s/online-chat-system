@@ -1,0 +1,41 @@
+卷 编程 的文件夹 PATH 列表
+卷序列号为 4040-F062
+D:.
+├─api
+│  ├─admin
+│  ├─emoji
+│  ├─friend
+│  ├─group
+│  ├─impression
+│  ├─message
+│  ├─notification
+│  └─user
+├─assets
+│  ├─audio
+│  ├─images
+│  └─styles
+├─components
+│  ├─call
+│  ├─chat
+│  ├─common
+│  ├─communication
+│  ├─friend
+│  ├─group
+│  ├─impression
+│  ├─message
+│  ├─messageBox
+│  ├─messageBubble
+│  └─user
+├─composables
+├─router
+├─stores
+├─types
+├─utils
+└─views
+    ├─admin
+    │  └─components
+    ├─auth
+    ├─chat
+    ├─layout
+    │  └─sidebar
+    └─profile

@@ -21,10 +21,4 @@ public interface GroupMapper extends BaseMapper<Group> {
      */
     List<Group> findGroupsByUserId(@Param("userId") Long userId);
 
-    /**
-     * 清除用户在指定群组中的未读消息计数
-     * @param groupId 群组ID
-     * @param userId 用户ID
-     */
-    void clearUnreadCount(@Param("groupId") Long groupId, @Param("userId") Long userId);
 }

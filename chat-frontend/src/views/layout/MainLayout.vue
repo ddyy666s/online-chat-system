@@ -1,7 +1,8 @@
 <template>
   <div class="app-container" @click="unlockAudio">
-    <div class="main-layout">
+    <div class="main-layout" :class="{ 'is-resizing': isResizing }" :style="{ '--sidebar-width': sidebarWidth + 'px' }">
       <Sidebar @select-chat="handleSelectChat" @select-group="handleSelectGroup" />
+      <div class="resize-handle" @mousedown="startResize" />
       <div class="right-panel">
         <Header />
         <Content />
@@ -18,9 +19,17 @@ import Sidebar from './Sidebar.vue'
 import Header from './Header.vue'
 import Content from './Content.vue'
 import { useFriendStore } from '@/stores/friendStore'
+import { useResizable } from '@/composables'
 
 const router = useRouter()
 const friendStore = useFriendStore()
+
+const { sidebarWidth, isResizing, startResize } = useResizable({
+  minWidth: 280,
+  maxWidth: 800,
+  defaultWidth: 420,
+  storageKey: 'sidebar-width'
+})
 
 /** 选择好友聊天 @param friend 好友对象 @returns void */
 const handleSelectChat = (friend: any) => {
@@ -85,5 +94,40 @@ onMounted(() => {
   min-width: 0;
   overflow: hidden;
   gap: 14px;
+}
+
+.main-layout.is-resizing {
+  cursor: col-resize;
+}
+
+.main-layout.is-resizing .sidebar,
+.main-layout.is-resizing .right-panel {
+  pointer-events: none;
+}
+
+.resize-handle {
+  width: 14px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  position: relative;
+  z-index: 30;
+  margin: 0 -7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resize-handle::before {
+  content: '';
+  width: 4px;
+  height: 48px;
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.resize-handle:hover::before,
+.main-layout.is-resizing .resize-handle::before {
+  background: var(--color-primary-light);
 }
 </style>

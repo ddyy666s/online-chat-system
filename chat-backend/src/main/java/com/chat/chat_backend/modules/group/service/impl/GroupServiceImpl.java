@@ -11,7 +11,7 @@ import com.chat.chat_backend.modules.group.dto.request.InviteMemberRequest;
 import com.chat.chat_backend.modules.group.dto.response.GroupVO;
 import com.chat.chat_backend.modules.group.entity.Group;
 import com.chat.chat_backend.modules.group.entity.GroupMember;
-import com.chat.chat_backend.modules.user.entity.User;
+import com.chat.chat_backend.modules.group.service.GroupMuteService;
 import com.chat.chat_backend.modules.group.service.GroupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,28 +21,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/** 群聊服务实现，处理群组CRUD、成员管理、角色分配、禁言、公告等业务逻辑 @author chat-backend @since 2026-05-12 */
+/** 群聊服务实现，处理群组CRUD、成员管理、角色分配、公告等业务逻辑 @author chat-backend @since 2026-05-12 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class GroupServiceImpl implements GroupService {
-
-    /** 内存禁言缓存（key为"groupId:userId"，值为禁言到期时间） */
-    private static final Map<String, LocalDateTime> muteMap = new ConcurrentHashMap<>();
-
-    /** 判断成员是否处于禁言状态 @param groupId 群聊ID @param userId 用户ID @return true表示禁言中 */
-    public static boolean isMuted(Long groupId, Long userId) {
-        LocalDateTime until = muteMap.get(key(groupId, userId));
-        return until != null && until.isAfter(LocalDateTime.now());
-    }
-
-    /** 构建禁言缓存key @param groupId 群聊ID @param userId 用户ID @return key字符串 */
-    private static String key(Long groupId, Long userId) {
-        return groupId + ":" + userId;
-    }
 
     /** 群聊数据访问层 */
     private final GroupMapper groupMapper;
@@ -50,6 +35,8 @@ public class GroupServiceImpl implements GroupService {
     private final GroupMemberMapper groupMemberMapper;
     /** 用户数据访问层 */
     private final UserMapper userMapper;
+    /** 禁言管理服务 */
+    private final GroupMuteService groupMuteService;
 
     /** 创建群聊，创建者默认为群主 @param userId 创建者用户ID @param request 创建群聊请求 @return 群聊信息 */
     @Override
@@ -321,55 +308,20 @@ public class GroupServiceImpl implements GroupService {
 
     /** 禁言成员 @param userId 操作者用户ID @param groupId 群聊ID @param memberId 被禁言成员ID @param minutes 禁言时长（分钟） */
     @Override
-    @Transactional
     public void muteMember(Long userId, Long groupId, Long memberId, Integer minutes) {
-        GroupMember operator = checkAdminOrOwner(userId, groupId);
-        GroupMember target = findMember(groupId, memberId);
-        if (target == null) throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "该用户不是群成员");
-        Integer targetRole = target.getRole();
-        if (targetRole == null || targetRole == 2) throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "不能禁言群主");
-        if (operator.getRole() == 1 && targetRole == 1)
-            throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "管理员不能禁言其他管理员");
-        muteMap.put(key(groupId, memberId), LocalDateTime.now().plusMinutes(minutes));
+        groupMuteService.muteMember(userId, groupId, memberId, minutes);
     }
 
     /** 取消禁言 @param userId 操作者用户ID @param groupId 群聊ID @param memberId 被禁言成员ID */
     @Override
-    @Transactional
     public void unmuteMember(Long userId, Long groupId, Long memberId) {
-        GroupMember operator = checkAdminOrOwner(userId, groupId);
-        GroupMember target = findMember(groupId, memberId);
-        if (target == null) throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "该用户不是群成员");
-        Integer targetRole = target.getRole();
-        if (targetRole == null || targetRole == 2) throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "不能操作群主");
-        if (operator.getRole() == 1 && targetRole == 1)
-            throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "管理员不能操作其他管理员");
-        muteMap.remove(key(groupId, memberId));
+        groupMuteService.unmuteMember(userId, groupId, memberId);
     }
 
     /** 批量禁言成员 @param userId 操作者用户ID @param groupId 群聊ID @param memberIds 被禁言成员ID列表 @param minutes 禁言时长（分钟） */
     @Override
-    @Transactional
     public void batchMute(Long userId, Long groupId, List<Long> memberIds, Integer minutes) {
-        GroupMember operator = checkAdminOrOwner(userId, groupId);
-        LocalDateTime until = LocalDateTime.now().plusMinutes(minutes);
-        for (Long mid : memberIds) {
-            GroupMember target = findMember(groupId, mid);
-            if (target == null) continue;
-            Integer targetRole = target.getRole();
-            if (targetRole == null || targetRole == 2) continue;
-            if (operator.getRole() == 1 && targetRole == 1) continue;
-            muteMap.put(key(groupId, mid), until);
-        }
-    }
-
-    /** 检查用户是否为群主或管理员 @param userId 用户ID @param groupId 群聊ID @return 群成员信息 */
-    private GroupMember checkAdminOrOwner(Long userId, Long groupId) {
-        GroupMember operator = findMember(groupId, userId);
-        if (operator == null) throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "你不是群成员");
-        if (operator.getRole() == null || operator.getRole() == 0)
-            throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "无权限");
-        return operator;
+        groupMuteService.batchMute(userId, groupId, memberIds, minutes);
     }
 
     /** 查询群成员信息 @param groupId 群聊ID @param userId 用户ID @return 群成员信息 */

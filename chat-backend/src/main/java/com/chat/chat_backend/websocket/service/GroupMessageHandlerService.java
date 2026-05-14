@@ -1,13 +1,12 @@
 package com.chat.chat_backend.websocket.service;
 
 import cn.hutool.json.JSONUtil;
-import com.chat.chat_backend.modules.group.mapper.GroupMapper;
 import com.chat.chat_backend.modules.group.mapper.GroupMemberMapper;
 import com.chat.chat_backend.modules.group.mapper.GroupMessageMapper;
 import com.chat.chat_backend.modules.user.mapper.UserMapper;
 import com.chat.chat_backend.modules.group.entity.GroupMember;
 import com.chat.chat_backend.modules.group.entity.GroupMessage;
-import com.chat.chat_backend.modules.group.service.impl.GroupServiceImpl;
+import com.chat.chat_backend.modules.group.service.GroupMuteService;
 import com.chat.chat_backend.modules.user.entity.User;
 import com.chat.chat_backend.websocket.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 群聊消息处理与投递服务
@@ -28,9 +26,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class GroupMessageHandlerService {
 
-    /** 群组数据映射器 */
-    private final GroupMapper groupMapper;
-
     /** 群成员数据映射器 */
     private final GroupMemberMapper groupMemberMapper;
 
@@ -42,6 +37,9 @@ public class GroupMessageHandlerService {
 
     /** 会话管理器，用于向在线群成员推送消息 */
     private final WebSocketSessionManager sessionManager;
+
+    /** 禁言管理服务 */
+    private final GroupMuteService groupMuteService;
 
     /**
      * 验证群成员身份和禁言状态，持久化消息，更新未读计数，推送给所有在线群成员
@@ -61,7 +59,7 @@ public class GroupMessageHandlerService {
         }
 
         // 检查发送者是否被禁言
-        if (GroupServiceImpl.isMuted(groupId, fromUserId)) {
+        if (groupMuteService.isMuted(groupId, fromUserId)) {
             log.warn("用户 {} 在群 {} 中被禁言", fromUserId, groupId);
             return;
         }

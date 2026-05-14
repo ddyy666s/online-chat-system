@@ -9,8 +9,8 @@ import com.chat.chat_backend.modules.group.dto.response.GroupMemberVO;
 import com.chat.chat_backend.modules.group.dto.response.GroupVO;
 import com.chat.chat_backend.modules.group.entity.GroupMember;
 import com.chat.chat_backend.modules.user.entity.User;
+import com.chat.chat_backend.modules.group.service.GroupMuteService;
 import com.chat.chat_backend.modules.group.service.GroupService;
-import com.chat.chat_backend.modules.group.service.impl.GroupServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +31,8 @@ public class GroupController {
 
     /** 群聊服务 */
     private final GroupService groupService;
+    /** 禁言管理服务 */
+    private final GroupMuteService groupMuteService;
     /** 群成员 Mapper */
     private final GroupMemberMapper groupMemberMapper;
     /** 用户 Mapper */
@@ -136,7 +138,7 @@ public class GroupController {
                     .avatar(user != null ? user.getAvatar() : null)
                     .groupNickname(member.getNickname())
                     .role(member.getRole())
-                    .muted(GroupServiceImpl.isMuted(groupId, member.getUserId()))
+                    .muted(groupMuteService.isMuted(groupId, member.getUserId()))
                     .build();
         }).collect(Collectors.toList());
         return Result.success(result);
