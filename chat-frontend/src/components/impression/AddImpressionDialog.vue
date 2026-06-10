@@ -27,7 +27,7 @@ import { ref, computed, watch } from 'vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import { notify } from '@/utils/notify'
 
-/** 组件属性：显示状态、好友列表、加载状态、预选好友ID */
+/** 组件属性：显示状态、好友列表、预选好友ID */
 const props = defineProps<{
   modelValue: boolean
   friendList: any[]
