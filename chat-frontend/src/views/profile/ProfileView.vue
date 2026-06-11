@@ -10,7 +10,7 @@
 
       <div class="avatar-section">
         <div class="avatar-wrapper" @click="triggerFileInput">
-          <el-avatar :size="100" :src="form.avatar || ''" class="profile-avatar">
+          <el-avatar :size="110" :src="form.avatar || ''" class="profile-avatar">
             {{ form.nickname?.charAt(0) || 'U' }}
           </el-avatar>
           <div class="avatar-overlay">
@@ -58,19 +58,17 @@ import AnimatedBackground from '@/components/common/AnimatedBackground.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
-/** 表单引用 */
+
 const formRef = ref()
-/** 保存按钮加载状态 */
 const saving = ref(false)
-/** 文件选择输入引用 */
 const fileInput = ref<HTMLInputElement>()
 
-/** 表单数据 */
+/** 表单数据 - 使用非空断言或默认值 */
 const form = reactive<UserInfo>({
   id: 0,
   username: '',
   nickname: '',
-  avatar: null,
+  avatar: '',
   signature: null,
   role: 'user'
 })
@@ -83,17 +81,17 @@ const rules = {
   ]
 }
 
-/** 返回聊天页面 @returns void */
+/** 返回聊天页面 */
 const goBack = () => {
   router.push('/')
 }
 
-/** 触发文件选择 @returns void */
+/** 触发文件选择 */
 const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
-/** 处理头像上传 @param event 文件选择事件 @returns Promise<void> */
+/** 处理头像上传 */
 const handleAvatarChange = async (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -113,28 +111,22 @@ const handleAvatarChange = async (event: Event) => {
 
   try {
     const avatarUrl = await updateAvatarApi(file)
-    console.log('上传成功，新头像URL:', avatarUrl)
-
     loadingMsg.close()
 
     form.avatar = avatarUrl
-
     if (userStore.userInfo) {
-      const updatedUserInfo = {
-        ...userStore.userInfo,
-        avatar: avatarUrl
-      }
-      userStore.setUserInfo(updatedUserInfo)
+      userStore.setUserInfo({ ...userStore.userInfo, avatar: avatarUrl })
     }
-
     ElMessage.success('头像更新成功')
   } catch (error) {
     console.error(error)
     ElMessage.error('头像上传失败')
+  } finally {
+    input.value = ''
   }
 }
 
-/** 保存个人信息 @returns Promise<void> */
+/** 保存个人信息 */
 const handleSave = async () => {
   const valid = await formRef.value?.validate()
   if (!valid) return
@@ -156,17 +148,21 @@ const handleSave = async () => {
   }
 }
 
-/** 组件挂载时加载用户信息 */
-onMounted(() => {
+/** 初始化表单数据 */
+const initForm = () => {
   const userInfo = userStore.userInfo
   if (userInfo) {
     form.id = userInfo.id
     form.username = userInfo.username
     form.nickname = userInfo.nickname
-    form.avatar = userInfo.avatar
+    form.avatar = userInfo.avatar || ''
     form.signature = userInfo.signature
     form.role = userInfo.role
   }
+}
+
+onMounted(() => {
+  initForm()
 })
 </script>
 
@@ -194,8 +190,14 @@ onMounted(() => {
 }
 
 @keyframes cardIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .profile-header {
