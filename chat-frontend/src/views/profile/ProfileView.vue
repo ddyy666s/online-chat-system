@@ -10,13 +10,11 @@
 
       <div class="avatar-section">
         <div class="avatar-wrapper" @click="triggerFileInput">
-          <el-avatar :size="110" :src="form.avatar || ''" class="profile-avatar">
+          <el-avatar :size="110" :src="form.avatar" class="profile-avatar">
             {{ form.nickname?.charAt(0) || 'U' }}
           </el-avatar>
           <div class="avatar-overlay">
-            <el-icon>
-              <Camera />
-            </el-icon>
+            <el-icon><Camera /></el-icon>
             <span>更换头像</span>
           </div>
         </div>
@@ -30,7 +28,7 @@
         </el-form-item>
 
         <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="form.nickname" placeholder="请输入昵称" />
+          <el-input v-model="form.nickname" placeholder="请输入昵称" maxlength="20" show-word-limit />
         </el-form-item>
 
         <el-form-item label="个性签名" prop="signature">
@@ -63,7 +61,7 @@ const formRef = ref()
 const saving = ref(false)
 const fileInput = ref<HTMLInputElement>()
 
-/** 表单数据 - 使用非空断言或默认值 */
+/** 表单数据 */
 const form = reactive<UserInfo>({
   id: 0,
   username: '',
@@ -82,14 +80,10 @@ const rules = {
 }
 
 /** 返回聊天页面 */
-const goBack = () => {
-  router.push('/')
-}
+const goBack = () => router.push('/')
 
 /** 触发文件选择 */
-const triggerFileInput = () => {
-  fileInput.value?.click()
-}
+const triggerFileInput = () => fileInput.value?.click()
 
 /** 处理头像上传 */
 const handleAvatarChange = async (event: Event) => {
@@ -119,10 +113,10 @@ const handleAvatarChange = async (event: Event) => {
     }
     ElMessage.success('头像更新成功')
   } catch (error) {
-    console.error(error)
+    console.error('头像上传失败:', error)
     ElMessage.error('头像上传失败')
   } finally {
-    input.value = ''
+    input.value = '' // 清空 input，允许重复上传同一文件
   }
 }
 
@@ -141,7 +135,7 @@ const handleSave = async () => {
     ElMessage.success('保存成功')
     router.push('/')
   } catch (error) {
-    console.error(error)
+    console.error('保存失败:', error)
     ElMessage.error('保存失败')
   } finally {
     saving.value = false
@@ -152,12 +146,14 @@ const handleSave = async () => {
 const initForm = () => {
   const userInfo = userStore.userInfo
   if (userInfo) {
-    form.id = userInfo.id
-    form.username = userInfo.username
-    form.nickname = userInfo.nickname
-    form.avatar = userInfo.avatar || ''
-    form.signature = userInfo.signature
-    form.role = userInfo.role
+    Object.assign(form, {
+      id: userInfo.id,
+      username: userInfo.username,
+      nickname: userInfo.nickname,
+      avatar: userInfo.avatar || '',
+      signature: userInfo.signature,
+      role: userInfo.role
+    })
   }
 }
 
@@ -225,9 +221,6 @@ onMounted(() => {
 }
 
 .profile-avatar {
-  width: 110px;
-  height: 110px;
-  font-size: 44px;
   border: 3px solid var(--color-primary-light) !important;
 }
 
@@ -235,8 +228,8 @@ onMounted(() => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 110px;
-  height: 110px;
+  width: 100%;
+  height: 100%;
   background: rgba(108, 92, 231, 0.8);
   border-radius: 50%;
   display: flex;
